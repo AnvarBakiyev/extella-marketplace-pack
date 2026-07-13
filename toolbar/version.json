@@ -1,8 +1,9 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "built": "2026-07-13T08:39:42Z",
   "sha": "446c00a",
   "bytes": 4398544,
   "file": "toolbar.js",
-  "marker": "Extella Plugins"
+  "marker": "Extella Plugins",
+  "note": "fix: form/service cards run global experts with global:true (Expert not found)"
 }
