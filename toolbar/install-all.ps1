@@ -29,6 +29,8 @@ $py=Get-Py
 if(-not $py){Write-Host "  installing Python via winget...";try{winget install -e --id Python.Python.3.12 --scope user --accept-source-agreements --accept-package-agreements|Out-Null}catch{};$env:Path=[Environment]::GetEnvironmentVariable("Path","Machine")+";"+[Environment]::GetEnvironmentVariable("Path","User");$py=Get-Py}
 if(-not $py){Write-Host "  ! Wizard skipped: install Python 3 (python.org/downloads, tick Add to PATH) and re-run. Toolbar works now." -ForegroundColor Yellow;return}
 Write-Host "  ok: $py"
+try{ & cmd /c "$py -m pip install --quiet --disable-pip-version-check certifi" | Out-Null }catch{}
+try{ $cb = (& cmd /c "$py -c ""import certifi;print(certifi.where())"""); if($cb){ $env:SSL_CERT_FILE=$cb.Trim() } }catch{}
 
 Write-Host "4/5 Toolbar experts + Wizard"
 $tmp=Join-Path $env:TEMP ("ex_"+[guid]::NewGuid());New-Item -ItemType Directory -Force -Path $tmp|Out-Null
