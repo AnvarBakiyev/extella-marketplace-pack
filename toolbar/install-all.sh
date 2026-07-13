@@ -14,9 +14,13 @@ say(){ printf "\n\033[1m%s\033[0m\n" "$*"; }
 
 # ── 0. Предусловия ────────────────────────────────────────────────────────
 command -v curl >/dev/null || { echo "нужен curl"; exit 1; }
-if ! command -v python3 >/dev/null; then echo "✗ Нужен Python 3 (для моста Визарда). Поставь python.org/downloads и повтори."; exit 1; fi
-PYV=$(python3 -c 'import sys;print("%d.%d"%sys.version_info[:2])')
-say "Python $PYV найден"
+PY=""
+for c in python3 python; do if $c -c 'import sys;exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1; then PY=$c; break; fi; done
+if [ -z "$PY" ]; then
+  if command -v brew >/dev/null; then say "Python 3 не найден — ставлю через brew"; brew install python@3.12 >/dev/null 2>&1 || true; command -v python3 >/dev/null && PY=python3; fi
+fi
+[ -n "$PY" ] || { echo "✗ Нужен Python 3 (для моста Визарда). Поставь: https://www.python.org/downloads/ и повтори. Тулбар уже стоит."; exit 0; }
+say "Python: $($PY -V 2>&1)"
 
 # ── 1. ТУЛБАР ─────────────────────────────────────────────────────────────
 say "1/4 · Тулбар"
@@ -34,7 +38,9 @@ if [ -z "$TOKEN" ]; then
   printf "  Вставь свой Extella-токен и нажми Enter: "
   read -rs TOKEN; echo
 fi
-[ -n "$TOKEN" ] || { echo "  ✗ токен пуст — Визард без него не поднимется (тулбар уже стоит)"; exit 1; }
+if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | grep -q '[<>]' || [ ${#TOKEN} -lt 12 ]; then
+  echo "  ! Тулбар установлен. Визард пропущен: нужен НАСТОЯЩИЙ токен (не плейсхолдер). Перезапусти с токеном."; exit 0
+fi
 
 # ── 3. ВИЗАРД: мост + config + регистрация ────────────────────────────────
 say "3/4 · Визард (мост :8765)"
@@ -51,13 +57,13 @@ json.dump({"auth_token":token,"api_base":"https://api.extella.ai","port":8765,"a
           open(path,"w"),ensure_ascii=False,indent=2)
 print("  ✓ config.json (keyless Qwen)")
 PY
-( cd "$SRC" && python3 install.py ) || echo "  ⚠️ install.py частично (эксперты, возможно, уже глобальные — норм)"
+( cd "$SRC" && "$PY" install.py ) || echo "  ⚠️ install.py частично (эксперты, возможно, уже глобальные — норм)"
 rm -rf "$TMP"
 
 # ── 4. Запуск моста + перезапуск приложения ───────────────────────────────
 say "4/4 · Запуск"
 pkill -f "extella_wizard/app/server.py" 2>/dev/null || true
-( cd "$WIZ_APP" && nohup python3 server.py >/tmp/extella_wizard.log 2>&1 & )
+( cd "$WIZ_APP" && nohup "$PY" server.py >/tmp/extella_wizard.log 2>&1 & )
 sleep 2
 curl -fsS http://127.0.0.1:8765/x/health >/dev/null 2>&1 && echo "  ✓ мост Визарда поднят (:8765)" || echo "  ⚠️ мост не ответил сразу — приложение поднимет его при открытии"
 pkill -f "Extella.app" 2>/dev/null || true; sleep 1; open -a Extella 2>/dev/null || true
