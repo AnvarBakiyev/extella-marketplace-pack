@@ -7,7 +7,7 @@ def kp_install_pack(pack_id="") -> str:
         # --- Право и налоги (adilet.zan.kz) ---
         "nalog_rk":  {"name": "Налоговый кодекс РК", "adilet": ["K1700000120"]},
         "trud_rk":   {"name": "Трудовой кодекс РК",  "adilet": ["K1500000414"]},
-        "grazhd_rk": {"name": "Гражданский кодекс РК","adilet": ["K940001000_"]},
+        "grazhd_rk": {"name": "Гражданский кодекс РК","adilet": ["K940001000_", "K990000409_"]},
         "admin_rk":  {"name": "Кодекс об админправонарушениях РК","adilet": ["K1400000235"]},
         "pred_rk":   {"name": "Предпринимательский кодекс РК","adilet": ["K1500000375"]},
         "ugol_rk":   {"name": "Уголовный кодекс РК", "adilet": ["K1400000226"]},
@@ -49,7 +49,7 @@ def kp_install_pack(pack_id="") -> str:
         h=urllib.request.urlopen(req, timeout=90, context=ctx).read().decode("utf-8","ignore")
         t=re.sub(r"(?is)<(script|style|nav|header|footer).*?</\1>"," ",h)
         t=re.sub(r"(?s)<[^>]+>"," ",t); t=html.unescape(t); t=re.sub(r"[ \t]+"," ",t)
-        m=re.search(r"(РАЗДЕЛ 1|Статья 1[.\s]|Общая часть)", t)
+        m=re.search(r"Статья\s+\d+[.\s]", t)
         if m: t=t[m.start():]
         return t.strip()
     def fetch_wiki(title):

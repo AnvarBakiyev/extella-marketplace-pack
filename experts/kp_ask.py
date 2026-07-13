@@ -17,7 +17,19 @@ def kp_ask(name="", question="") -> str:
     def cos(a,b):
         s=sum(x*y for x,y in zip(a,b)); na=math.sqrt(sum(x*x for x in a)); nb=math.sqrt(sum(y*y for y in b))
         return s/(na*nb) if na and nb else 0.0
-    ranked=sorted(store, key=lambda c: cos(qe,c["emb"]), reverse=True)[:8]
+    _qtok=[w for w in re.findall(r"[а-яёa-z]{4,}", question.lower())]
+    _bg=[_qtok[k]+" "+_qtok[k+1] for k in range(len(_qtok)-1)]
+    _df={w: sum(1 for c in store if w in c["text"].lower()) for w in set(_qtok)}
+    def _lex(c):
+        ct=c["text"].lower()
+        return sum(100000 for b in _bg if b in ct) + sum(ct.count(w)*(len(store)/(1.0+_df[w])) for w in _qtok)
+    _dense=sorted(store, key=lambda c: cos(qe,c["emb"]), reverse=True)[:10]
+    _lexed=sorted([c for c in store if _lex(c)>0], key=_lex, reverse=True)[:8]
+    _seen=set(); ranked=[]
+    for c in _dense+_lexed:
+        _k=c["text"][:80]
+        if _k not in _seen: _seen.add(_k); ranked.append(c)
+    ranked=ranked[:16]
     ctx="\n\n".join("["+c["src"]+"] "+c["text"] for c in ranked)
     prompt="Ответь на вопрос ТОЛЬКО по этим фрагментам документов. Если ответа в них нет — честно скажи, что в документах этого нет. Кратко.\n\nФРАГМЕНТЫ:\n"+ctx+"\n\nВОПРОС: "+question
     tok=""
