@@ -15,7 +15,8 @@ grep -q "Extella Plugins" "$APP/tb.tmp" || { echo "✗ toolbar check"; rm -f "$A
 mv "$APP/tb.tmp" "$APP/toolbar.js"; echo "  ✓"
 
 say "2/5 Токен"
-TOKEN="${EXTELLA_TOKEN:-}"; [ -z "$TOKEN" ] && { printf "  Вставь Extella-токен: "; read -rs TOKEN; echo; }
+TOKEN="${EXTELLA_TOKEN:-}"
+if [ -z "$TOKEN" ]; then printf "  Вставь Extella-токен и нажми Enter: "; read -r TOKEN </dev/tty || true; fi
 if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | LC_ALL=C grep -q '[^ -~]\|[<> ]' || [ ${#TOKEN} -lt 20 ]; then
   echo "  ! Тулбар установлен. Эксперты/Визард пропущены: нужен НАСТОЯЩИЙ токен."; exit 0; fi
 mkdir -p "$WA"
