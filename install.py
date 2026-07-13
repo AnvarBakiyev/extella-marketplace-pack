@@ -25,7 +25,8 @@ def load_or_prompt():
     tok = input("Вставь Extella-токен: ").strip()
     if not tok:
         print("Токен не введён — выход."); sys.exit(1)
-    cfg = {"auth_token": tok, "api_base": "https://api.extella.ai", "agent_id": "agent_extella_default"}
+    cfg = {"auth_token": tok, "api_base": "https://api.extella.ai",
+           "agent_id": os.environ.get("EXTELLA_AGENT_ID") or "agent_extella_alibaba_default"}
     os.makedirs(os.path.dirname(CFG_PATH), exist_ok=True)
     json.dump(cfg, open(CFG_PATH, "w", encoding="utf-8"))
     print("Токен сохранён:", CFG_PATH)
@@ -36,7 +37,7 @@ cfg = load_or_prompt()
 TOKEN = cfg.get("auth_token", "")
 BASE = cfg.get("api_base", "https://api.extella.ai")
 HDR = {"X-Auth-Token": TOKEN, "Content-Type": "application/json",
-       "X-Profile-Id": "default", "X-Agent-Id": cfg.get("agent_id", "agent_extella_default")}
+       "X-Profile-Id": "default", "X-Agent-Id": cfg.get("agent_id", "agent_extella_alibaba_default")}
 if not TOKEN:
     print("В config.json нет auth_token."); sys.exit(1)
 
@@ -124,4 +125,75 @@ if os.path.exists(cc):
     except Exception as e:
         print("  \u26a0\ufe0f composer:catalog:", str(e)[:60])
 
-print("\nГотово. Способности зарегистрированы. Витрину ставь отдельно: ./install_toolbar.sh")
+# ---- 5. Автоматизации (готовые паки: Travel Agency, Контракты, Competitor Intelligence) ----
+AUTO = os.path.join(HERE, "automations")
+AGENT_ID = os.environ.get("EXTELLA_AGENT_ID") or cfg.get("agent_id") or "agent_extella_alibaba_default"
+if AGENT_ID == "agent_extella_default":          # никогда не ставим платного Claude клиентам
+    AGENT_ID = "agent_extella_alibaba_default"
+if os.path.isdir(AUTO):
+    import shutil
+    print("== Автоматизации ==")
+    # 5a. эксперты паков (подстановка Qwen-агента коллеги вместо сентинела)
+    afiles = sorted(glob.glob(os.path.join(AUTO, "experts", "*.py")))
+    aok = 0
+    for f in afiles:
+        name = os.path.basename(f)[:-3]
+        src = open(f, encoding="utf-8").read().replace("__EXTELLA_AGENT__", AGENT_ID)
+        try:
+            r = api("/api/expert/save", {"name": name, "description": desc_of(src) or name,
+                                         "code": src, "kwargs": {}, "cspl": "fython", "global": True}, timeout=45)
+            if r.get("status") == "success":
+                aok += 1
+            else:
+                print("  ❌", name, "—", str(r)[:60])
+        except Exception as e:
+            print("  ❌", name, "—", str(e)[:60])
+    print("  эксперты паков: %d / %d" % (aok, len(afiles)))
+    # 5b. UI-папки плагинов -> ~/extella-plugins/<id>/
+    PLUG = os.path.expanduser("~/extella-plugins")
+    REGDIR = os.path.join(PLUG, "_registry")
+    os.makedirs(REGDIR, exist_ok=True)
+    uidir = os.path.join(AUTO, "ui")
+    if os.path.isdir(uidir):
+        for pid in os.listdir(uidir):
+            sdir = os.path.join(uidir, pid)
+            if not os.path.isdir(sdir):
+                continue
+            ddir = os.path.join(PLUG, pid)
+            os.makedirs(ddir, exist_ok=True)
+            for fn in os.listdir(sdir):
+                try:
+                    shutil.copy(os.path.join(sdir, fn), os.path.join(ddir, fn))
+                except Exception:
+                    pass
+    # 5c. реестры плагинов (подстановка агента + правильный путь реестра под дом коллеги)
+    for rf in sorted(glob.glob(os.path.join(AUTO, "registries", "*.json"))):
+        raw = open(rf, encoding="utf-8").read().replace("__EXTELLA_AGENT__", AGENT_ID)
+        try:
+            d = json.loads(raw)
+        except Exception as e:
+            print("  ⚠️ реестр", os.path.basename(rf), "—", str(e)[:50]); continue
+        pid = d.get("id") or os.path.basename(rf)[:-5]
+        art = d.get("artifacts")
+        if isinstance(art, dict):
+            art["registryFile"] = os.path.join(REGDIR, pid + ".json")
+        json.dump(d, open(os.path.join(REGDIR, pid + ".json"), "w", encoding="utf-8"),
+                  ensure_ascii=False, indent=2)
+        print("  ✅ пак:", d.get("name") or pid)
+    # 5d. agent_id в конфиг паков, чтобы LLM-звонки шли на Qwen коллеги (не на дефолт)
+    for ck in ("ta:config",):
+        try:
+            cur = {}
+            try:
+                cur = json.loads(api("/api/kv/get", {"key": ck, "global": True}).get("value") or "{}")
+            except Exception:
+                pass
+            if not isinstance(cur, dict):
+                cur = {}
+            cur.setdefault("agent_id", AGENT_ID)
+            api("/api/kv/set", {"key": ck, "value": json.dumps(cur, ensure_ascii=False),
+                                "description": "pack config", "global": True})
+        except Exception:
+            pass
+
+print("\nГотово. Способности и автоматизации зарегистрированы. Витрину ставь отдельно: ./install_toolbar.sh")

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extella.ai — Юрист по договорам</title>
+<style>
+:root{--paper:#FAFAF8;--cream:#F5F3EE;--divider:#EBE8E1;--ink:#0A0A0A;--ink-soft:#1A1A1A;--ink-med:#2A2A2A;
+--gold:#C57E33;--gold-d:#A5632A;--petrol:#2F6B66;--petrol-d:#24544F;--silver:#8C8C8C;--bgold:#D4B896;}
+*{box-sizing:border-box;margin:0;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif}
+body{background:var(--paper);color:var(--ink-soft);padding:0 0 60px}
+.wrap{max-width:920px;margin:0 auto;padding:0 22px}
+header{display:flex;align-items:center;gap:14px;padding:22px 0 14px}
+header .logo{width:46px;height:46px;border-radius:11px;flex:none}
+header h1{font-size:24px;color:var(--ink);font-weight:800}
+header h1 .ai{color:var(--gold)}
+header .sub{font-size:14px;color:var(--silver);margin-top:2px}
+.tabs{display:flex;gap:8px;border-bottom:2px solid var(--divider);margin:8px 0 20px}
+.tab{padding:11px 18px;font-size:15px;font-weight:700;color:var(--silver);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab.on{color:var(--ink);border-bottom-color:var(--gold)}
+.card{background:#fff;border:1px solid var(--divider);border-radius:14px;padding:20px 22px;margin-bottom:16px}
+.card h2{font-size:18px;color:var(--ink);margin-bottom:4px}
+.card p.d{font-size:14px;color:var(--silver);margin-bottom:14px}
+label{display:block;font-size:13px;color:var(--ink-med);font-weight:600;margin:10px 0 4px}
+input,textarea,select{width:100%;border:1px solid var(--divider);border-radius:9px;padding:10px 12px;font-size:14px;background:var(--paper);color:var(--ink-soft)}
+textarea{min-height:110px;resize:vertical;font-family:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:inline-block;background:var(--gold);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;margin-top:14px}
+.btn:hover{background:var(--gold-d)}.btn.sec{background:transparent;color:var(--gold-d);border:1.5px solid var(--bgold)}
+.btn:disabled{opacity:.5;cursor:default}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;padding:6px 13px;border-radius:20px;margin:4px 8px 4px 0}
+.pill .dot{width:9px;height:9px;border-radius:50%}
+.pill.ok{background:rgba(47,107,102,.12);color:var(--petrol-d)}.pill.ok .dot{background:var(--petrol)}
+.pill.no{background:#f2ede4;color:var(--silver)}.pill.no .dot{background:var(--silver)}
+.chip{display:inline-block;font-size:12px;font-weight:700;padding:4px 11px;border-radius:16px;margin:3px 5px 3px 0;font-family:ui-monospace,Menlo,monospace}
+.chip.gold{background:rgba(197,126,51,.14);color:var(--gold-d)}.chip.petrol{background:rgba(47,107,102,.12);color:var(--petrol-d)}
+.pt{background:var(--cream);border-left:5px solid var(--gold);border-radius:9px;padding:11px 15px;margin:8px 0}
+.pt b{color:var(--ink)}.pt.petrol{border-left-color:var(--petrol)}
+.email{background:var(--cream);border:1px solid var(--divider);border-radius:11px;padding:16px 18px;margin-top:12px;white-space:pre-wrap;font-size:14px;line-height:1.5;color:var(--ink-soft)}
+.email .subj{font-weight:800;color:var(--ink);margin-bottom:8px;white-space:normal}
+.note{font-size:13px;color:var(--silver);margin-top:10px;font-style:italic}
+.dl{display:inline-block;font-size:14px;font-weight:700;color:var(--gold-d);text-decoration:none;margin:6px 14px 0 0}
+.hidden{display:none}
+.msg{font-size:14px;margin-top:10px}.msg.err{color:#a33}.msg.ok{color:var(--petrol-d)}
+.spin{display:inline-block;font-size:14px;color:var(--silver)}
+.prov{margin:0}.prov.on{background:var(--gold);color:#fff;border-color:var(--gold)}
+.busy{position:fixed;inset:0;background:rgba(10,10,11,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:999}
+.busy.hidden{display:none}
+.busy-card{background:#fff;border:1px solid var(--divider);border-radius:16px;padding:28px 34px;max-width:440px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+.ring{width:46px;height:46px;margin:0 auto 16px;border:4px solid var(--divider);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#busymsg{font-size:18px;font-weight:700;color:var(--ink)}
+.busy-sub{font-size:14px;color:var(--silver);margin-top:8px}
+.busy-dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
+@keyframes dots{0%{content:''}25%{content:'·'}50%{content:'··'}75%{content:'···'}}
+.steps{margin-top:18px;text-align:left;display:inline-block}
+.steps .st{display:flex;align-items:center;gap:10px;font-size:14.5px;color:var(--silver);margin:7px 0}
+.steps .st .ic{width:20px;height:20px;border-radius:50%;border:2px solid var(--divider);flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.steps .st.done{color:var(--petrol-d)} .steps .st.done .ic{border-color:var(--petrol);background:var(--petrol);color:#fff}
+.steps .st.active{color:var(--ink);font-weight:700} .steps .st.active .ic{border-color:var(--gold);border-top-color:transparent;animation:spin 0.9s linear infinite}
+</style></head>
+<body><div class="wrap">
+<header>
+<svg class="logo" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="cop" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#F2D6B2"/><stop offset=".33" stop-color="#DBA365"/><stop offset=".62" stop-color="#C57E33"/><stop offset="1" stop-color="#89531F"/></linearGradient>
+<radialGradient id="bg" cx=".5" cy=".4" r=".75"><stop offset="0" stop-color="#242424"/><stop offset="1" stop-color="#0A0A0A"/></radialGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<line x1="176" y1="205" x2="176" y2="307" stroke="url(#cop)" stroke-width="7" opacity=".7" stroke-linecap="round"/>
+<line x1="336" y1="205" x2="336" y2="307" stroke="url(#cop)" stroke-width="7" opacity=".7" stroke-linecap="round"/>
+<path d="M134,168 C200,168 224,256 256,256 C288,256 312,344 378,344" fill="none" stroke="url(#cop)" stroke-width="27" stroke-linecap="round"/>
+<path d="M134,344 C200,344 224,256 256,256 C288,256 312,168 378,168" fill="none" stroke="url(#cop)" stroke-width="27" stroke-linecap="round"/>
+<g fill="url(#cop)"><circle cx="104" cy="188" r="7"/><circle cx="104" cy="216" r="6"/><circle cx="104" cy="244" r="6"/><circle cx="104" cy="272" r="6"/><circle cx="104" cy="300" r="6"/><circle cx="104" cy="330" r="7"/>
+<circle cx="408" cy="188" r="7"/><circle cx="408" cy="216" r="6"/><circle cx="408" cy="244" r="6"/><circle cx="408" cy="272" r="6"/><circle cx="408" cy="300" r="6"/><circle cx="408" cy="330" r="7"/></g>
+</svg>
+<div><h1>Extella<span class="ai">.ai</span> — Юрист по договорам</h1>
+<div class="sub">Разбор договоров по чек-листу и Гражданскому кодексу · согласование с контрагентом · человек в контуре</div></div>
+</header>
+
+<div class="tabs">
+<div class="tab on" data-t="setup">⚙️ Настройка</div>
+<div class="tab" data-t="clients">👥 Клиенты</div>
+<div class="tab" data-t="kb">📚 Базы знаний</div>
+<div class="tab" data-t="review">📋 Разбор договора</div>
+<div class="tab" data-t="nego">✉️ Согласование</div>
+<div class="tab" data-t="assist">💬 Помощник</div>
+</div>
+
+<!-- НАСТРОЙКА -->
+<section id="setup">
+ <div class="card">
+  <h2>Подключения</h2><p class="d">Статус вашего аккаунта Extella, базы знаний и уведомлений.</p>
+  <div id="pills"><span class="spin">проверяю…</span></div>
+  <div class="note">База знаний «Гражданский кодекс РК» ставится в один клик из раздела «Базы знаний» в Extella. Без неё разбор работает, но без ссылок на статьи закона.</div>
+ </div>
+ <div class="card">
+  <h2>Стандарты компании</h2><p class="d">Условия, которые агент будет отстаивать в договорах.</p>
+  <div class="row2">
+   <div><label>Срок оплаты</label><input id="s_pay" value="не более 30 дней с момента приёмки"></div>
+   <div><label>Неустойка за просрочку</label><input id="s_pen" value="не менее 0,1% в день от суммы просрочки"></div>
+   <div><label>Гарантийный срок</label><input id="s_war" value="не менее 12 месяцев"></div>
+   <div><label>Подсудность</label><input id="s_jur" value="суд по месту нахождения заказчика"></div>
+   <div><label>Наша сторона (как в договоре)</label><input id="p_our" placeholder="напр. Заказчик (наша компания)"></div>
+   <div><label>Контрагент</label><input id="p_cp" placeholder="напр. ТОО «Поставщик»"></div>
+  </div>
+  <button class="btn" onclick="saveCfg()">Сохранить стандарты</button><span id="cfgmsg" class="msg"></span>
+ </div>
+ <div class="card">
+  <h2>Уведомления руководителю (Telegram, опционально)</h2>
+  <p class="d">Сюда придёт сводка и черновик на согласование. Бот — @BotFather, chat_id — @userinfobot.</p>
+  <div class="row2"><div><label>Bot token</label><input id="tg_tok" placeholder="123456:AA..."></div>
+   <div><label>Chat ID</label><input id="tg_cid" placeholder="напр. 12345678"></div></div>
+  <button class="btn sec" onclick="saveTg()">Подключить и проверить</button><span id="tgmsg" class="msg"></span>
+ </div>
+ <div class="card">
+  <h2>Почта агента</h2>
+  <p class="d">Выберите почту — сервер и порт подставятся сами. Останется войти вашим адресом и паролем приложения.</p>
+  <div id="mailProviders" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  <div id="mailForm" class="hidden">
+   <div class="row2">
+    <div><label>Ваш адрес</label><input id="sm_user" placeholder="you@gmail.com"></div>
+    <div><label>Пароль приложения</label><input id="sm_pass" type="password" placeholder="••••••••"></div>
+   </div>
+   <div id="mailCustom" class="row2 hidden"><div><label>SMTP-сервер</label><input id="sm_host" placeholder="smtp.example.com"></div><div><label>Порт</label><input id="sm_port" value="465"></div></div>
+   <input type="hidden" id="sm_from">
+   <div id="mailHelp" class="note"></div>
+   <button class="btn sec" onclick="saveEmail()">Подключить и отправить тест</button><span id="emmsg" class="msg"></span>
+  </div>
+  <div class="note" style="margin-top:12px">🔒 Пароль приложения — не ваш основной пароль, а отдельный ключ для приложений (создаётся в настройках безопасности почты). Вход «через Google» в один клик подключим, когда включим OAuth на стороне Extella.</div>
+ </div>
+ <div class="card">
+  <h2>WhatsApp (GreenAPI)</h2>
+  <p class="d">Чтобы агент переписывался с клиентами в WhatsApp. idInstance и apiTokenInstance — на green-api.com, отсканируйте QR номером компании. Не для холодных рассылок.</p>
+  <div class="row2"><div><label>idInstance</label><input id="wa_id" placeholder="1101xxxxxx"></div>
+   <div><label>apiTokenInstance</label><input id="wa_tok" type="password" placeholder="••••••••"></div></div>
+  <button class="btn sec" onclick="saveWa()">Подключить и проверить</button><span id="wamsg" class="msg"></span>
+ </div>
+ <div class="card">
+  <h2>Политики и стандарты компании (файлы)</h2>
+  <p class="d">Загрузите документы (.txt/.docx), которым агент будет следовать при разборе договоров — регламенты закупок, обязательные условия, шаблоны. Агент учитывает их вместе с Гражданским кодексом.</p>
+  <input type="file" id="pol_file" accept=".txt,.docx">
+  <button class="btn sec" onclick="uploadPolicy()">Загрузить документ</button>
+  <button class="btn sec" onclick="clearPolicies()">Очистить</button><span id="polmsg" class="msg"></span>
+  <div id="polList" style="margin-top:10px"></div>
+ </div>
+</section>
+
+<!-- КЛИЕНТЫ -->
+<section id="clients" class="hidden">
+ <div class="card">
+  <h2>Клиенты и контрагенты</h2>
+  <p class="d">Добавьте контакты, чтобы агент отправлял им письма (почта) и сообщения (WhatsApp). Или загрузите CSV: имя, почта, телефон, компания.</p>
+  <div class="row2">
+   <div><label>Имя</label><input id="cl_name" placeholder="Иван Иванов"></div>
+   <div><label>Компания</label><input id="cl_comp" placeholder="ТОО «Контрагент»"></div>
+   <div><label>Почта</label><input id="cl_email" placeholder="ivan@company.kz"></div>
+   <div><label>Телефон (WhatsApp)</label><input id="cl_phone" placeholder="+7701..."></div>
+  </div>
+  <button class="btn" onclick="addClient()">Добавить контакт</button>
+  <label style="margin-top:14px">…или загрузить CSV</label><input type="file" id="cl_file" accept=".csv">
+  <button class="btn sec" onclick="uploadClients()">Загрузить CSV</button><span id="clmsg" class="msg"></span>
+  <div id="clList" style="margin-top:14px"></div>
+ </div>
+</section>
+
+<!-- БАЗЫ ЗНАНИЙ -->
+<section id="kb" class="hidden">
+ <div class="card">
+  <h2>Базы законов</h2>
+  <p class="d">Готовые правовые базы, на которые агент опирается при разборе (со ссылками на статьи). Гражданский кодекс РК подключён по умолчанию.</p>
+  <div id="legalList"><span class="spin">загружаю…</span></div>
+  <div class="note">Если базы нет в списке подключённых — установите её в разделе «Базы знаний» самого приложения Extella, затем нажмите «Подключить».</div>
+ </div>
+ <div class="card">
+  <h2>Свои базы знаний</h2>
+  <p class="d">Загрузите свои документы (регламенты, стандарты, шаблоны, законы) — агент будет учитывать их при разборе наравне с ГК.</p>
+  <label>Название базы</label><input id="kb_name" placeholder="напр. Регламент закупок компании">
+  <label>Документы (.txt/.docx, можно несколько)</label><input type="file" id="kb_files" accept=".txt,.docx" multiple>
+  <button class="btn" onclick="createKB()">Создать базу</button><span id="kbmsg" class="msg"></span>
+  <div id="kbList" style="margin-top:14px"></div>
+ </div>
+</section>
+
+<!-- РАЗБОР -->
+<section id="review" class="hidden">
+ <div class="card">
+  <h2>Разбор договора</h2>
+  <p class="d">Вставьте текст договора или загрузите файл (.txt / .docx). Агент проверит по чек-листу, стандартам компании и Гражданскому кодексу.</p>
+  <label>Текст договора</label><textarea id="ctext" placeholder="Вставьте текст договора…"></textarea>
+  <label>…или файл</label><input type="file" id="cfile" accept=".txt,.docx">
+  <br><button class="btn" id="revBtn" onclick="runReview()">Разобрать договор</button><span id="revmsg" class="msg"></span>
+ </div>
+ <div id="revResult" class="card hidden">
+  <h2>Результат разбора</h2>
+  <div id="revSummary"></div>
+  <div id="revDocs" style="margin-top:12px"></div>
+  <div id="revPoints" style="margin-top:14px"></div>
+  <button class="btn" onclick="toNego()">Передать спорные пункты в согласование →</button>
+  <button class="btn sec" onclick="notifyHead()">Отправить сводку руководителю</button>
+ </div>
+</section>
+
+<!-- СОГЛАСОВАНИЕ -->
+<section id="nego" class="hidden">
+ <div class="card">
+  <h2>Согласование с контрагентом</h2>
+  <p class="d">Агент готовит аргументированное письмо по спорным пунктам — со ссылками на Гражданский кодекс. Отправляете письмо <b>вы сами</b>: агент только готовит черновик.</p>
+  <div id="negoPoints"></div>
+  <label>Предмет договора</label><input id="n_subj" value="договор поставки">
+  <button class="btn" id="n1Btn" onclick="negotiate(1)">Подготовить письмо контрагенту</button><span id="negomsg" class="msg"></span>
+ </div>
+ <div id="draft1" class="card hidden">
+  <h2>Черновик письма (раунд 1)</h2><div id="draft1body"></div>
+  <div class="sendrow" data-r="1"></div>
+  <div class="note">Проверьте черновик и отправьте контрагенту. Когда придёт ответ — вставьте его ниже.</div>
+  <label>Ответ контрагента (возражения)</label><textarea id="cpreply" placeholder="Вставьте письмо-возражение контрагента…"></textarea>
+  <button class="btn" onclick="negotiate(2)">Ответить на возражения</button>
+ </div>
+ <div id="draft2" class="card hidden">
+  <h2>Черновик ответа (раунд 2)</h2><div id="draft2body"></div>
+  <div class="sendrow" data-r="2"></div>
+  <button class="btn sec" onclick="notifyHead('Черновик ответа контрагенту готов на согласование.')">Отправить руководителю на согласование</button>
+  <div class="note">Отправку контрагенту вы подтверждаете сами — кнопкой выше.</div>
+ </div>
+</section>
+
+<!-- ПОМОЩНИК -->
+<section id="assist" class="hidden">
+ <div class="card">
+  <h2>Помощник по агенту</h2>
+  <p class="d">Спросите, как агент работает и как изменить его под себя — помощник знает всё устройство. Например: «сделай тон писем мягче», «добавь проверку пункта про форс-мажор», «поменяй срок оплаты на 14 дней».</p>
+  <div id="chat" style="max-height:340px;overflow-y:auto;margin:6px 0"></div>
+  <div style="display:flex;gap:10px;align-items:flex-end">
+   <textarea id="ainput" style="min-height:52px" placeholder="Ваш вопрос…"></textarea>
+   <button class="btn" id="aBtn" onclick="ask()" style="margin-top:0;white-space:nowrap">Спросить</button>
+  </div>
+ </div>
+ <div class="card">
+  <h2>Как изменить агента самому</h2>
+  <p class="d">Два уровня кастомизации:</p>
+  <div class="pt"><b>Настройки</b> (без программирования) — во вкладке «Настройка»: стандарты компании (срок оплаты, неустойка, гарантия, подсудность), стороны договора, Telegram, база знаний «Гражданский кодекс РК».</div>
+  <div class="pt petrol"><b>Логика агента</b> (пункты чек-листа, тон писем, новые документы или шаги) — в <b>основном чате Extella</b> через Строителя процессов: откройте главный чат, назовите нужный эксперт и опишите изменение словами. Помощник выше подскажет, какой именно эксперт назвать.</div>
+  <div class="note">Эксперты этого агента: <span class="chip petrol">p2d4_evaluate_contract_batch</span><span class="chip petrol">p2d4_generate_document_package</span><span class="chip petrol">p2d4_run_pipeline</span><span class="chip petrol">p2d5_negotiate</span><span class="chip petrol">lp_notify</span></div>
+ </div>
+</section>
+
+</div>
+<div id="busy" class="busy hidden"><div class="busy-card"><div class="ring"></div><div id="busymsg">Обработка</div><div class="busy-sub" id="busysub">Запущен эксперт — пожалуйста, подождите.</div><div id="busysteps" class="steps"></div></div></div>
+<script>
+const $=s=>document.querySelector(s);
+function showBusy(msg,sub){$('#busymsg').innerHTML=(msg||'Обработка')+'<span class="busy-dots"></span>';$('#busysub').textContent=sub||'Запущен эксперт — пожалуйста, подождите.';$('#busy').classList.remove('hidden');}
+function hideBusy(){$('#busy').classList.add('hidden');}
+async function post(route,body){const r=await fetch(route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})});return r.json();}
+// action → сообщение индикатора для каждого «долгого» роута
+const BUSY={
+ '/x/negotiate':['Агент готовит письмо','Формулирую позицию со ссылками на закон…'],
+ '/x/save_telegram':['Проверяю Telegram','Отправляю тестовое сообщение…'],
+ '/x/save_email':['Проверяю почту','Отправляю тестовое письмо через SMTP…'],
+ '/x/save_whatsapp':['Проверяю WhatsApp','Запрашиваю статус подключения…'],
+ '/x/notify':['Отправляю руководителю','Шлю сводку в Telegram…'],
+ '/x/send_email':['Отправляю письмо','Соединяюсь с почтовым сервером…'],
+ '/x/send_wa':['Отправляю в WhatsApp','Передаю сообщение через GreenAPI…'],
+ '/x/upload_policy':['Загружаю документ','Читаю файл и сохраняю в стандарты…']};
+// оборачиваем post: для «долгих» роутов сам показывает индикатор
+const _post=post;
+post=async function(route,body){const b=BUSY[route];if(b)showBusy(b[0],b[1]);try{return await _post(route,body);}finally{if(b)hideBusy();}};
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
+ ['setup','clients','kb','review','nego','assist'].forEach(id=>$('#'+id).classList.toggle('hidden',id!==t.dataset.t));
+ if(t.dataset.t==='clients')loadClients();
+ if(t.dataset.t==='kb')loadKB();});
+let DISPUTED=[];
+let CHAT=[];
+function chatBubble(role,text){
+ const mine=role==='user';
+ return `<div style="margin:8px 0;text-align:${mine?'right':'left'}"><div style="display:inline-block;max-width:82%;text-align:left;background:${mine?'var(--gold)':'var(--cream)'};color:${mine?'#fff':'var(--ink-soft)'};border-radius:12px;padding:9px 13px;font-size:14px;line-height:1.45;white-space:pre-wrap">${text.replace(/</g,'&lt;')}</div></div>`;
+}
+function renderChat(){$('#chat').innerHTML=CHAT.map(m=>chatBubble(m.role,m.text)).join('');$('#chat').scrollTop=$('#chat').scrollHeight;}
+async function ask(){
+ const q=$('#ainput').value.trim();if(!q)return;
+ CHAT.push({role:'user',text:q});$('#ainput').value='';CHAT.push({role:'a',text:'…'});renderChat();
+ $('#aBtn').disabled=true;
+ const hist=CHAT.slice(0,-2).map(m=>(m.role==='user'?'Пользователь: ':'Помощник: ')+m.text).join('\n');
+ const r=await post('/x/assist',{question:q,history:hist});
+ $('#aBtn').disabled=false;CHAT.pop();
+ let ans=r.answer||'—';
+ if(r.action==='builder'&&r.expert)ans+='\n\n→ Это меняется в основном чате Extella: назовите эксперт «'+r.expert+'» и опишите правку Строителю.';
+ else if(r.action==='panel')ans+='\n\n→ Это меняется здесь, во вкладке «Настройка».';
+ CHAT.push({role:'a',text:ans});renderChat();
+}
+
+async function loadStatus(){
+ const s=await post('/x/status',{});
+ const P=(ok,l)=>`<span class="pill ${ok?'ok':'no'}"><span class="dot"></span>${l}${ok?' ✓':''}</span>`;
+ $('#pills').innerHTML=P(s.token,'Аккаунт')+P(s.gk,'Гражданский кодекс РК')+P(s.email,'Почта')+P(s.whatsapp,'WhatsApp')+P(s.telegram,'Telegram');
+ const st=s.standards||{},p=s.parties||{};
+ if(st.pay)$('#s_pay').value=st.pay; if(st.pen)$('#s_pen').value=st.pen; if(st.war)$('#s_war').value=st.war; if(st.jur)$('#s_jur').value=st.jur;
+ if(p.our_side)$('#p_our').value=p.our_side; if(p.counterparty)$('#p_cp').value=p.counterparty;
+ if(s.email_from)$('#sm_from').value=$('#sm_from').value||s.email_from;
+ renderPolicies(s.policies||[]);
+}
+function renderPolicies(pols){
+ $('#polList').innerHTML=pols.length?('<b>Загружено:</b> '+pols.map(p=>`<span class="chip petrol">${p.name} · ${p.chars} симв.</span>`).join('')):'<span class="note">Документы не загружены — агент использует базовые стандарты + ГК.</span>';
+}
+const MAIL_PROVIDERS={
+ 'Gmail':{host:'smtp.gmail.com',port:'465',ph:'you@gmail.com',help:'Пароль приложения: включите двухэтапную защиту → myaccount.google.com/apppasswords → создайте пароль для «Почта».'},
+ 'Outlook':{host:'smtp.office365.com',port:'587',ph:'you@outlook.com',help:'Создайте пароль приложения в настройках безопасности Microsoft (при включённой двухэтапной защите).'},
+ 'Yandex':{host:'smtp.yandex.ru',port:'465',ph:'you@yandex.ru',help:'В Яндекс ID включите доступ по IMAP/SMTP и создайте пароль приложения.'},
+ 'Mail.ru':{host:'smtp.mail.ru',port:'465',ph:'you@mail.ru',help:'В Mail.ru → «Пароль и безопасность» создайте пароль для внешнего приложения.'},
+ 'Другой':{host:'',port:'465',ph:'you@company.kz',custom:true,help:'Укажите SMTP-сервер и порт вашего провайдера.'}
+};
+function pickMail(name){
+ const p=MAIL_PROVIDERS[name];
+ $('#sm_host').value=p.host;$('#sm_port').value=p.port;$('#sm_user').placeholder=p.ph;$('#mailHelp').textContent=p.help;
+ $('#mailCustom').classList.toggle('hidden',!p.custom);
+ $('#mailForm').classList.remove('hidden');
+ document.querySelectorAll('#mailProviders .prov').forEach(b=>b.classList.toggle('on',b.dataset.p===name));
+}
+function initMail(){$('#mailProviders').innerHTML=Object.keys(MAIL_PROVIDERS).map(n=>`<button class="btn sec prov" data-p="${n}" onclick="pickMail('${n}')">${n}</button>`).join('');}
+async function saveEmail(){
+ if(!$('#sm_user').value.trim()||!$('#sm_pass').value){$('#emmsg').textContent=' введите адрес и пароль приложения';$('#emmsg').className='msg err';return;}
+ $('#sm_from').value=$('#sm_user').value;
+ const r=await post('/x/save_email',{smtp_host:$('#sm_host').value,smtp_port:$('#sm_port').value,smtp_user:$('#sm_user').value,smtp_pass:$('#sm_pass').value,email_from:$('#sm_from').value});
+ $('#emmsg').textContent=r.status==='success'?(' тест отправлен на '+(r.test_to||'')+' ✓'):(' ошибка: '+((r.detail&&r.detail.error)||'проверьте адрес и пароль приложения'));
+ $('#emmsg').className='msg '+(r.status==='success'?'ok':'err');loadStatus();
+}
+async function saveWa(){
+ $('#wamsg').textContent=' проверяю…';$('#wamsg').className='msg';
+ const r=await post('/x/save_whatsapp',{id_instance:$('#wa_id').value,api_token_instance:$('#wa_tok').value});
+ $('#wamsg').textContent=r.authorized?' подключено (authorized) ✓':' сохранено, но не authorized — отсканируйте QR на green-api.com';
+ $('#wamsg').className='msg '+(r.authorized?'ok':'err');loadStatus();
+}
+async function uploadPolicy(){
+ const f=$('#pol_file').files[0];if(!f){$('#polmsg').textContent=' выберите файл';return;}
+ $('#polmsg').textContent=' загружаю…';const b=await fileToB64(f);
+ const r=await post('/x/upload_policy',{file_b64:b,filename:f.name});
+ $('#polmsg').textContent=r.status==='success'?' загружено ✓':' '+(r.message||'ошибка');$('#polmsg').className='msg '+(r.status==='success'?'ok':'err');
+ if(r.policies)renderPolicies(r.policies);
+}
+async function clearPolicies(){const r=await post('/x/clear_policies',{});renderPolicies(r.policies||[]);$('#polmsg').textContent=' очищено';}
+async function loadClients(){const r=await post('/x/clients',{});renderClients(r.clients||[]);}
+function renderClients(cs){
+ window.CLIENTS=cs;
+ $('#clList').innerHTML=cs.length?('<b>Контакты ('+cs.length+'):</b>'+cs.map(c=>`<div class="pt"><b>${c.name||'—'}</b> ${c.company?('· '+c.company):''}<br><span class="note">${c.email||''} ${c.phone||''}</span></div>`).join('')):'<span class="note">Контактов пока нет.</span>';
+}
+async function addClient(){
+ const r=await post('/x/add_client',{name:$('#cl_name').value,company:$('#cl_comp').value,email:$('#cl_email').value,phone:$('#cl_phone').value});
+ if(r.status==='success'){['cl_name','cl_comp','cl_email','cl_phone'].forEach(i=>$('#'+i).value='');renderClients(r.clients);$('#clmsg').textContent=' добавлено ✓';$('#clmsg').className='msg ok';}
+ else{$('#clmsg').textContent=' '+(r.message||'ошибка');$('#clmsg').className='msg err';}
+}
+async function uploadClients(){
+ const f=$('#cl_file').files[0];if(!f){$('#clmsg').textContent=' выберите CSV';return;}
+ const b=await fileToB64(f);const r=await post('/x/upload_clients',{file_b64:b});
+ if(r.status==='success'){renderClients(r.clients);$('#clmsg').textContent=' загружено: '+r.clients.length+' ✓';$('#clmsg').className='msg ok';}
+ else{$('#clmsg').textContent=' '+(r.message||'ошибка');$('#clmsg').className='msg err';}
+}
+async function saveCfg(){
+ $('#cfgmsg').textContent=' сохраняю…';
+ const r=await post('/x/save_config',{standards:{pay:$('#s_pay').value,pen:$('#s_pen').value,war:$('#s_war').value,jur:$('#s_jur').value},
+  parties:{our_side:$('#p_our').value,counterparty:$('#p_cp').value}});
+ $('#cfgmsg').textContent=r.status==='success'?' сохранено ✓':' ошибка'; $('#cfgmsg').className='msg '+(r.status==='success'?'ok':'err');
+}
+async function saveTg(){
+ $('#tgmsg').textContent=' подключаю…';
+ const r=await post('/x/save_telegram',{bot_token:$('#tg_tok').value,chat_id:$('#tg_cid').value});
+ $('#tgmsg').textContent=r.status==='success'?' подключено, тест отправлен ✓':' ошибка (проверьте токен/chat_id)';
+ $('#tgmsg').className='msg '+(r.status==='success'?'ok':'err'); loadStatus();
+}
+function fileToB64(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f);});}
+function renderSteps(steps,active,doneAll){
+ $('#busysteps').innerHTML=steps.map((s,i)=>{
+  let cls='st',ic=i+1;
+  if(doneAll||i<active){cls+=' done';ic='✓';}
+  else if(i===active){cls+=' active';ic='';}
+  return `<div class="${cls}"><span class="ic">${ic}</span>${s}</div>`;
+ }).join('');
+}
+async function runReview(){
+ const btn=$('#revBtn');
+ let body={contract_text:$('#ctext').value};
+ const f=$('#cfile').files[0];
+ if(f&&!$('#ctext').value.trim()){body.file_b64=await fileToB64(f);body.filename=f.name;}
+ if((body.contract_text||'').trim().length<60 && !body.file_b64){$('#revmsg').textContent=' вставьте текст договора или загрузите файл';$('#revmsg').className='msg err';return;}
+ btn.disabled=true;$('#revmsg').textContent='';
+ const start=await _post('/x/run_review',body);
+ if(!start.job_id){btn.disabled=false;$('#revmsg').textContent=' '+(start.message||'ошибка');$('#revmsg').className='msg err';return;}
+ const steps=start.steps||['Читаю договор','Сверяю с Гражданским кодексом','Собираю документы'];
+ showBusy('Разбор договора','Пожалуйста, подождите — идёт анализ.');renderSteps(steps,0,false);
+ let p={};
+ for(;;){
+  await new Promise(res=>setTimeout(res,1500));
+  p=await _post('/x/review_progress',{job_id:start.job_id});
+  if(p.error)break;
+  renderSteps(steps, p.done?steps.length:Math.max(0,(p.index||1)-1), !!p.done);
+  if(p.done)break;
+ }
+ hideBusy();$('#busysteps').innerHTML='';btn.disabled=false;
+ if(p.error){$('#revmsg').textContent=' '+p.error;$('#revmsg').className='msg err';return;}
+ const r=p.result||{};
+ if(r.status!=='success'){$('#revmsg').textContent=' разбор не удался';$('#revmsg').className='msg err';return;}
+ DISPUTED=r.disputed_points||[];
+ $('#revResult').classList.remove('hidden');
+ $('#revSummary').innerHTML=`<span class="chip ${r.high_risk_contracts?'gold':'petrol'}">риск: ${r.high_risk_contracts?'ВЫСОКИЙ':'в норме'}</span>`+
+  `<span class="chip petrol">отклонений: ${DISPUTED.length}</span>`+
+  ((r.bases_used&&r.bases_used.length)?('<div style="margin-top:9px;font-size:13.5px;color:var(--silver)">📚 Сверено с базами: '+r.bases_used.map(b=>`<span class="chip gold">${b}</span>`).join('')+'</div>'):(r.gk_grounded?'<span class="chip gold">со ссылками на ГК</span>':''));
+ const d=r.docs||{},dl=(n,l)=>n?`<a class="dl" href="/out/${encodeURIComponent(n)}" download>⬇ ${l}</a>`:'';
+ $('#revDocs').innerHTML=dl(d.registry,'Реестр рисков (Excel)')+dl(d.protocol,'Протокол разногласий (Word)')+dl(d.summary,'Сводка (txt)')+
+  `<div style="margin-top:8px"><button class="btn sec" onclick="openFolder('${d.registry||''}')">📂 Открыть папку с документами</button></div>`;
+ $('#revPoints').innerHTML='<b>Спорные пункты:</b>'+DISPUTED.map(p=>`<div class="pt"><b>${p.clause||''}</b> — ${p.our_ask||''} ${p.severity?`<span class="chip gold">${p.severity}</span>`:''}</div>`).join('');
+}
+function toNego(){
+ document.querySelector('.tab[data-t="nego"]').click();
+ $('#negoPoints').innerHTML='<b>Спорные пункты для согласования:</b>'+DISPUTED.map(p=>`<div class="pt petrol"><b>${p.clause||''}</b> — ${p.our_ask||''}</div>`).join('')||'Нет спорных пунктов — сначала сделайте разбор.';
+}
+function renderEmail(el,de,points){
+ let h=`<div class="email"><div class="subj">${(de.subject||'')}</div>${(de.body||'').replace(/</g,'&lt;')}</div>`;
+ if(points&&points.length)h+='<div style="margin-top:10px">'+points.map(p=>`<span class="chip ${p.law_ref&&/ст\.|\d/.test(p.law_ref)?'gold':'petrol'}">${p.clause||''}${p.law_ref&&/ст\.|\d/.test(p.law_ref)?' · '+p.law_ref.slice(0,28):''}</span>`).join('')+'</div>';
+ el.innerHTML=h;
+}
+async function negotiate(round){
+ $('#negomsg').textContent=' готовлю письмо…';$('#negomsg').className='msg';$('#n1Btn').disabled=true;
+ const body={disputed_points:DISPUTED,round_no:round,contract_subject:$('#n_subj').value};
+ if(round===2)body.counterparty_reply=$('#cpreply').value;
+ const r=await post('/x/negotiate',body);$('#n1Btn').disabled=false;$('#negomsg').textContent='';
+ if(r.status!=='success'){$('#negomsg').textContent=' '+(r.message||'ошибка');$('#negomsg').className='msg err';return;}
+ window['DRAFT'+round]=r.draft_email||{};
+ if(round===1){$('#draft1').classList.remove('hidden');renderEmail($('#draft1body'),r.draft_email,r.points);}
+ else{$('#draft2').classList.remove('hidden');renderEmail($('#draft2body'),r.draft_email,r.points);}
+ renderSendRow(round);
+}
+function cpContact(){
+ const cs=window.CLIENTS||[];const name=($('#p_cp')?$('#p_cp').value:'')||'';
+ let m=cs.find(c=>name&&((c.company||'').includes(name.replace(/[«»"]/g,''))||name.includes(c.company||'—x')));
+ m=m||cs[0]||{};return {email:m.email||'',phone:m.phone||''};}
+function renderSendRow(round){
+ const el=document.querySelector('.sendrow[data-r="'+round+'"]');if(!el)return;
+ const c=cpContact();
+ el.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px">
+  <div style="flex:1;min-width:200px"><label>Почта контрагента</label><input id="to${round}" value="${c.email}" placeholder="counterparty@company.kz"></div>
+  <button class="btn" onclick="sendDraft(${round},'email')">Отправить по почте</button>
+  <div style="min-width:150px"><label>WhatsApp</label><input id="wa${round}" value="${c.phone}" placeholder="+7701..."></div>
+  <button class="btn sec" onclick="sendDraft(${round},'wa')">В WhatsApp</button></div>`;
+}
+async function sendDraft(round,chan){
+ const de=window['DRAFT'+round]||{};
+ if(chan==='email'){
+  const to=$('#to'+round).value.trim();if(!to){alert('Укажите почту контрагента');return;}
+  if(!confirm('Отправить письмо контрагенту на '+to+'?'))return;
+  const r=await post('/x/send_email',{to:to,subject:de.subject||'',body:de.body||''});
+  alert(r.status==='success'?'Письмо отправлено ✓':'Не отправлено: '+((r.detail&&r.detail.error)||r.message||'подключите почту в «Настройке»'));
+ }else{
+  const ph=$('#wa'+round).value.trim();if(!ph){alert('Укажите телефон');return;}
+  if(!confirm('Отправить в WhatsApp на '+ph+'?'))return;
+  const r=await post('/x/send_wa',{phone:ph,text:(de.subject?de.subject+'\n\n':'')+(de.body||'')});
+  alert(r.status==='success'?'Сообщение отправлено ✓':'Не отправлено: '+((r.detail&&r.detail.error)||r.message||'подключите WhatsApp'));
+ }
+}
+async function notifyHead(extra){
+ const txt='📋 Extella «Юрист по договорам»\n'+(extra||`Разбор договора готов. Риск: ${DISPUTED.length} отклонений. Документы — в панели.`)+'\nОтветьте «Согласовано» для финализации.';
+ const r=await post('/x/notify',{text:txt});
+ alert(r.status==='success'?'Отправлено руководителю ✓':'Не отправлено — подключите Telegram в «Настройке».');
+}
+async function openFolder(name){
+ const r=await post('/x/reveal',{name:name||''});
+ if(r.status!=='success')alert('Не удалось открыть папку. Документы лежат в: ~/extella-plugins/extella_contract_agent/out');
+}
+async function loadKB(){
+ const r=await _post('/x/kb_status',{});
+ $('#legalList').innerHTML=(r.legal||[]).map(b=>`<div class="pt ${b.connected?'':'petrol'}" style="display:flex;align-items:center;justify-content:space-between"><div><b>${b.name}</b> ${b.connected?'<span class="chip petrol">подключена ✓</span>':''}</div>`+
+  (b.connected?(b.name==='Гражданский кодекс РК'?'':`<button class="btn sec" style="margin:0" onclick="removeLegal('${b.name.replace(/'/g,"")}')">Отключить</button>`):`<button class="btn sec" style="margin:0" onclick="addLegal('${b.name.replace(/'/g,"")}')">Подключить</button>`)+`</div>`).join('');
+ renderKB(r.knowledge_bases||[]);
+}
+function renderKB(kbs){
+ $('#kbList').innerHTML=kbs.length?('<b>Ваши базы ('+kbs.length+'):</b>'+kbs.map(k=>`<div class="pt" style="display:flex;align-items:center;justify-content:space-between"><div><b>${k.name}</b> <span class="chip petrol">${k.files||0} докум. · ${k.chunks||0} фрагм.</span></div><button class="btn sec" style="margin:0" onclick="removeKB('${(k.name||'').replace(/'/g,"")}')">Удалить</button></div>`).join('')):'<span class="note">Своих баз пока нет.</span>';
+}
+async function addLegal(name){
+ const r=await post('/x/kb_add_legal',{name});
+ if(r.status==='success')loadKB(); else alert(r.message||'Не удалось подключить.');
+}
+async function removeLegal(name){const r=await post('/x/kb_remove_legal',{name});loadKB();}
+async function removeKB(name){if(!confirm('Удалить базу «'+name+'» из агента?'))return;await post('/x/kb_remove',{name});loadKB();}
+async function createKB(){
+ const name=$('#kb_name').value.trim(); const fs=$('#kb_files').files;
+ if(!name){$('#kbmsg').textContent=' укажите название';$('#kbmsg').className='msg err';return;}
+ if(!fs.length){$('#kbmsg').textContent=' добавьте документы';$('#kbmsg').className='msg err';return;}
+ showBusy('Создаю базу знаний','Читаю документы и индексирую…');
+ const files=[];
+ for(const f of fs){files.push({filename:f.name,file_b64:await fileToB64(f)});}
+ const r=await _post('/x/kb_create',{name,files});hideBusy();
+ if(r.status==='success'){$('#kb_name').value='';$('#kb_files').value='';$('#kbmsg').textContent=' база создана ✓';$('#kbmsg').className='msg ok';renderKB(r.knowledge_bases||[]);}
+ else{$('#kbmsg').textContent=' '+(r.message||'ошибка');$('#kbmsg').className='msg err';}
+}
+initMail();
+CHAT.push({role:'a',text:'Привет! Я помощник по агенту «Юрист по договорам».\n\nЧем помогу: объясню, как агент работает, и как настроить его под себя — что менять здесь в панели, а что через Строителя в основном чате Extella.\n\nЧего не умею: я не вижу, что происходит «под капотом» в реальном времени, и не чиню технические сбои. Если что-то не работает (например, не качается файл) — я подскажу известное решение или куда обратиться, но не буду выдумывать.\n\nС чего начать?'});renderChat();
+loadStatus();
+</script>
+</body></html>

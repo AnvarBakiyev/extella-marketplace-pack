@@ -1,0 +1,103 @@
+{
+  "id": "extella_competitor_intel",
+  "name": "Competitor Intelligence",
+  "tagline": "From trending AI tools to a live competitor-intelligence workflow",
+  "description": "A running business process, not a wrapper: pulls competitor GitHub releases, blog/changelog RSS and Hacker News, grounds them on your positioning (local RAG), and an analyst agent ships a daily digest — What changed / Why it matters / Impact on us / Suggested response — to Slack or email. Flags knowledge gaps to compound over time. Install -> Adapt -> Compose -> Deploy -> Learn.",
+  "category": "ai-work",
+  "type": "process",
+  "version": "0.1.1",
+  "registered": true,
+  "source": "local://extella-competitor-intel-pack",
+  "market": "us",
+  "formula": [
+    "install",
+    "adapt",
+    "compose",
+    "deploy",
+    "learn"
+  ],
+  "experts": [
+    "svc_github_releases",
+    "svc_rss",
+    "svc_reddit",
+    "svc_hackernews",
+    "kp_ask",
+    "ci_run_pipeline",
+    "wz_connector_slack",
+    "wz_connector_email"
+  ],
+  "orchestrator": "ci_run_pipeline",
+  "agentRole": "competitor_analyst",
+  "conceptTexts": [
+    "Процесс Competitor Intelligence (ci_run_pipeline): источники svc_github_releases/svc_rss/svc_hackernews -> синтез агентом competitor_analyst (Qwen) с заземлением на позишенинг (kp_ask) -> дайджест -> Slack/email, daily через wz_scheduler_tick. Learn-петля: knowledge_gaps в KV."
+  ],
+  "schedule": {
+    "cadence": "daily",
+    "mechanism": "wz_scheduler_tick",
+    "kvKey": "sched:ci",
+    "target": "85800354-f7b7-449f-b526-9357cd91f780",
+    "lastrunKey": "lastrun:ci",
+    "registered": true
+  },
+  "toolbar": {
+    "tab": "Процессы",
+    "status": "pending",
+    "note": "Карточка в реестре. Видимой в витрине станет после добавления 8-й вкладки «Процессы» (renderProcesses + CATS) — правка toolbar.js, отдельное решение."
+  },
+  "params": {
+    "repos": "anthropics/anthropic-sdk-python,openai/openai-python,langchain-ai/langchain",
+    "feeds": "https://hnrss.org/frontpage",
+    "subreddits": "LocalLLaMA,artificial",
+    "agent_id": "__EXTELLA_AGENT__",
+    "deliver": "none",
+    "deliver_client": "default",
+    "kb_name": ""
+  },
+  "runtimeConfigKey": "ci:config",
+  "synthAgent": {
+    "id": "__EXTELLA_AGENT__",
+    "name": "Extella Qwen fine-tuned",
+    "provider": "custom",
+    "model": "extella_test_llm",
+    "keyless": true,
+    "note": "общий агент, всё умеет, MCP-тулы есть; синтез с строгим JSON и без вызова тулов"
+  },
+  "sampleRun": {
+    "status": "completed",
+    "ranAt": "2026-07-08T05:51:10Z",
+    "synthAgent": "__EXTELLA_AGENT__",
+    "findings": 16,
+    "knowledgeGaps": 10,
+    "digestSource": "qwen",
+    "stages": [
+      "GitHub releases",
+      "RSS/блоги",
+      "Hacker News",
+      "Синтез дайджеста (Qwen)"
+    ],
+    "artifact": "sample_run/competitor_digest.md",
+    "gapsArtifact": "sample_run/knowledge_gaps.json"
+  },
+  "install": {
+    "script": "install.py",
+    "registersExperts": [
+      "svc_github_releases",
+      "svc_rss",
+      "ci_run_pipeline"
+    ],
+    "reusesExisting": [
+      "svc_hackernews",
+      "kp_ask",
+      "wz_connector_slack",
+      "wz_connector_email",
+      "wz_scheduler_tick"
+    ],
+    "flashRole": {
+      "role": "competitor_analyst",
+      "via": "agent_flash_role",
+      "optional": true,
+      "note": "инструкция analyst передаётся в сообщении синтеза; прошивать роль на общий агент не обязательно"
+    }
+  },
+  "installed": false
+}

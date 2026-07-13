@@ -1,9 +1,9 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "built": "2026-07-13T08:39:42Z",
   "sha": "446c00a",
   "bytes": 4398544,
   "file": "toolbar.js",
   "marker": "Extella Plugins",
-  "note": "fix: form/service cards run global experts with global:true (Expert not found)"
+  "note": "3 готовых автоматизации в паке: Travel Agency, Юрист по договорам, Competitor Intelligence"
 }

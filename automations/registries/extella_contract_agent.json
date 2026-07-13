@@ -1,0 +1,84 @@
+{
+  "id": "extella_contract_agent",
+  "name": "Extella — Юрист по договорам",
+  "tagline": "Разбор договора по чек-листу и Гражданскому кодексу → реестр рисков и правки → аргументированное согласование с контрагентом по почте. Человек в контуре.",
+  "description": "Работающий юридический процесс на Extella. Разбор: ИИ проверяет договор по 10-пунктному чек-листу, стандартам компании и Гражданскому кодексу РК (со ссылками на статьи), собирает Реестр рисков (Excel) и Протокол разногласий (Word). Согласование: агент готовит аргументированные письма контрагенту по спорным пунктам, отбивает возражения — где уместно предлагает компромисс, где на кону интересы стоит на своём с опорой на закон. Отправку писем делает человек. Панель на 3 вкладки: Настройка / Разбор / Согласование.",
+  "category": "automations",
+  "type": "process",
+  "version": "1.0.0",
+  "registered": true,
+  "source": "https://github.com/AnvarBakiyev/extella-contract-agent-pack",
+  "market": "kz",
+  "mode": "repo_ui",
+  "ui": {
+    "type": "local_server",
+    "port": 8767,
+    "rootPath": "~/extella-plugins/extella_contract_agent",
+    "startExpert": "_etb_srv_extella_contracts",
+    "mainFile": "onboarding.html",
+    "openInBrowser": false,
+    "expectsHealth": false
+  },
+  "service": {
+    "isApp": true,
+    "port": 8767,
+    "startExpert": "_etb_srv_extella_contracts",
+    "healthPath": "/x/status",
+    "launchCmd": "python3 ~/extella-plugins/extella_contract_agent/server.py",
+    "ready": true
+  },
+  "experts": [
+    "p2d4_evaluate_contract_batch",
+    "p2d4_generate_document_package",
+    "p2d4_run_pipeline",
+    "p2d5_negotiate",
+    "lp_notify",
+    "lp_email_send",
+    "lp_wa_state",
+    "lp_wa_send",
+    "lp_assistant",
+    "_etb_srv_extella_contracts"
+  ],
+  "channels": {
+    "email": "lp_email_send (SMTP; config smtp_host/port/user/pass/email_from)",
+    "whatsapp": "lp_wa_send + lp_wa_state (GreenAPI; config greenapi_id/greenapi_token)",
+    "telegram": "lp_notify (bot; config telegram_bot_token/telegram_chat_id)"
+  },
+  "clients": "config.contract_clients (name/email/phone/company); panel tab «Клиенты»",
+  "policies": "config.company_policies (uploaded .txt/.docx documents the review follows, alongside the Civil Code)",
+  "orchestrator": "p2d4_run_pipeline",
+  "assistant": "lp_assistant",
+  "customize": {
+    "settings": "panel tab «Настройка» (contract_standards, contract_parties, telegram, knowledge base)",
+    "logic": "main Extella chat via Строитель — name the expert (p2d4_evaluate_contract_batch / p2d5_negotiate / ...) and describe the change",
+    "helper": "panel tab «Помощник» (lp_assistant) knows the full architecture and guides the user"
+  },
+  "agentRole": "lp_contract_agent",
+  "conceptTexts": [
+    "Юридический процесс Extella (разбор + согласование договоров): p2d4_evaluate_contract_batch (ИИ-анализ по чек-листу + стандарты компании + Гражданский кодекс через kp_ask) → p2d4_generate_document_package (реестр рисков xlsx, протокол разногласий docx, сводка) через оркестратор p2d4_run_pipeline; p2d5_negotiate готовит аргументированные письма контрагенту со ссылками на статьи ГК, поддерживает раунды возражений. lp_notify — уведомление руководителю в Telegram. Отправку писем делает человек (черновики). Стандарты — config.contract_standards; секреты в ~/extella_wizard/app/config.json."
+  ],
+  "runtimeConfigKey": "contract_standards",
+  "knowledgeBase": {
+    "name": "Гражданский кодекс РК",
+    "access": "kp_ask",
+    "required": false,
+    "note": "ставится в один клик в разделе «Базы знаний»; без неё разбор работает, но без ссылок на статьи закона"
+  },
+  "synthAgent": {
+    "id": "__EXTELLA_AGENT__",
+    "name": "Extella Qwen",
+    "provider": "custom",
+    "model": "extella_test_llm",
+    "keyless": true,
+    "note": "анализ договоров и подготовка писем; общий Qwen (llm_agent_id/agent_id из config)"
+  },
+  "install": {
+    "script": "install.py",
+    "secretsFromUser": [
+      "Extella токен (api.extella.ai)",
+      "Telegram bot token + chat_id (опц., для уведомлений руководителю)"
+    ],
+    "note": "секреты вводятся локально/в панели, НЕ в репозитории"
+  },
+  "installed": true
+}

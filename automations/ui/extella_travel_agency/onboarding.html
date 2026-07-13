@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Travel Agency — панель процесса</title>
+<style>
+:root{--bg:#f6f4f0;--card:#fff;--ink:#1d1a16;--mut:#7a746b;--line:#e7e2da;--acc:#C67E34;--acc2:#a8681f;--ok:#2e9e5b;--bad:#c94f38;--chip:#f3ede4}
+@media(prefers-color-scheme:dark){:root{--bg:#16130f;--card:#201c17;--ink:#f0ebe3;--mut:#9a938a;--line:#332d26;--chip:#2a251e}}
+*{box-sizing:border-box;margin:0}
+body{font:15px/1.55 -apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);padding:28px 16px 80px}
+.wrap{max-width:920px;margin:0 auto}
+h1{font-size:24px;margin-bottom:4px}
+.lede{color:var(--mut);margin-bottom:18px}
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tabs button{background:var(--chip);color:var(--ink);border-radius:20px;padding:9px 20px}
+.tabs button.on{background:var(--acc);color:#fff}
+.pane{display:none}.pane.on{display:block}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:16px}
+.step h2{font-size:17px;display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--chip);color:var(--acc);font-size:13px;font-weight:700;flex:none}
+.hint{color:var(--mut);font-size:13.5px;margin-bottom:12px}
+.hint a{color:var(--acc)}
+.st{margin-left:auto;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--chip);color:var(--mut)}
+.st.ok{color:var(--ok)} .st.bad{color:var(--bad)}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit;margin-bottom:10px}
+textarea{min-height:90px;font-family:ui-monospace,monospace;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+button{padding:9px 18px;border:0;border-radius:9px;background:var(--acc);color:#fff;font:600 14px/1 inherit;cursor:pointer}
+button:hover{filter:brightness(.94)} button:disabled{opacity:.45;cursor:default}
+button.ghost{background:var(--chip);color:var(--ink)}
+.msg{font-size:13.5px;margin-top:8px;white-space:pre-wrap}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.draft{border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin-top:12px}
+.draft .meta{font-size:12.5px;color:var(--mut);margin-bottom:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.draft pre{white-space:pre-wrap;font:13.5px/1.5 inherit;background:var(--bg);border-radius:8px;padding:12px;margin:8px 0}
+.tag{background:var(--chip);border-radius:6px;padding:2px 8px;font-size:11.5px}
+.tag.sent{color:var(--ok)} .tag.new{color:var(--acc)}
+.lead-row{display:flex;gap:10px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+.lead-row:last-child{border-bottom:0}
+.lead-row input[type=checkbox]{width:17px;height:17px;margin:0;flex:none;accent-color:var(--acc)}
+.lead-row .nm{font-weight:600;min-width:130px}
+.lead-row .ph{color:var(--mut);min-width:120px}
+.lead-row .toggle{margin-left:auto;background:none;color:var(--acc);padding:4px 8px;font-size:13px}
+.lead-body{display:none;width:100%}
+.lead-body.on{display:block}
+.spin{display:inline-block;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}
+.chkall{font-size:13px;color:var(--mut);display:flex;align-items:center;gap:7px;margin:6px 0}
+.chkall input{width:16px;height:16px;margin:0;accent-color:var(--acc)}
+</style>
+</head>
+<body><div class="wrap">
+<h1>Travel Agency — панель процесса</h1>
+<div class="lede">Все сообщения уходят клиентам только после нажатия «Отправить» менеджером.</div>
+<div class="tabs">
+ <button id="tb-setup" class="on" onclick="tab('setup')">⚙️ Настройка</button>
+ <button id="tb-sales" onclick="tab('sales')">✈️ Продажи: лид → договор</button>
+ <button id="tb-mkt" onclick="tab('mkt')">📣 Маркетинг: база и рассылки</button>
+</div>
+
+<!-- ================= НАСТРОЙКА ================= -->
+<div class="pane on" id="pane-setup">
+<div class="step" id="s1">
+ <h2><span class="num">1</span> Tourvisor — поиск туров <span class="st" id="st1">проверяю…</span></h2>
+ <div class="hint">JWT-токен из кабинета <a href="https://pro.tourvisor.ru" target="_blank">pro.tourvisor.ru</a> → Настройки → Интеграции → Search API. Токен живёт ~год.</div>
+ <div class="row"><input id="jwt" placeholder="Вставьте JWT-токен (eyJ...)"><button onclick="saveTV()">Сохранить и проверить</button></div>
+ <div class="row">
+  <select id="dep"></select>
+  <input id="agency" placeholder="Название агентства">
+  <input id="manager" placeholder="Имя менеджера (подпись)">
+  <button class="ghost" onclick="saveConf()">Сохранить настройки</button>
+ </div>
+ <div class="msg" id="m1"></div>
+</div>
+
+<div class="step" id="s2">
+ <h2><span class="num">2</span> WhatsApp — отправка (GreenAPI) <span class="st" id="st2">проверяю…</span></h2>
+ <div class="hint">Зарегистрируйтесь на <a href="https://green-api.com" target="_blank">green-api.com</a>, создайте инстанс, отсканируйте QR номером агентства. Вставьте idInstance и apiTokenInstance. <b>Важно:</b> используем для ответов лидам и своей базе — не для холодных рассылок (риск блокировки номера).</div>
+ <div class="row"><input id="gid" placeholder="idInstance"><input id="gtok" placeholder="apiTokenInstance"><button onclick="saveWA()">Сохранить и проверить</button></div>
+ <div class="msg" id="m2"></div>
+ <div class="hint" style="margin-top:14px"><b>Telegram-уведомления менеджеру</b> (опционально): бот от <a href="https://t.me/BotFather" target="_blank">@BotFather</a>, свой chat_id — у <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>. Планировщик пришлёт сигнал, когда черновики готовы.</div>
+ <div class="row"><input id="tgtok" placeholder="Bot token (123:ABC…)"><input id="tgchat" placeholder="chat_id"><button class="ghost" onclick="saveTG()">Подключить Telegram</button></div>
+ <div class="msg" id="m2t"></div>
+</div>
+
+<div class="step" id="s3">
+ <h2><span class="num">3</span> База клиентов <span class="st" id="st3">—</span></h2>
+ <div class="hint">CSV, по строке на клиента: <b>имя, телефон, день рождения (ГГГГ-ММ-ДД), последнее направление, дата поездки, бюджет</b>. Можно экспорт из Excel/CRM. Базу используют «Продажи» (подстановка клиента) и «Маркетинг» (рассылки).</div>
+ <textarea id="csv" placeholder="Айгуль,+77021234567,1990-07-09,Турция Кемер,2025-06,850000"></textarea>
+ <div class="row"><button onclick="uploadClients()">Загрузить базу</button><button class="ghost" onclick="filePick()">…или из файла CSV</button></div>
+ <input type="file" id="file" accept=".csv,.txt" style="display:none" onchange="fileRead(this)">
+ <div class="msg" id="m3"></div>
+</div>
+
+<div class="step" id="s7">
+ <h2><span class="num">4</span> Автоответчик входящих (бот-квалификатор) <span class="st" id="st7">—</span></h2>
+ <div class="hint"><b>Бот отвечает ТОЛЬКО номерам из вашей базы клиентов</b> (вкладка «Настройка» → шаг 3) и тем, кому вы написали первым через «🤖 Бот напишет первым». Всем остальным (личные контакты, незнакомцы) бот НЕ отвечает — они вас не побеспокоят. Клиента из базы бот узнаёт по имени и истории поездок, задаёт 5 вопросов и присылает подборку; на ответ после предложения — передаёт менеджеру (Telegram). При включении автоматически включается приём входящих в GreenAPI (инстанс перезагрузится ~1–2 мин).</div>
+ <div class="row" style="align-items:center">
+  <label style="flex:none;display:flex;align-items:center;gap:9px;cursor:pointer"><input type="checkbox" id="inbToggle" onchange="toggleInbound()" style="width:20px;height:20px;accent-color:var(--acc)"> <b>Включить автоответчик</b></label>
+ </div>
+ <div class="hint" style="margin-top:14px">Проверьте бота, не отправляя ничего клиентам — впишите сообщение «как будто от клиента»:</div>
+ <div class="row"><input id="inbText" placeholder="Напр.: Хочу в Турцию в августе, вдвоём, бюджет 900тыс"><button class="ghost" onclick="testInbound()" id="inbBtn">Проверить ответ бота</button></div>
+ <div class="msg" id="m7"></div>
+ <div id="inbData"></div>
+</div>
+</div>
+
+<!-- ================= ПРОДАЖИ ================= -->
+<div class="pane" id="pane-sales">
+<div class="step" id="s4">
+ <h2><span class="num">1</span> Новый лид → подборка туров <span class="st" id="st4">—</span></h2>
+ <div class="hint">Заполните после 5 вопросов клиенту, или возьмите клиента из базы — имя, телефон и бюджет подставятся сами.</div>
+ <div class="row"><select id="fromBase" onchange="pickClient()"><option value="">— взять клиента из базы —</option></select></div>
+ <div class="row"><input id="lfio" placeholder="Имя клиента"><input id="lphone" placeholder="+7701…"><input id="ldir" placeholder="Направление (Турция)"></div>
+ <div class="row"><input id="ld1" type="date"><input id="ld2" type="date"><input id="ladults" type="number" value="2" min="1" max="6" title="взрослых"><input id="lchilds" placeholder="возраст детей: 7,12"><input id="lbudget" type="number" placeholder="Бюджет, ₸"></div>
+ <button onclick="runLead()" id="leadBtn">Подобрать туры</button>
+ <div class="msg" id="m4"></div>
+</div>
+
+<div class="step">
+ <h2><span class="num">2</span> Лиды и предложения <span class="st" id="st5">—</span></h2>
+ <div class="hint">Лид пришёл от лидогенератора (номер в WhatsApp) — пусть бот сам напишет первым и проведёт квалификацию. Или отметьте галочками готовые предложения и отправьте выбранным.</div>
+ <div class="row" style="margin-bottom:6px">
+  <input id="startPhone" placeholder="+7701… номер лида" style="max-width:210px">
+  <input id="startName" placeholder="Имя (если известно)" style="max-width:200px">
+  <button class="ghost" onclick="startBot()" id="startBtn">🤖 Бот напишет первым</button>
+ </div>
+ <div class="msg" id="mstart"></div>
+ <div class="chkall"><input type="checkbox" id="allLeads" onchange="checkAll('leads')"><label for="allLeads">выбрать всех с готовым предложением</label></div>
+ <div id="leadsList"><div class="hint">загружаю…</div></div>
+ <div class="row" style="margin-top:12px">
+  <button onclick="sendSelected('leads')" id="sendLeadsBtn">📤 Отправить выбранным</button>
+  <button class="ghost" onclick="loadLeads()">Обновить</button>
+ </div>
+ <div class="msg" id="m5s"></div>
+</div>
+
+<div class="step" id="s6x">
+ <h2><span class="num">3</span> Клиент купил: паспорт → договор <span class="st" id="st6">—</span></h2>
+ <div class="hint">Загрузите скан паспорта — данные считываются с машиночитаемой зоны (MRZ) с проверкой контрольных цифр, ничего не выдумывается. Скан после разбора удаляется (ПДн). Для демо есть <a href="/passport_specimen.png" target="_blank">тестовый образец</a>.</div>
+ <div class="row">
+  <button onclick="ppPick()">📎 Загрузить скан паспорта</button>
+  <button class="ghost" onclick="runPassport()" id="ppBtn">Демо: разобрать тестовый образец</button>
+  <button class="ghost" onclick="makeContract()" id="ctrBtn" disabled>Сформировать договор по подборке лида</button>
+ </div>
+ <input type="file" id="ppFile" accept="image/*,.pdf" style="display:none" onchange="ppUpload(this)">
+ <div class="msg" id="m6"></div>
+ <div id="ppData"></div>
+</div>
+</div>
+
+<!-- ================= МАРКЕТИНГ ================= -->
+<div class="pane" id="pane-mkt">
+<div class="step">
+ <h2><span class="num">1</span> Кому отправляем <span class="st" id="stm">—</span></h2>
+ <div class="hint">Отметьте клиентов для кампании. Дни рождения проверяются и сами — каждое утро в 09:00 (Алматы), менеджер получает сигнал в Telegram.</div>
+ <div class="chkall"><input type="checkbox" id="allClients" checked onchange="checkAll('clients')"><label for="allClients">все клиенты</label></div>
+ <div id="clientsList"><div class="hint">загружаю…</div></div>
+</div>
+<div class="step">
+ <h2><span class="num">2</span> Запуск кампании</h2>
+ <div class="row">
+  <button class="ghost" onclick="runBday()">🎂 Дни рождения сегодня</button>
+  <input id="seasonName" placeholder="Сезон: осень 2026" style="max-width:220px">
+  <button class="ghost" onclick="runSeason()" id="seasonBtn">🌴 Запустить сезонную кампанию</button>
+ </div>
+ <div class="msg" id="m5"></div>
+</div>
+<div class="step">
+ <h2><span class="num">3</span> Черновики рассылок — проверьте и отправьте</h2>
+ <div class="hint">Каждый черновик персональный. Отметьте галочками, какие рассылки каким клиентам отправить.</div>
+ <div class="chkall"><input type="checkbox" id="allMkt" onchange="checkAll('mkt')"><label for="allMkt">выбрать все готовые</label></div>
+ <div id="drafts-mkt"><div class="hint">загружаю…</div></div>
+ <div class="row" style="margin-top:12px">
+  <button onclick="sendSelected('mkt')" id="sendMktBtn">📤 Отправить выбранные</button>
+  <button class="ghost" onclick="loadDrafts()">Обновить</button>
+ </div>
+ <div class="msg" id="m5m"></div>
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+async function api(p, body){const r=await fetch(p,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});return r.json()}
+function say(id,t,ok){const e=$(id);if(!e)return;e.textContent=t;e.className='msg '+(ok===true?'ok':ok===false?'bad':'')}
+function st(id,t,ok){const e=$(id);if(!e)return;e.textContent=t;e.className='st '+(ok===true?'ok':ok===false?'bad':'')}
+let WA_OK=false, DOC_NO='', CLIENTS=[];
+function tab(t){
+ for(const x of ['setup','sales','mkt']){
+   $('tb-'+x).className = x===t?'on':'';
+   $('pane-'+x).className = 'pane'+(x===t?' on':'');
+ }
+ localStorage.setItem('ta_tab', t);
+}
+function esc(s){return String(s||'').replace(/</g,'&lt;')}
+function statusTag(s){
+ const map={new:'новый',qualified:'квалифицирован',offered:'предложение готово',handed_over:'у менеджера',sent:'отправлено ✓',draft_ready:'готов к отправке'};
+ return `<span class="tag ${s==='sent'?'sent':(s==='new'?'new':'')}">${map[s]||s||'—'}</span>`;
+}
+
+async function refresh(){
+ try{
+  const s=await api('/x/status');
+  const tv=s.tourvisor||{};
+  st('st1', tv.ok?'подключён ✓':(tv.connected?'токен не работает':'не подключён'), tv.ok?true:(tv.connected?false:null));
+  if(tv.departures&&tv.departures.length){
+    const cur=(s.config||{}).departure_id;
+    $('dep').innerHTML=tv.departures.map(d=>`<option value="${d.id}" ${d.id==cur?'selected':''}>Вылет: ${d.name}</option>`).join('');
+  } else { $('dep').innerHTML='<option value="">Вылет: подключите Tourvisor</option>' }
+  if(s.config){ $('agency').value=s.config.agency_name||''; $('manager').value=s.config.manager_name||''; }
+  const wa=s.whatsapp||{};
+  WA_OK = !!wa.authorized;
+  st('st2', wa.authorized?'authorized ✓':(wa.connected?('статус: '+(wa.state||'?')):'не подключён'), wa.authorized?true:(wa.connected?false:null));
+  if(s.telegram&&s.telegram.connected){const e=$('m2t');e.textContent='Telegram-уведомления: подключены ✓';e.className='msg ok'}
+  $('inbToggle').checked = !!s.inbound;
+  st('st7', s.inbound?'включён ✓':'выключен', s.inbound?true:null);
+  st('st3', s.clients_count? s.clients_count+' клиент(ов) ✓':'база пуста', s.clients_count?true:null);
+  st('stm', s.clients_count? 'база: '+s.clients_count+' клиент(ов)':'загрузите базу в Настройке', s.clients_count?true:false);
+  $('sendLeadsBtn').disabled = $('sendMktBtn').disabled = !WA_OK;
+  if(!WA_OK){$('sendLeadsBtn').textContent=$('sendMktBtn').textContent='📤 Отправить (подключите WhatsApp в Настройке)'}
+  else{$('sendLeadsBtn').textContent='📤 Отправить выбранным';$('sendMktBtn').textContent='📤 Отправить выбранные'}
+ }catch(e){ say('m1','мост не отвечает: '+e,false) }
+}
+async function loadClients(){
+ const r=await api('/x/clients'); CLIENTS=r.clients||[];
+ $('fromBase').innerHTML='<option value="">— взять клиента из базы —</option>'+
+   CLIENTS.map((c,i)=>`<option value="${i}">${esc(c.name)} · ${esc(c.phone)}${c.last_destination?' · был: '+esc(c.last_destination):''}</option>`).join('');
+ $('clientsList').innerHTML = CLIENTS.length ? CLIENTS.map((c,i)=>`
+  <div class="lead-row"><input type="checkbox" class="chk-clients" data-phone="${esc(c.phone)}" checked>
+   <span class="nm">${esc(c.name)}</span><span class="ph">${esc(c.phone)}</span>
+   <span class="tag">ДР: ${esc(c.birthday)||'—'}</span>
+   <span class="tag">${c.last_destination?esc(c.last_destination)+' · ~'+(c.avg_budget||0).toLocaleString('ru')+' ₸':'без истории'}</span>
+  </div>`).join('') : '<div class="hint">База пуста — загрузите CSV во вкладке «Настройка».</div>';
+}
+function pickClient(){
+ const i=$('fromBase').value; if(i==='')return;
+ const c=CLIENTS[+i]||{};
+ $('lfio').value=c.name||''; $('lphone').value=c.phone||'';
+ if(c.avg_budget)$('lbudget').value=c.avg_budget;
+ say('m4','Подставил из базы: '+(c.name||'')+(c.last_destination?' (прошлая поездка: '+c.last_destination+')':''),true);
+}
+async function loadLeads(){
+ const r=await api('/x/leads');
+ const L=r.leads||[];
+ st('st5', L.length? L.length+' лид(ов)':'—', L.length?true:null);
+ $('leadsList').innerHTML = L.length ? L.map((l,i)=>{
+   const canSend = l.draft && l.draft.status!=='sent';
+   return `<div class="lead-row">
+    <input type="checkbox" class="chk-leads" data-key="${l.draft?esc(l.draft._key):''}" ${canSend?'':'disabled'}>
+    <span class="nm">${esc(l.fio)||'—'}</span><span class="ph">${esc(l.phone)}</span>
+    <span class="tag">${esc(l.channel)||'—'}</span>
+    ${statusTag(l.draft&&l.draft.status==='sent'?'sent':l.status)}
+    ${l.draft?`<button class="toggle" onclick="$('lb${i}').classList.toggle('on')">черновик ▾</button>`:''}
+    ${l.draft?`<div class="lead-body" id="lb${i}"><pre>${esc(l.draft.message)}</pre></div>`:''}
+   </div>`}).join('') : '<div class="hint">Лидов пока нет — оформите первого в блоке 1.</div>';
+}
+function checkAll(kind){
+ const master=$(kind==='leads'?'allLeads':kind==='mkt'?'allMkt':'allClients').checked;
+ document.querySelectorAll('.chk-'+kind+':not(:disabled)').forEach(c=>c.checked=master);
+}
+async function sendSelected(kind){
+ const keys=[...document.querySelectorAll('.chk-'+kind+':checked')].map(c=>c.dataset.key).filter(Boolean);
+ const msgId = kind==='leads'?'m5s':'m5m';
+ if(!keys.length){say(msgId,'ничего не выбрано',false);return}
+ const btn=$(kind==='leads'?'sendLeadsBtn':'sendMktBtn');
+ btn.disabled=true;btn.innerHTML='<span class="spin">◌</span> отправляю '+keys.length+'…';
+ const r=await api('/x/send_bulk',{draft_keys:keys});
+ btn.disabled=false;btn.textContent=kind==='leads'?'📤 Отправить выбранным':'📤 Отправить выбранные';
+ say(msgId, r.status==='success'?('Отправлено: '+r.sent+' из '+r.total+' ✓'):('Ошибка: '+(r.error||'')), r.status==='success'&&r.sent===r.total);
+ kind==='leads'?loadLeads():loadDrafts();
+}
+async function saveTV(){
+ if(!$('jwt').value.trim()){say('m1','вставьте токен',false);return}
+ say('m1','проверяю токен на живом API…');
+ const r=await api('/x/save_tourvisor',{jwt:$('jwt').value});
+ say('m1', r.checked?'Токен работает — справочники получены ✓':('Ошибка: '+(r.error||'')), !!r.checked);
+ $('jwt').value=''; refresh();
+}
+async function saveConf(){
+ await api('/x/save_config',{departure_id:$('dep').value,agency_name:$('agency').value,manager_name:$('manager').value});
+ say('m1','Настройки сохранены ✓',true);
+}
+async function saveWA(){
+ say('m2','проверяю инстанс…');
+ const r=await api('/x/save_greenapi',{id:$('gid').value,token:$('gtok').value});
+ say('m2', r.authorized?'WhatsApp подключён и авторизован ✓':('Статус: '+(r.state||r.error||'?')+' — отсканируйте QR в кабинете GreenAPI'), !!r.authorized);
+ $('gtok').value=''; refresh();
+}
+async function saveTG(){
+ say('m2t','подключаю и шлю тестовое сообщение…');
+ const r=await api('/x/save_telegram',{bot_token:$('tgtok').value,chat_id:$('tgchat').value});
+ say('m2t', r.status==='success'?'Telegram подключён — проверьте тестовое сообщение ✓':('Ошибка: '+(r.error||'')), r.status==='success');
+ $('tgtok').value='';
+}
+async function toggleInbound(){
+ const on=$('inbToggle').checked;
+ const r=await api('/x/inbound_toggle',{enabled:on});
+ st('st7', on?'включён ✓':'выключен', on?true:null);
+ const extra = on && r.greenapi_incoming ? ' Приём входящих в GreenAPI включён (инстанс перезагрузится ~1–2 мин).' : '';
+ say('m7', on?('Автоответчик включён — теперь бот сам отвечает входящим лидам в WhatsApp.'+extra):'Автоответчик выключен — входящие обрабатывает менеджер вручную.', on?true:null);
+}
+async function startBot(){
+ const ph=$('startPhone').value.trim();
+ if(!ph){say('mstart','укажите номер лида',false);return}
+ const b=$('startBtn');b.disabled=true;b.innerHTML='<span class="spin">◌</span> пишу лиду…';
+ const r=await api('/x/inbound_start',{phone:ph,name:$('startName').value.trim()});
+ b.disabled=false;b.textContent='🤖 Бот напишет первым';
+ if(r.status==='success'){
+   say('mstart', 'Бот написал лиду'+(r.recognized?' (узнал по базе)':'')+' и ждёт ответа. Дальше диалог ведётся сам.', true);
+   $('startPhone').value='';$('startName').value='';
+   setTimeout(loadLeads, 1500);
+ } else say('mstart','Ошибка: '+(r.error||''),false);
+}
+async function testInbound(){
+ const t=$('inbText').value.trim();
+ if(!t){say('m7','впишите сообщение клиента',false);return}
+ const b=$('inbBtn');b.disabled=true;b.innerHTML='<span class="spin">◌</span> бот думает…';
+ const r=await api('/x/inbound_test',{phone:'+70000000000',text:t});
+ b.disabled=false;b.textContent='Проверить ответ бота';
+ if(r.status==='success'){
+   say('m7','',true);
+   const slots=r.slots&&Object.keys(r.slots).length?('\nСобрано: '+JSON.stringify(r.slots,null,0)):'';
+   const tag=r.action==='READY'?'✅ всё собрано — далее подбор туров':(r.action==='ask'?'❓ уточняющий вопрос':(r.action==='handed_over'?'📞 передано менеджеру':r.action));
+   $('inbData').innerHTML=`<div class="draft"><div class="meta"><span class="tag">${tag}</span></div><pre>Клиент: ${esc(t)}\n\nБот: ${esc(r.reply)}${esc(slots)}</pre>
+   <div class="hint">Это тест — клиенту ничего не отправлено.</div></div>`;
+ } else say('m7','Ошибка: '+(r.error||''),false);
+}
+function filePick(){$('file').click()}
+function fileRead(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{$('csv').value=rd.result};rd.readAsText(f)}
+async function uploadClients(){
+ say('m3','загружаю…');
+ const r=await api('/x/upload_clients',{csv:$('csv').value});
+ say('m3', r.status==='success'?('Загружено клиентов: '+r.count+' ✓'):('Ошибка: '+r.error), r.status==='success');
+ refresh(); loadClients();
+}
+async function runLead(){
+ const b=$('leadBtn');b.disabled=true;b.innerHTML='<span class="spin">◌</span> ищу туры (до 2 минут)…';
+ say('m4','');
+ const childs='['+($('lchilds').value||'').split(',').map(s=>s.trim()).filter(Boolean).join(',')+']';
+ const r=await api('/x/run_lead',{fio:$('lfio').value,phone:$('lphone').value,direction:$('ldir').value,
+   date_from:$('ld1').value,date_to:$('ld2').value,adults:+$('ladults').value||2,childs_json:childs,budget:+$('lbudget').value||0});
+ b.disabled=false;b.textContent='Подобрать туры';
+ if(r.status==='success'){ st('st4','черновик готов ✓',true); say('m4','Готово — предложение в блоке 2 ниже.',true); loadLeads(); }
+ else say('m4','Ошибка: '+(r.error||JSON.stringify(r).slice(0,200)),false);
+}
+function ppPick(){$('ppFile').click()}
+function ppUpload(inp){
+ const f=inp.files[0]; if(!f)return;
+ const rd=new FileReader();
+ rd.onload=async()=>{
+   say('m6','распознаю скан…');
+   const r=await api('/x/upload_passport',{image_b64:rd.result});
+   ppShow(r);
+ };
+ rd.readAsDataURL(f); inp.value='';
+}
+let PP_BUSY=false;
+async function runPassport(){
+ if(PP_BUSY)return; PP_BUSY=true;
+ const b=$('ppBtn');b.disabled=true;b.textContent='распознаю скан…';
+ const r=await api('/x/passport_demo',{});
+ b.disabled=false;b.textContent='Демо: разобрать тестовый образец';PP_BUSY=false;
+ ppShow(r);
+}
+function ppShow(r){
+ if(r.status==='success'&&r.data){
+   DOC_NO=r.data.document_no; $('ctrBtn').disabled=false; st('st6','паспорт распознан ✓',true);
+   const v=r.data, mv=v.mrz_valid||{};
+   $('ppData').innerHTML=`<div class="draft"><div class="meta"><span class="tag">MRZ ✓ контрольные цифры: документ ${mv.document?'✓':'✗'} · дата рожд. ${mv.birth?'✓':'✗'} · срок ${mv.expiry?'✓':'✗'}</span></div>
+   <pre>ФИО: ${esc(v.surname)} ${esc(v.given_names)}\nПаспорт: ${esc(v.document_no)} (${esc(v.issuing_state)}), действует до ${esc(v.expiry_date)}\nДата рождения: ${esc(v.birth_date)} · Пол: ${esc(v.sex)} · ИИН: ${esc(v.personal_no)}</pre>
+   <div class="hint">Сохранено в карточку клиента. Скан удалён после разбора. Менеджер проверяет глазами перед CRM.</div></div>`;
+   say('m6','',true);
+ } else say('m6','Ошибка: '+(r.error||'')+(r.hint?' · '+r.hint:''),false);
+}
+async function makeContract(){
+ const b=$('ctrBtn');b.disabled=true;b.textContent='формирую договор…';
+ const r=await api('/x/contract',{doc_no:DOC_NO,draft_phone:'+77010000001'});
+ b.disabled=false;b.textContent='Сформировать договор по подборке лида';
+ if(r.status==='success'){ say('m6','Договор '+r.contract_no+' готов: '+(r.client||'')+' · '+((r.tour||{}).hotel||'')+' ✓',true);
+   $('ppData').insertAdjacentHTML('beforeend',`<div class="row" style="margin-top:10px"><button onclick="window.open('${r.url}','_blank')">Открыть договор</button></div>`);
+ } else say('m6','Ошибка: '+(r.error||''),false);
+}
+function selectedPhones(){
+ return [...document.querySelectorAll('.chk-clients:checked')].map(c=>c.dataset.phone).filter(Boolean);
+}
+async function loadDrafts(){
+ const r=await api('/x/drafts');
+ const mkt=$('drafts-mkt'); mkt.innerHTML='';
+ (r.drafts||[]).filter(d=>d.kind==='birthday'||d.kind==='season').forEach(d=>{
+   const el=document.createElement('div');el.className='draft';
+   const kind=d.kind==='birthday'?'🎂 ДР':'🌴 сезон'+(d.season?' · '+esc(d.season):'');
+   const canSend=d.status!=='sent';
+   el.innerHTML=`<div class="meta">
+     <input type="checkbox" class="chk-mkt" data-key="${esc(d._key)}" ${canSend?'':'disabled'} style="width:17px;height:17px;accent-color:var(--acc)">
+     <span class="tag">${kind}</span><b>${esc(d.name)}</b><span>${esc(d.phone)}</span><span>${esc(d.created_at)}</span>${statusTag(d.status)}</div>
+   <pre>${esc(d.message)}</pre>`;
+   mkt.appendChild(el);
+ });
+ if(!mkt.children.length)mkt.innerHTML='<div class="hint">Черновиков рассылок нет — запустите кампанию выше.</div>';
+}
+async function runBday(){
+ say('m5','ищу именинников среди выбранных…');
+ const r=await api('/x/run_birthday',{days_ahead:0,phones:selectedPhones()});
+ say('m5', r.status==='success'?('Найдено именинников: '+(r.found||0)+(r.found?' — черновики в блоке 3':'')):('Ошибка: '+r.error), r.status==='success');
+ loadDrafts();
+}
+async function runSeason(){
+ const sz=$('seasonName').value.trim();
+ if(!sz){say('m5','укажите сезон в поле слева (например: осень 2026)',false);$('seasonName').focus();return}
+ const phones=selectedPhones();
+ if(!phones.length){say('m5','не выбран ни один клиент в блоке 1',false);return}
+ const b=$('seasonBtn');b.disabled=true;b.innerHTML='<span class="spin">◌</span> пишу персональные приглашения…';
+ const r=await api('/x/run_season',{season:sz,phones:phones});
+ b.disabled=false;b.textContent='🌴 Запустить сезонную кампанию';
+ say('m5', r.status==='success'?('Черновиков подготовлено: '+(r.found||0)+' — проверьте в блоке 3 и отправьте'):('Ошибка: '+r.error), r.status==='success');
+ loadDrafts();
+}
+async function fastInbound(){
+ try{const r=await api('/x/inbound_status'); $('inbToggle').checked=!!r.enabled; st('st7', r.enabled?'включён ✓':'выключен', r.enabled?true:null);}catch(e){}
+}
+tab(localStorage.getItem('ta_tab')||'setup');
+fastInbound(); refresh(); loadClients(); loadLeads(); loadDrafts();
+</script>
+</div></body>
+</html>
