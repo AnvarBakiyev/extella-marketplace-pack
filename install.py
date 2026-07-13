@@ -114,4 +114,14 @@ try:
 except Exception:
     pass
 
+# ---- composer:catalog (библиотека блоков для "Собрать") ----
+cc = os.path.join(HERE, "composer_catalog.json")
+if os.path.exists(cc):
+    try:
+        api("/api/kv/set", {"key": "composer:catalog", "value": open(cc, encoding="utf-8").read(),
+                            "description": "composer catalog", "global": True})
+        print("== composer:catalog ==\n  \u2705 засеян")
+    except Exception as e:
+        print("  \u26a0\ufe0f composer:catalog:", str(e)[:60])
+
 print("\nГотово. Способности зарегистрированы. Витрину ставь отдельно: ./install_toolbar.sh")

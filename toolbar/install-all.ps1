@@ -4,7 +4,7 @@ $RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/ma
 $PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.zip"
 $WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/main.zip"
 $APP=Join-Path $env:APPDATA "extella-desktop"
-$WA=Join-Path $env:USERPROFILE "extella_wizard\app"; $AGENT="agent_extella_alibaba_default"
+$WA=Join-Path $env:USERPROFILE "extella_wizard\app"; $AGENT=if($env:EXTELLA_AGENT_ID){$env:EXTELLA_AGENT_ID}else{"agent_extella_alibaba_default"}
 function Dl($u,$o){ Invoke-WebRequest $u -OutFile $o -UseBasicParsing }
 
 Write-Host "1/5 Toolbar"

@@ -5,7 +5,7 @@ PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/head
 WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/main.tar.gz"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
-WA="$HOME/extella_wizard/app"; AGENT="agent_extella_alibaba_default"
+WA="$HOME/extella_wizard/app"; AGENT="${EXTELLA_AGENT_ID:-agent_extella_alibaba_default}"
 say(){ printf "\n\033[1m%s\033[0m\n" "$*"; }
 
 say "1/5 Тулбар"
