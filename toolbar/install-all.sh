@@ -53,6 +53,16 @@ CB=$("$PY" -c "import certifi;print(certifi.where())" 2>/dev/null || true)
 [ -n "$CB" ] && export SSL_CERT_FILE="$CB"
 echo "  ✓ SSL-сертификаты (certifi)"
 
+# Движок инструментов Homebrew (для CLI: сжатие PDF, OCR, конвертеры). Тяжёлый + просит пароль — по согласию.
+if [ "$(uname)" = "Darwin" ] && ! command -v brew >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
+  printf "  Поставить движок инструментов Homebrew (нужен для CLI: PDF/OCR/конвертеры)? Спросит пароль один раз [y/N]: "
+  read -r _hb </dev/tty || _hb=""
+  case "$_hb" in y|Y|д|Д|yes|да)
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty >/dev/null 2>&1 && echo "  ✓ Homebrew" || echo "  ~ Homebrew не поставился (CLI-инструменты можно поставить позже)";;
+    *) echo "  пропущено (CLI-инструменты потребуют Homebrew позже)";;
+  esac
+fi
+
 say "4/5 Эксперты тулбара + Визард"
 TMP=$(mktemp -d)
 curl -fsSL "$PACK" -o "$TMP/p.tgz"; tar -xzf "$TMP/p.tgz" -C "$TMP"
