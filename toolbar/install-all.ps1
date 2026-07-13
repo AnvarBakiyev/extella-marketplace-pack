@@ -20,7 +20,7 @@ Move-Item "$dest.tmp" $dest -Force; Write-Host "  ok: toolbar installed"
 Write-Host "2/4 Token"
 $tok = $env:EXTELLA_TOKEN
 if (-not $tok) { $sec = Read-Host "  Paste your Extella token" -AsSecureString; $tok=[Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)) }
-if ((-not $tok) -or ($tok -match '[<>]') -or ($tok.Length -lt 12)) {
+if ((-not $tok) -or ($tok -match '[^\x21-\x7E]') -or ($tok -match '[<>\s]') -or ($tok.Length -lt 20)) {
   Write-Host "  ! Toolbar installed, but Wizard skipped: need a REAL token (not the placeholder)." -ForegroundColor Yellow
   Write-Host "  Re-run with your token. Toolbar already works: open Extella -> Plugins."; return
 }
@@ -52,7 +52,8 @@ Invoke-WebRequest $WIZ -OutFile "$tmp\w.zip"; Expand-Archive "$tmp\w.zip" -Desti
 $src=(Get-ChildItem $tmp -Directory | Where-Object { $_.Name -like "extella-adoption-wizard*" } | Select-Object -First 1).FullName
 New-Item -ItemType Directory -Force -Path $WA | Out-Null
 Copy-Item (Join-Path $src "ui\*") $WA -Force
-@{auth_token=$tok;api_base="https://api.extella.ai";port=8765;agent_id=$AGENT} | ConvertTo-Json | Set-Content -Path (Join-Path $WA "config.json") -Encoding UTF8
+$cfgJson = @{auth_token=$tok;api_base="https://api.extella.ai";port=8765;agent_id=$AGENT} | ConvertTo-Json
+[System.IO.File]::WriteAllText((Join-Path $WA "config.json"), $cfgJson, (New-Object System.Text.UTF8Encoding($false)))
 Push-Location $src; & cmd /c "$py install.py"; $rc=$LASTEXITCODE; Pop-Location
 Remove-Item $tmp -Recurse -Force
 if ($rc -ne 0) { Write-Host "  ! install.py вернул код $rc — возможно SSL/сеть. Пришли вывод." -ForegroundColor Yellow }

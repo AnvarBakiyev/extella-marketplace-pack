@@ -38,7 +38,7 @@ if [ -z "$TOKEN" ]; then
   printf "  Вставь свой Extella-токен и нажми Enter: "
   read -rs TOKEN; echo
 fi
-if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | grep -q '[<>]' || [ ${#TOKEN} -lt 12 ]; then
+if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | LC_ALL=C grep -q '[^ -~]\|[<> ]' || [ ${#TOKEN} -lt 20 ]; then
   echo "  ! Тулбар установлен. Визард пропущен: нужен НАСТОЯЩИЙ токен (не плейсхолдер). Перезапусти с токеном."; exit 0
 fi
 
