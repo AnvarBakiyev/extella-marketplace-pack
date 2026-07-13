@@ -29,10 +29,29 @@ PY=""; for c in python3 python; do $c -c 'import sys;exit(0 if sys.version_info[
 [ -z "$PY" ] && command -v brew >/dev/null && { brew install python@3.12 >/dev/null 2>&1 || true; command -v python3 >/dev/null && PY=python3; }
 [ -n "$PY" ] || { echo "✗ Нужен Python 3 (python.org/downloads). Тулбар уже стоит."; exit 0; }
 echo "  ✓ $($PY -V 2>&1)"
-# macOS python.org Python часто без CA → ставим certifi и указываем SSL_CERT_FILE (без отключения проверки)
+# macOS python.org Python часто без CA-сертификатов. Ставим certifi И привязываем его к дефолтному
+# пути Python (аналог "Install Certificates.command") — тогда SSL работает для ВСЕХ python-процессов,
+# включая мост server.py, который приложение запускает само. Проверка SSL остаётся включённой.
 "$PY" -m pip install --quiet --disable-pip-version-check certifi >/dev/null 2>&1 || true
+"$PY" - <<'PYCERT' 2>/dev/null || true
+import os, ssl, certifi
+cf = ssl.get_default_verify_paths().openssl_cafile
+d = os.path.dirname(cf)
+try:
+    if d and not os.path.isdir(d): os.makedirs(d, exist_ok=True)
+    try: os.remove(cf)
+    except FileNotFoundError: pass
+    except IsADirectoryError: pass
+    os.symlink(certifi.where(), cf)
+    print("  linked CA ->", cf)
+except PermissionError:
+    print("  no perm to link CA (fallback env)")
+except Exception as e:
+    print("  CA:", e)
+PYCERT
 CB=$("$PY" -c "import certifi;print(certifi.where())" 2>/dev/null || true)
-[ -n "$CB" ] && export SSL_CERT_FILE="$CB" && echo "  ✓ SSL-сертификаты (certifi)"
+[ -n "$CB" ] && export SSL_CERT_FILE="$CB"
+echo "  ✓ SSL-сертификаты (certifi)"
 
 say "4/5 Эксперты тулбара + Визард"
 TMP=$(mktemp -d)
