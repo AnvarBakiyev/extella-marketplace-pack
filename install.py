@@ -58,12 +58,13 @@ def desc_of(src):
 print("== Эксперты ==")
 files = sorted(glob.glob(os.path.join(HERE, "experts", "*.py")))
 ok = fail = 0
-for f in files:
+for i, f in enumerate(files, 1):
     name = os.path.basename(f)[:-3]
     src = open(f, encoding="utf-8").read()
+    print("  [%d/%d] %s" % (i, len(files), name), flush=True)
     try:
         r = api("/api/expert/save", {"name": name, "description": desc_of(src) or name,
-                                     "code": src, "kwargs": {}, "cspl": "fython", "global": True})
+                                     "code": src, "kwargs": {}, "cspl": "fython", "global": True}, timeout=45)
         good = (r.get("status") == "success")
         ok += 1 if good else 0; fail += 0 if good else 1
         if not good:
