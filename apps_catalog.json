@@ -86,7 +86,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": true,
+     "verify_note": "установлено (0 шагов, без start.js)"
     }
    },
    {
@@ -174,7 +176,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": true,
+     "verify_note": "установлено (0 шагов, без start.js)"
     }
    },
    {
@@ -240,7 +244,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": false,
+     "verify_note": "install: шаг упал: npm install | m error A complete log of this run can be found in: /Users/anvarba"
     }
    },
    {
@@ -503,7 +509,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": true,
+     "verify_note": "установлено (0 шагов, без start.js)"
     }
    },
    {
@@ -619,7 +627,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": true,
+     "verify_note": "установлено; старт: стартует на порту 51666 (подождите)"
     }
    },
    {
@@ -751,7 +761,9 @@
       "win32"
      ],
      "gpu": "cpu",
-     "note": "лёгкое, без GPU-требований"
+     "note": "лёгкое, без GPU-требований",
+     "verified": true,
+     "verify_note": "установлено (2 шагов, без start.js)"
     }
    },
    {
