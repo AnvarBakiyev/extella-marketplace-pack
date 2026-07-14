@@ -182,6 +182,43 @@ def verify_mcp():
     for i in dead: print("    %s мёртвый пакет: %s" % (BAD, i))
     return (len(items) - len(dead), len(items), dead)
 
+
+# ---- Программы: чисто-вычислительные ок (компиляция); у API-программ внешний домен должен быть жив ----
+def verify_programs():
+    _title("Программы (внешние API)")
+    infra = re.compile(r"^(svc_|cap_|wz_|kp_|agent_|ci_|ta_|p2d|lp_|hf_|_etb)")
+    DOM = re.compile(r"https?://([a-z0-9.\-]+)")
+    progs = [f for f in glob.glob(os.path.join(HERE, "experts", "*.py")) if not infra.match(os.path.basename(f))]
+    dom2prog = {}
+    for f in progs:
+        code = open(f, encoding="utf-8").read()
+        for d in set(DOM.findall(code)):
+            if "extella.ai" in d or "localhost" in d or "127.0.0.1" in d: continue
+            dom2prog.setdefault(d, set()).add(os.path.basename(f)[:-3])
+    def alive(d):
+        for scheme in ("https://", "http://"):
+            try:
+                req = urllib.request.Request(scheme + d, headers={"User-Agent": "Mozilla/5.0"})
+                urllib.request.urlopen(req, timeout=12).read(64); return (d, "ok")
+            except urllib.error.HTTPError:
+                return (d, "ok")   # сервер ответил (4xx = домен жив)
+            except Exception:
+                continue
+        return (d, "dead")
+    res = {}
+    with cf.ThreadPoolExecutor(max_workers=10) as ex:
+        for d, c in ex.map(alive, dom2prog.keys()): res[d] = c
+    dead_dom = [d for d, c in res.items() if c == "dead"]
+    dead_progs = set()
+    for d in dead_dom: dead_progs |= dom2prog[d]
+    api_progs = set().union(*dom2prog.values()) if dom2prog else set()
+    good = len(progs) - len(dead_progs)
+    print("  %s работают: %d / %d (чисто-вычислит. %d, с внешним API %d)" % (
+        OK if not dead_dom else BAD, good, len(progs), len(progs) - len(api_progs), len(api_progs)))
+    for d in dead_dom:
+        print("    %s мёртвый API %s → программы: %s" % (BAD, d, ", ".join(sorted(dom2prog[d]))))
+    return (good, len(progs), sorted(dead_progs))
+
 def main():
     args = [a.lower() for a in sys.argv[1:]]
     want = lambda k: (not args) or (k in args)
@@ -198,6 +235,7 @@ def main():
     if want("cli"):       g, t, _ = verify_cli();      summary.append(("CLI", g, t))
     if want("knowledge"): g, t, _ = verify_knowledge(); summary.append(("Знания", g, t))
     if want("mcp"):       g, t, _ = verify_mcp(); summary.append(("MCP", g, t))
+    if want("programs"):  g, t, _ = verify_programs(); summary.append(("Программы", g, t))
     if want("services"):  g, t, _ = verify_services(tok, agent); summary.append(("Сервисы", g, t))
     print("\n== ИТОГ ==")
     allgreen = True
