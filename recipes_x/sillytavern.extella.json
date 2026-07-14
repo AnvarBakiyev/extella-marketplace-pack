@@ -1,0 +1,37 @@
+{
+  "id": "sillytavern",
+  "name": "sillytavern",
+  "kind": "app",
+  "source": {
+    "git": "https://github.com/SillyTavern/SillyTavern"
+  },
+  "requires": [
+    "git",
+    "node"
+  ],
+  "install": [
+    {
+      "run": "git clone https://github.com/SillyTavern/SillyTavern app"
+    },
+    {
+      "run": "npm i --no-audit --no-fund --quiet --omit=dev",
+      "cwd": "app",
+      "venv": "env",
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  ],
+  "start": {
+    "run": "node server",
+    "daemon": true,
+    "ready": {
+      "log": "https?://\\S+"
+    },
+    "cwd": "app",
+    "venv": "env",
+    "env": {
+      "SILLY_TAVERN_PORT": "{{port}}"
+    }
+  }
+}
