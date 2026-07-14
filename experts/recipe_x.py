@@ -89,6 +89,13 @@ def install(recipe, root=None):
         env = _venv_env(root, step.get("venv"), step.get("env"), ctx)
         if not shutil.which("uv"):
             cmd = cmd.replace("uv pip", "pip")
+        # идемпотентность: git clone во внутр. папку падает на повторе → пропускаем, если уже склонировано
+        gc = re.match(r"\s*git\s+clone\b.*?\s(\S+)\s*$", cmd)
+        if gc:
+            tgt = os.path.join(cwd, gc.group(1))
+            if os.path.isdir(os.path.join(tgt, ".git")):
+                done += 1; continue
+            shutil.rmtree(tgt, ignore_errors=True)
         r = subprocess.run(cmd, shell=True, cwd=cwd, env=env, capture_output=True, text=True, timeout=1800)
         if r.returncode != 0:
             return {"status": "error", "message": "шаг упал: " + cmd[:70] + " | " + (r.stderr or "")[-140:], "app_id": rid}

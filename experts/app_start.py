@@ -28,13 +28,15 @@ def app_start(app_id="", root="", entry="start.js"):
     # запустить detached (venv)
     def venv_env(vp):
         env = dict(os.environ)
-        if vp:
+        base = env.get("PATH","")
+        for extra in ("~/miniconda3/bin",):          # conda — БАЗОВЫЙ слой (позади venv)
+            p = os.path.expanduser(extra)
+            if os.path.isdir(p): base = p + os.pathsep + base
+        if vp:                                        # venv приложения — ПЕРВЫМ, иначе conda-python перекроет
             vabs = os.path.normpath(os.path.join(root, vp))
             env["VIRTUAL_ENV"] = vabs
-            env["PATH"] = os.path.join(vabs,"bin") + os.pathsep + env.get("PATH","")
-        for extra in ("~/miniconda3/bin",):
-            p = os.path.expanduser(extra)
-            if os.path.isdir(p): env["PATH"] = p + os.pathsep + env["PATH"]
+            base = os.path.join(vabs,"bin") + os.pathsep + base
+        env["PATH"] = base
         return env
     for st in shell_steps:
         p = st.get("params",{}); cwd = os.path.normpath(os.path.join(root, p.get("path","") or ""))

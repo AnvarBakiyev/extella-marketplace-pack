@@ -89,6 +89,13 @@ def app_install(repo="", app_id="", branch="main"):
             env.setdefault("UV_SYSTEM_PYTHON","0")
         for m in (p.get("message") or []):
             m2=m.replace("uv pip","pip") if not shutil.which("uv") else m  # фолбэк если нет uv
+            # идемпотентность: git clone во внутр. папку падает на повторе → пропускаем, если папка уже склонирована
+            gc=re.match(r"\s*git\s+clone\b.*?\s(\S+)\s*$", m2)
+            if gc:
+                tgt=os.path.join(cwd, gc.group(1))
+                if os.path.isdir(os.path.join(tgt,".git")):
+                    continue
+                shutil.rmtree(tgt, ignore_errors=True)  # чистим частичный клон
             r=subprocess.run(m2,shell=True,cwd=cwd,env=env,capture_output=True,text=True,timeout=900)
             if r.returncode!=0:
                 return err("шаг упал: "+m2[:70]+" | "+(r.stderr or "")[-120:])
