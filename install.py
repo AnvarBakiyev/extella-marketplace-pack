@@ -125,6 +125,20 @@ if os.path.exists(cc):
     except Exception as e:
         print("  \u26a0\ufe0f composer:catalog:", str(e)[:60])
 
+# ---- _mkt_models (verified-каталог витрины: пред-проверен, шардирован; клиент видит только рабочее) ----
+mc = os.path.join(HERE, "models_catalog.json")
+if os.path.exists(mc):
+    try:
+        cat = json.load(open(mc, encoding="utf-8"))
+        n = 0
+        for key, shard in cat.items():  # _mkt_models, _mkt_models_2, ...
+            api("/api/kv/set", {"key": key, "value": json.dumps(shard, ensure_ascii=False),
+                                "description": "verified models catalog", "global": True})
+            n += len(shard.get("shelf", []))
+        print("== Каталог моделей ==\n  ✅ засеян verified-каталог: %d моделей" % n)
+    except Exception as e:
+        print("  ⚠️ _mkt_models:", str(e)[:60])
+
 # ---- 5. Автоматизации (готовые паки: Travel Agency, Контракты, Competitor Intelligence) ----
 AUTO = os.path.join(HERE, "automations")
 AGENT_ID = os.environ.get("EXTELLA_AGENT_ID") or cfg.get("agent_id") or "agent_extella_alibaba_default"
