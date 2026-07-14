@@ -18,17 +18,88 @@ def hf_space_install(space="", plugin_id="", display_name="", port="", root_path
     start_expert = "_etb_srv_" + plugin_id
     host = "https://%s-%s.hf.space" % (owner.lower().replace("_", "-"), name.lower().replace("_", "-").replace(".", "-"))
 
-    # 1) интроспекция gradio API
-    try:
-        info = json.load(urllib.request.urlopen(host + "/gradio_api/info", timeout=25))
-    except Exception:
+    def _acct():
+        # config.json Визарда — валидный токен+agent приоритетно; ~/.extella/api_token.txt — фолбэк
+        cfg = os.path.expanduser("~/extella_wizard/app/config.json")
+        if os.path.exists(cfg):
+            try:
+                d = json.load(open(cfg)); t = d.get("auth_token", "")
+                if t: return t, d.get("agent_id", "")
+            except Exception: pass
+        pp = os.path.expanduser("~/.extella/api_token.txt")
+        if os.path.exists(pp):
+            t = open(pp).read().strip()
+            if t: return t, ""
+        return "", ""
+
+    # Установка НЕ-gradio спейса как встроенного сайта (детерминированно, без LLM, без прокси).
+    def _install_embed(space_host):
+        def esc2(x): return str(x).replace("&","&amp;").replace('"',"&quot;")
+        idx2 = ("<!doctype html><meta charset=utf-8><title>" + esc2(display_name) + "</title>"
+                "<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100vh;display:block}</style>"
+                "<iframe src=\"" + esc2(space_host) + "\" allow=\"clipboard-write; camera; microphone\"></iframe>")
         try:
-            info = json.load(urllib.request.urlopen(host + "/info", timeout=25))
+            os.makedirs(root_path, exist_ok=True)
+            os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+            open(os.path.join(root_path, "index.html"), "w", encoding="utf-8").write(idx2)
         except Exception as e:
-            return err("это не Gradio-Space (нет gradio_api/info) — вероятно веб-приложение; детерминированная установка не подходит: " + str(e)[:80], "not_gradio")
-    eps = info.get("named_endpoints") or {}
+            return err("index.html (embed) не записан: " + str(e)[:100])
+        # сервер + стартовый эксперт
+        at2, aid2 = _acct()
+        try:
+            subprocess.Popen([sys.executable, "-m", "http.server", port], cwd=root_path,
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except Exception: pass
+        start_code2 = ("# expert: %s\n# description: старт встроенного плагина %s\n" % (start_expert, plugin_id) +
+            "def %s():\n    import subprocess,sys,json\n    subprocess.Popen([sys.executable,'-m','http.server',%r],cwd=%r,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n    return json.dumps({'status':'ok'})\n" % (start_expert, port, root_path))
+        if at2:
+            try:
+                h2 = {"X-Auth-Token": at2, "X-Profile-Id": "default", "Content-Type": "application/json"}
+                if aid2: h2["X-Agent-Id"] = aid2
+                rq2 = urllib.request.Request("https://api.extella.ai/api/expert/save",
+                        data=json.dumps({"name": start_expert, "description": "start " + plugin_id, "code": start_code2, "kwargs": {}, "cspl": "fython", "global": True}).encode(), headers=h2)
+                urllib.request.urlopen(rq2, timeout=45)
+            except Exception: pass
+        man = {"id": plugin_id, "name": display_name, "type": "github", "mode": "embed",
+               "hf": {"id": space, "kind": "space", "hosted": True},
+               "ui": {"type": "local_server", "port": int(port), "rootPath": root_path,
+                      "startExpert": start_expert, "mainFile": "index.html", "openInBrowser": False, "expectsHealth": False},
+               "service": {"isApp": False, "port": int(port), "startExpert": start_expert, "ready": True},
+               "experts": [], "installed": True}
+        try:
+            open(registry_path, "w", encoding="utf-8").write(json.dumps(man, ensure_ascii=False, indent=2))
+        except Exception as e:
+            return err("реестр (embed) не записан: " + str(e)[:100])
+        return json.dumps({"status": "success", "plugin_id": plugin_id, "mode": "embed",
+                           "ok": True, "message": "установлено как встроенный сайт (не-gradio)"}, ensure_ascii=False)
+
+    # 0) разбудить спейс (HF засыпает при простое) — иначе холодный запрос его "не видит"
+    try:
+        urllib.request.urlopen(host + "/", timeout=25).read(256)
+    except Exception:
+        pass
+    time.sleep(2)
+    # 1) интроспекция gradio API — несколько путей (новые/старые gradio)
+    info, eps = None, {}
+    for pth in ("/gradio_api/info", "/info"):
+        try:
+            info = json.load(urllib.request.urlopen(host + pth, timeout=30))
+            eps = info.get("named_endpoints") or {}
+            if eps:
+                break
+        except Exception:
+            continue
     if not eps:
-        return err("у Space нет именованных эндпоинтов gradio", "not_gradio")
+        # не gradio-API (веб-приложение / старый gradio) — ставим ДЕТЕРМИНИРОВАННО как встроенный сайт
+        # проверим, что спейс вообще жив
+        alive = False
+        try:
+            urllib.request.urlopen(host + "/", timeout=20).read(64); alive = True
+        except Exception:
+            alive = False
+        if not alive:
+            return err("спейс недоступен (спит/приватный/удалён) — попробуй позже", "unreachable")
+        return _install_embed(host)
     # выбираем первый эндпоинт с параметрами
     api_name, spec = None, None
     for k, v in eps.items():
@@ -108,19 +179,6 @@ def hf_space_install(space="", plugin_id="", display_name="", port="", root_path
         "        return json.dumps({\"status\": \"error\", \"message\": str(e)[:300]}, ensure_ascii=False)\n"
     )
     # сохранить прокси через аккаунт-токен устройства
-    def _acct():
-        # config.json Визарда — валидный токен+agent приоритетно; ~/.extella/api_token.txt — фолбэк
-        cfg = os.path.expanduser("~/extella_wizard/app/config.json")
-        if os.path.exists(cfg):
-            try:
-                d = json.load(open(cfg)); t = d.get("auth_token", "")
-                if t: return t, d.get("agent_id", "")
-            except Exception: pass
-        pp = os.path.expanduser("~/.extella/api_token.txt")
-        if os.path.exists(pp):
-            t = open(pp).read().strip()
-            if t: return t, ""
-        return "", ""
     at, aid = _acct()
     if not at:
         return err("не найден аккаунт-токен устройства (config.json / ~/.extella/api_token.txt)")
