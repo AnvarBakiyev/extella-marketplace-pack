@@ -153,6 +153,20 @@ if os.path.exists(mcp):
     except Exception as e:
         print("  ⚠️ _mkt_mcp:", str(e)[:60])
 
+# ---- _mkt_apps (директория приложений Pinokio-совместимых рецептов: рекламируем репо, ставит recipe_run) ----
+ap = os.path.join(HERE, "apps_catalog.json")
+if os.path.exists(ap):
+    try:
+        cat = json.load(open(ap, encoding="utf-8"))
+        n = 0
+        for key, shard in cat.items():
+            api("/api/kv/set", {"key": key, "value": json.dumps(shard, ensure_ascii=False),
+                                "description": "apps directory (recipe-installable)", "global": True})
+            n += len(shard.get("shelf") or [])
+        print("== Каталог приложений ==\n  ✅ засеян: %d приложений (рецепты)" % n)
+    except Exception as e:
+        print("  ⚠️ _mkt_apps:", str(e)[:60])
+
 # ---- 5. Автоматизации (готовые паки: Travel Agency, Контракты, Competitor Intelligence) ----
 AUTO = os.path.join(HERE, "automations")
 AGENT_ID = os.environ.get("EXTELLA_AGENT_ID") or cfg.get("agent_id") or "agent_extella_alibaba_default"
