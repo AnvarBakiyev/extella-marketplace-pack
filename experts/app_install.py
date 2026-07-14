@@ -72,9 +72,14 @@ def app_install(repo="", app_id="", branch="main"):
         return err(rt_err)
 
     # 3. исполнить shell-шаги в venv
+    def _best_py():  # новейший Python (3.9 Xcode ломает X|None и др.) — берём 3.12/3.11/3.10, иначе текущий
+        for c in ("python3.12","python3.11","python3.10"):
+            p=shutil.which(c)
+            if p: return p
+        return sys.executable
     def venv_py(vp):
         vabs=os.path.normpath(os.path.join(root,vp)); py=os.path.join(vabs,"bin","python")
-        if not os.path.exists(py): subprocess.run([sys.executable,"-m","venv",vabs],capture_output=True,text=True,timeout=120)
+        if not os.path.exists(py): subprocess.run([_best_py(),"-m","venv",vabs],capture_output=True,text=True,timeout=120)
         return py
     done=0
     for st in steps:

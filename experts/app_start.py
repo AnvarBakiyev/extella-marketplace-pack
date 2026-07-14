@@ -38,6 +38,20 @@ def app_start(app_id="", root="", entry="start.js"):
             base = os.path.join(vabs,"bin") + os.pathsep + base
         env["PATH"] = base
         return env
+    # ИДЕМПОТЕНТНОСТЬ: приложение уже поднято? (лог содержит URL и порт слушает) — не плодим копии, отдаём реальный порт
+    def _log_port():
+        try:
+            txt = open(os.path.join(root,"server.log"),encoding="utf-8",errors="ignore").read()
+            mm2 = re.findall(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt)
+            return int(mm2[-1]) if mm2 else None
+        except Exception: return None
+    lp = _log_port()
+    if lp:
+        try:
+            with socket.create_connection(("127.0.0.1", lp), timeout=1.5):
+                return json.dumps({"status":"success","app_id":app_id,"port":lp,"url":"http://localhost:%d"%lp,
+                                   "ready":True,"found_url":True,"message":"уже запущено на порту %d"%lp}, ensure_ascii=False)
+        except Exception: pass
     for st in shell_steps:
         p = st.get("params",{}); cwd = os.path.normpath(os.path.join(root, p.get("path","") or ""))
         env = venv_env(p.get("venv"))
@@ -48,13 +62,20 @@ def app_start(app_id="", root="", entry="start.js"):
                              stdout=open(os.path.join(root,"server.log"),"a"), stderr=subprocess.STDOUT)
     # дождаться готовности: приложение печатает свой URL в лог (приём Pinokio on:event) — берём порт ОТТУДА
     logf = os.path.join(root, "server.log")
-    up = False
-    for _ in range(25):
+    up = False; found_url = False
+    # ML-приложения грузят модель на первом старте (минута+) → ждём ДОЛЬШЕ (до ~110с),
+    # и приоритет — поймать URL в логе (реальный порт), а не только сокет.
+    for _ in range(55):
         time.sleep(2)
         try:
             txt = open(logf, encoding="utf-8", errors="ignore").read() if os.path.exists(logf) else ""
             m = re.search(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt)
-            if m: port = int(m.group(1))   # РЕАЛЬНЫЙ порт из лога
+            if m: port = int(m.group(1)); found_url = True   # РЕАЛЬНЫЙ порт из лога
+            # честный ранний выход ТОЛЬКО при явной фатальной ошибке (не URL, не поднимется)
+            if not found_url and _ > 8 and re.search(r"ModuleNotFoundError|TypeError: unsupported operand|error while attempting to bind|Address already in use", txt):
+                fatal = re.search(r"(ModuleNotFoundError[^\n]*|TypeError: unsupported operand[^\n]*|Address already in use[^\n]*)", txt)
+                return json.dumps({"status":"error","app_id":app_id,
+                    "message":"приложение не поднялось: "+(fatal.group(1)[:80] if fatal else "ошибка среды")+" — стороннее ML-приложение несовместимо с этой машиной"}, ensure_ascii=False)
         except Exception: pass
         try:
             with socket.create_connection(("127.0.0.1", port), timeout=1.5): up = True; break
@@ -67,6 +88,12 @@ def app_start(app_id="", root="", entry="start.js"):
             man["ui"]["url"] = "http://localhost:%d" % port; man["running"]=up
             open(reg,"w",encoding="utf-8").write(json.dumps(man,ensure_ascii=False,indent=2))
         except Exception: pass
-    return json.dumps({"status":"success" if up else "starting", "app_id":app_id, "port":port,
-                       "url":"http://localhost:%d"%port, "ready":up,
-                       "message":("запущено на порту %d"%port) if up else ("стартует на порту %d (подождите)"%port)}, ensure_ascii=False)
+    # found_url=True → знаем реальный порт (можно встраивать); иначе порт неизвестен → UI попросит нажать ещё раз
+    out = {"status":"success" if up else "starting", "app_id":app_id, "port":port,
+           "ready":up, "found_url":found_url}
+    if up or found_url:
+        out["url"] = "http://localhost:%d" % port
+        out["message"] = ("запущено на порту %d"%port) if up else ("поднимается на порту %d — секунду"%port)
+    else:
+        out["message"] = "приложение ещё стартует (грузит модель) — нажми ▶ Открыть ещё раз через минуту"
+    return json.dumps(out, ensure_ascii=False)

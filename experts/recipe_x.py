@@ -53,7 +53,8 @@ def _venv_env(root, venv, extra, ctx):
     if venv:
         vpath = os.path.join(root, venv)
         if not os.path.isdir(vpath):
-            subprocess.run([sys.executable, "-m", "venv", vpath], capture_output=True, timeout=300)
+            py = next((shutil.which(c) for c in ("python3.12","python3.11","python3.10") if shutil.which(c)), sys.executable)
+            subprocess.run([py, "-m", "venv", vpath], capture_output=True, timeout=300)
         env["VIRTUAL_ENV"] = vpath
         env["PATH"] = os.path.join(vpath, "bin") + os.pathsep + env.get("PATH", "")
     for k, v in (extra or {}).items():
