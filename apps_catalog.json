@@ -1,1 +1,3938 @@
-{"_mkt_apps": {"shelf": [{"id": "cocktailpeanut/fluxgym", "title": "fluxgym", "desc": "Dead simple FLUX LoRA training UI with LOW VRAM support", "cat": "image", "stars": 3234, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/fluxgym", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/cogstudio", "title": "cogstudio", "desc": "", "cat": "other", "stars": 391, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/cogstudio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/RMBG-2-Studio", "title": "RMBG-2-Studio", "desc": "Enhanced background remove and replace app built around BRIA-RMBG-2.0.  Low VRAM/RAM | 6GB Install", "cat": "other", "stars": 281, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/RMBG-2-Studio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/mirror", "title": "mirror", "desc": "", "cat": "other", "stars": 274, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/mirror", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/flux-webui", "title": "flux-webui", "desc": "", "cat": "image", "stars": 189, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/flux-webui", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/hermes-mod", "title": "hermes-mod", "desc": "", "cat": "other", "stars": 172, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/hermes-mod", "file": "pinokio.js", "branch": "master"}}, {"id": "cocktailpeanut/image-to-prompt", "title": "image-to-prompt", "desc": "", "cat": "image", "stars": 127, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/image-to-prompt", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/deus", "title": "deus", "desc": "", "cat": "other", "stars": 126, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/deus", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/e2-f5-tts", "title": "e2-f5-tts", "desc": "", "cat": "audio", "stars": 80, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/e2-f5-tts", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/audiogradio.pinokio", "title": "audiogradio.pinokio", "desc": "One-click launcher for Audiocraft MusicGen + AudioGen Gradio Web UI", "cat": "audio", "stars": 73, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/audiogradio.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/bolt", "title": "bolt", "desc": "", "cat": "other", "stars": 58, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/bolt", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/clarity-refiners-ui", "title": "clarity-refiners-ui", "desc": "Creative Image Enhancer/Upscaler. Powered By Refiners.  8GB VRAM | 10GB Install", "cat": "image", "stars": 52, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/clarity-refiners-ui", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/hallucinator", "title": "hallucinator", "desc": "", "cat": "other", "stars": 52, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/hallucinator", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/deeperhermes", "title": "deeperhermes", "desc": "deep hermes, but decides how to respond based on its OWN decision, no need for system prompts.", "cat": "other", "stars": 45, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/deeperhermes", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/comfyui.pinokio", "title": "comfyui.pinokio", "desc": "A 1-click launcher for https://github.com/comfyanonymous/ComfyUI", "cat": "image", "stars": 45, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/comfyui.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/wan", "title": "wan", "desc": "", "cat": "video", "stars": 39, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/wan", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ai4animationpy.pinokio", "title": "ai4animationpy.pinokio", "desc": "", "cat": "video", "stars": 37, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ai4animationpy.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Nari-Dia-TTS", "title": "Nari-Dia-TTS", "desc": "Nari Dia is a powerful text-to-speech (TTS) application based on the Dia-1.6B model from Nari Labs. This application allows you to convert text into natural-sou", "cat": "audio", "stars": 34, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Nari-Dia-TTS", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/facefusion.pinokio", "title": "facefusion.pinokio", "desc": "", "cat": "avatar", "stars": 31, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/facefusion.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/comfy", "title": "comfy", "desc": "", "cat": "image", "stars": 29, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/comfy", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Ultimate-TTS-Studio", "title": "Ultimate-TTS-Studio", "desc": "🟢 NVIDIA ONLY – All-in-One TTS App with Kokoro, KittenTTS, Higgs audio, Chatterbox, Fish-Speech, F5 & index-tts & indextts2, Supports Conversation Mode & eBook-", "cat": "audio", "stars": 28, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Ultimate-TTS-Studio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/openaudio", "title": "openaudio", "desc": "", "cat": "audio", "stars": 27, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/openaudio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/axios-inspector", "title": "axios-inspector", "desc": "", "cat": "other", "stars": 27, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/axios-inspector", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/sd-webui.pinokio", "title": "sd-webui.pinokio", "desc": "1-click launcher for AUTOMATIC1111/stable-diffusion-webui with full SDXL 1.0 support.", "cat": "image", "stars": 24, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/sd-webui.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/audiocraft_plus.pinokio", "title": "audiocraft_plus.pinokio", "desc": "", "cat": "audio", "stars": 24, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/audiocraft_plus.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/MFLUX-WEBUI", "title": "MFLUX-WEBUI", "desc": "A powerful and user-friendly web interface for MFLUX, powered by Gradio and MLX. https://github.com/CharafChnioune/MFLUX-WEBUI", "cat": "image", "stars": 23, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/MFLUX-WEBUI", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Hunyuan3d-2-lowvram", "title": "Hunyuan3d-2-lowvram", "desc": "", "cat": "3d", "stars": 23, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Hunyuan3d-2-lowvram", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/cropper", "title": "cropper", "desc": "crop anything", "cat": "other", "stars": 23, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/cropper", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Frame-Pack", "title": "Frame-Pack", "desc": "(NVIDIA) FramePack is a next-frame (next-frame-section) prediction neural network structure that generates videos progressively.", "cat": "video", "stars": 22, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Frame-Pack", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/stabledaw.pinokio", "title": "stabledaw.pinokio", "desc": "", "cat": "other", "stars": 22, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/stabledaw.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ace-step-ui.pinokio", "title": "ace-step-ui.pinokio", "desc": "", "cat": "other", "stars": 22, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ace-step-ui.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/diffusers-image-fill", "title": "diffusers-image-fill", "desc": "", "cat": "image", "stars": 21, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/diffusers-image-fill", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Orpheus-TTS-FastAPI", "title": "Orpheus-TTS-FastAPI", "desc": "", "cat": "audio", "stars": 21, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Orpheus-TTS-FastAPI", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/openui", "title": "openui", "desc": "", "cat": "other", "stars": 20, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/openui", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ideoprompt", "title": "ideoprompt", "desc": "", "cat": "other", "stars": 20, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ideoprompt", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/hunyuanvideo", "title": "hunyuanvideo", "desc": "", "cat": "video", "stars": 19, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/hunyuanvideo", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/diffrhythm", "title": "diffrhythm", "desc": "", "cat": "other", "stars": 19, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/diffrhythm", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/open-webui", "title": "open-webui", "desc": "", "cat": "llm", "stars": 18, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/open-webui", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/facepoke", "title": "facepoke", "desc": "", "cat": "avatar", "stars": 18, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/facepoke", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/TRELLIS", "title": "TRELLIS", "desc": "A pinokio script for https://github.com/microsoft/TRELLIS", "cat": "other", "stars": 18, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/TRELLIS", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/yue", "title": "yue", "desc": "", "cat": "other", "stars": 18, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/yue", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/xtts.pinokio", "title": "xtts.pinokio", "desc": "", "cat": "audio", "stars": 18, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/xtts.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ai-video-composer", "title": "ai-video-composer", "desc": "", "cat": "video", "stars": 17, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ai-video-composer", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/tutorial.pinokio", "title": "tutorial.pinokio", "desc": "", "cat": "other", "stars": 15, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/tutorial.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/hallo", "title": "hallo", "desc": "", "cat": "other", "stars": 13, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/hallo", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/mlx-video-transcription", "title": "mlx-video-transcription", "desc": "", "cat": "video", "stars": 13, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/mlx-video-transcription", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/rvc.pinokio", "title": "rvc.pinokio", "desc": "", "cat": "other", "stars": 13, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/rvc.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/whisper-webui", "title": "whisper-webui", "desc": "Pinokio Installer for Whisper-Webui", "cat": "llm", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/whisper-webui", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/MMAudio", "title": "MMAudio", "desc": "", "cat": "audio", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/MMAudio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/StyleTTS2_Studio", "title": "StyleTTS2_Studio", "desc": "Build your own StyleTTS 2 Voice!", "cat": "audio", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/StyleTTS2_Studio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Hunyuan3D-2", "title": "Hunyuan3D-2", "desc": "", "cat": "3d", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Hunyuan3D-2", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/macOS-use", "title": "macOS-use", "desc": "We Make Mac apps accessible for AI agents", "cat": "other", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/macOS-use", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/clawdbot.pinokio", "title": "clawdbot.pinokio", "desc": "", "cat": "other", "stars": 12, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/clawdbot.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/augmentoolkit", "title": "augmentoolkit", "desc": "", "cat": "other", "stars": 11, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/augmentoolkit", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/stableaudio", "title": "stableaudio", "desc": "", "cat": "audio", "stars": 11, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/stableaudio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/stable-diffusion-webui-forge", "title": "stable-diffusion-webui-forge", "desc": "", "cat": "image", "stars": 11, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/stable-diffusion-webui-forge", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/browser-use", "title": "browser-use", "desc": "", "cat": "other", "stars": 11, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/browser-use", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/dia", "title": "dia", "desc": "", "cat": "other", "stars": 11, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/dia", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/invoke", "title": "invoke", "desc": "", "cat": "other", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/invoke", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/zonos", "title": "zonos", "desc": "", "cat": "other", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/zonos", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/MatAnyone", "title": "MatAnyone", "desc": "[NVIDIA ONLY] \"Stable Video Matting with Consistent Memory Propagation\"   9GB install, 9GB+ VRAM", "cat": "video", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/MatAnyone", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/triposplat.pinokio", "title": "triposplat.pinokio", "desc": "", "cat": "other", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/triposplat.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ds4.pinokio", "title": "ds4.pinokio", "desc": "a minimal frontend for ds4.c", "cat": "other", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ds4.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/automatic1111.pinokio", "title": "automatic1111.pinokio", "desc": "(deprecated) A one-click installer for Automatic1111/stable-diffusion-webui ", "cat": "image", "stars": 10, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/automatic1111.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/llamafactory", "title": "llamafactory", "desc": "", "cat": "llm", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/llamafactory", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/autogpt", "title": "autogpt", "desc": "", "cat": "llm", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/autogpt", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/echomimic2", "title": "echomimic2", "desc": "", "cat": "other", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/echomimic2", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/vibevoice-realtime", "title": "vibevoice-realtime", "desc": "", "cat": "audio", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/vibevoice-realtime", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/hermes-agent.pinokio", "title": "hermes-agent.pinokio", "desc": "", "cat": "other", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/hermes-agent.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/animatediff.pinokio", "title": "animatediff.pinokio", "desc": "", "cat": "video", "stars": 9, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/animatediff.pinokio", "file": "pinokio.js", "branch": "main"}}], "shards": 3}, "_mkt_apps_2": {"shelf": [{"id": "pinokiofactory/MagicQuill", "title": "MagicQuill", "desc": "An intelligent, interactive Image Editing System. Easily erase and add objects on a user-friendly interface.", "cat": "image", "stars": 8, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/MagicQuill", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Kokoro-TTS", "title": "Kokoro-TTS", "desc": "Welcome to Kokoro, a high-quality text-to-speech synthesis program powered by deep learning. This tool converts any text into high-fidelity speech in just a few", "cat": "audio", "stars": 8, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Kokoro-TTS", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/AudioLDM2.pinokio", "title": "AudioLDM2.pinokio", "desc": "", "cat": "audio", "stars": 8, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/AudioLDM2.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/control-lora.comfyui.pinokio", "title": "control-lora.comfyui.pinokio", "desc": "1 click control lora models and workflows downloader for comfyui", "cat": "image", "stars": 8, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/control-lora.comfyui.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/photomaker2", "title": "photomaker2", "desc": "", "cat": "image", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/photomaker2", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/aura-sr-upscaler", "title": "aura-sr-upscaler", "desc": "", "cat": "image", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/aura-sr-upscaler", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/applio", "title": "applio", "desc": "Pinokio Installer for Applio", "cat": "other", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/applio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/omnigen", "title": "omnigen", "desc": "", "cat": "other", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/omnigen", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ai-toolkit", "title": "ai-toolkit", "desc": "A Pinokio installer for Ostris' ai-toolkit, The ultimate training toolkit for finetuning diffusion models. Main branch is [NVIDIA ONLY]", "cat": "image", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ai-toolkit", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/overworld.pinokio", "title": "overworld.pinokio", "desc": "", "cat": "other", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/overworld.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/discord-id-bypass-tool.pinokio", "title": "discord-id-bypass-tool.pinokio", "desc": "1-click launcher for https://github.com/promptpirate-x/discord-id-bypass-tool", "cat": "other", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/discord-id-bypass-tool.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/voicebox.pinokio", "title": "voicebox.pinokio", "desc": "", "cat": "audio", "stars": 7, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/voicebox.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/moshi", "title": "moshi", "desc": "", "cat": "other", "stars": 6, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/moshi", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/texturizer", "title": "texturizer", "desc": "", "cat": "other", "stars": 6, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/texturizer", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/searxng.pinokio", "title": "searxng.pinokio", "desc": "", "cat": "other", "stars": 6, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/searxng.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ms-image2video.pinokio", "title": "ms-image2video.pinokio", "desc": "", "cat": "video", "stars": 6, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ms-image2video.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ace-step.pinokio", "title": "ace-step.pinokio", "desc": "", "cat": "other", "stars": 6, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ace-step.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/sillytavern", "title": "sillytavern", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/sillytavern", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/video-background-removal", "title": "video-background-removal", "desc": "", "cat": "video", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/video-background-removal", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/pyramidflow", "title": "pyramidflow", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/pyramidflow", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/uno", "title": "uno", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/uno", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/acejam.pinokio", "title": "acejam.pinokio", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/acejam.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/bark.pinokio", "title": "bark.pinokio", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/bark.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/tokenflow.pinokio", "title": "tokenflow.pinokio", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/tokenflow.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/directorsconsole.pinokio", "title": "directorsconsole.pinokio", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/directorsconsole.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/unsloth", "title": "unsloth", "desc": "", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/unsloth", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/heartmula-studio", "title": "heartmula-studio", "desc": "pinokio launcher for heartmula-studio", "cat": "other", "stars": 5, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/heartmula-studio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/liveportrait", "title": "liveportrait", "desc": "", "cat": "avatar", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/liveportrait", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/rc-stableaudio", "title": "rc-stableaudio", "desc": "", "cat": "audio", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/rc-stableaudio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Allegro-txt2vid-install", "title": "Allegro-txt2vid-install", "desc": "Allegro-txt2vid. WARNING: takes a long time to generate a result, 1hr on a 3090. 12GB+ VRAM | 32GB+ RAM | 30GB Download. Check the README for details", "cat": "other", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Allegro-txt2vid-install", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/instantir", "title": "instantir", "desc": "", "cat": "other", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/instantir", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/LTX-Desktop-WanGP", "title": "LTX-Desktop-WanGP", "desc": "[NVIDIA only] [Currently Windows only]  LTX-Desktop powered By WanGP itself powered among other things by LTX-2 Engine", "cat": "video", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/LTX-Desktop-WanGP", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/openclaw.rabbit.pinokio", "title": "openclaw.rabbit.pinokio", "desc": "connect your Rabbit R1 device to openclaw (formerly ClawdBot) with 1 click.", "cat": "other", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/openclaw.rabbit.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/vibe-kanban.pinokio", "title": "vibe-kanban.pinokio", "desc": "", "cat": "other", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/vibe-kanban.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/svd.pinokio", "title": "svd.pinokio", "desc": "", "cat": "other", "stars": 4, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/svd.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ditto", "title": "ditto", "desc": "", "cat": "other", "stars": 3, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ditto", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/muscriptor.pinokio", "title": "muscriptor.pinokio", "desc": "", "cat": "other", "stars": 3, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/muscriptor.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/odysseus.pinokio", "title": "odysseus.pinokio", "desc": "", "cat": "other", "stars": 3, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/odysseus.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/worldmirror.pinokio", "title": "worldmirror.pinokio", "desc": "", "cat": "other", "stars": 3, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/worldmirror.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/hidream-o1", "title": "hidream-o1", "desc": "", "cat": "other", "stars": 3, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/hidream-o1", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/pcm", "title": "pcm", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/pcm", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/flashdiffusion", "title": "flashdiffusion", "desc": "", "cat": "image", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/flashdiffusion", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/florence2", "title": "florence2", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/florence2", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/artist", "title": "artist", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/artist", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/cogvideo", "title": "cogvideo", "desc": "", "cat": "video", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/cogvideo", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/diamond", "title": "diamond", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/diamond", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/mcp", "title": "mcp", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/mcp", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/cube", "title": "cube", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/cube", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ACE-Step", "title": "ACE-Step", "desc": "A Step Towards Music Generation Foundation Model", "cat": "audio", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ACE-Step", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/SongGeneration-Studio-MLX", "title": "SongGeneration-Studio-MLX", "desc": "Tencent SongGeneration Studio MLX", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/SongGeneration-Studio-MLX", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/lcm.pinokio", "title": "lcm.pinokio", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/lcm.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/automatic1111-dev.pinokio", "title": "automatic1111-dev.pinokio", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/automatic1111-dev.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/DramaBox-TTS-Pinokio", "title": "DramaBox-TTS-Pinokio", "desc": "", "cat": "audio", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/DramaBox-TTS-Pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/stable-audio-3-small.pinokio", "title": "stable-audio-3-small.pinokio", "desc": "", "cat": "audio", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/stable-audio-3-small.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/next-ai-draw-io-launcher", "title": "next-ai-draw-io-launcher", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/next-ai-draw-io-launcher", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/anigen.pinokio", "title": "anigen.pinokio", "desc": "", "cat": "other", "stars": 2, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/anigen.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/mlx", "title": "mlx", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/mlx", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/audiocraft_plus", "title": "audiocraft_plus", "desc": "", "cat": "audio", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/audiocraft_plus", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/stable-fast-3d", "title": "stable-fast-3d", "desc": "", "cat": "3d", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/stable-fast-3d", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/omniparser", "title": "omniparser", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/omniparser", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/AllTalk-TTS", "title": "AllTalk-TTS", "desc": "", "cat": "audio", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/AllTalk-TTS", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/RuinedFooocus", "title": "RuinedFooocus", "desc": "(NVIDIA ONLY) Forget everything you thought you knew about AI art generation - RuinedFooocus is here to completely reinvent the game! This groundbreaking image ", "cat": "image", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/RuinedFooocus", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/AudioX", "title": "AudioX", "desc": "AudioX: Diffusion Transformer for Anything-to-Audio Generation", "cat": "audio", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/AudioX", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/z-image-turbo", "title": "z-image-turbo", "desc": "", "cat": "image", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/z-image-turbo", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ovis", "title": "ovis", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ovis", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/mlx-video-ui", "title": "mlx-video-ui", "desc": "Pinokio launcher scripts for MLX Video UI", "cat": "video", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/mlx-video-ui", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/kanban.pinokio", "title": "kanban.pinokio", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/kanban.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ideogrammar.pinokio", "title": "ideogrammar.pinokio", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ideogrammar.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/lingbot-map.pinokio", "title": "lingbot-map.pinokio", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/lingbot-map.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/openclaude", "title": "openclaude", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/openclaude", "file": "pinokio.js", "branch": "main"}}]}, "_mkt_apps_3": {"shelf": [{"id": "cocktailpeanut/FreeMoCap.pinokio", "title": "FreeMoCap.pinokio", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/FreeMoCap.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/openclaw.pinokio", "title": "openclaw.pinokio", "desc": "", "cat": "other", "stars": 1, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/openclaw.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/forge", "title": "forge", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/forge", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/applio-old", "title": "applio-old", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/applio-old", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/dough", "title": "dough", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/dough", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/accdiffusion", "title": "accdiffusion", "desc": "", "cat": "image", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/accdiffusion", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/florence-sam", "title": "florence-sam", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/florence-sam", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/sd35", "title": "sd35", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/sd35", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/mochi", "title": "mochi", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/mochi", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/oasis", "title": "oasis", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/oasis", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/hertz", "title": "hertz", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/hertz", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/errortest", "title": "errortest", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/errortest", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/ominicontrol", "title": "ominicontrol", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/ominicontrol", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/controlyourself", "title": "controlyourself", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/controlyourself", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/text2midi", "title": "text2midi", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/text2midi", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Hunyuan3D-2-mini", "title": "Hunyuan3D-2-mini", "desc": "", "cat": "3d", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Hunyuan3D-2-mini", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/Ilaria-RVC", "title": "Ilaria-RVC", "desc": "Easily convert audio in Speech to Speech with built-in Text to Speech with RVC.", "cat": "audio", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/Ilaria-RVC", "file": "pinokio.js", "branch": "main"}}, {"id": "pinokiofactory/janus", "title": "janus", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/pinokiofactory/janus", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/huggingmirror", "title": "huggingmirror", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/huggingmirror", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/geolibre.pinokio", "title": "geolibre.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/geolibre.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/uncensored-local-studio.pinokio", "title": "uncensored-local-studio.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/uncensored-local-studio.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/theDAW-Pinokio", "title": "theDAW-Pinokio", "desc": "Pinokio one-click launcher for theDAW, the all-in-one AI music studio by GANTASMO", "cat": "audio", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/theDAW-Pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/underfit.pinokio", "title": "underfit.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/underfit.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/omlx.pinokio", "title": "omlx.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/omlx.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/comfyfs", "title": "comfyfs", "desc": "", "cat": "image", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/comfyfs", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/image-extender.pinokio", "title": "image-extender.pinokio", "desc": "", "cat": "image", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/image-extender.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/mmm.pinokio", "title": "mmm.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/mmm.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/html-anything.pinokio", "title": "html-anything.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/html-anything.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/openreel", "title": "openreel", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/openreel", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/kimodo.pinokio", "title": "kimodo.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/kimodo.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/multiline_args_test", "title": "multiline_args_test", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/multiline_args_test", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/worldmonitor.pinokio", "title": "worldmonitor.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/worldmonitor.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/euphony.pinokio", "title": "euphony.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/euphony.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/hf-symlink-repro", "title": "hf-symlink-repro", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/hf-symlink-repro", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/ovie-webui", "title": "ovie-webui", "desc": "", "cat": "llm", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/ovie-webui", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/cline-kanban.pinokio", "title": "cline-kanban.pinokio", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/cline-kanban.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/comfy.pinokio", "title": "comfy.pinokio", "desc": "minimal comfyui 1-click launcher", "cat": "image", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/comfy.pinokio", "file": "pinokio.js", "branch": "main"}}, {"id": "cocktailpeanut/package-security-test", "title": "package-security-test", "desc": "", "cat": "other", "stars": 0, "run": {"type": "recipe", "repo": "https://github.com/cocktailpeanut/package-security-test", "file": "pinokio.js", "branch": "main"}}]}}
+{
+ "_mkt_apps": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "cocktailpeanut/fluxgym",
+    "title": "fluxgym",
+    "desc": "Dead simple FLUX LoRA training UI with LOW VRAM support",
+    "cat": "image",
+    "stars": 3234,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/fluxgym",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/cogstudio",
+    "title": "cogstudio",
+    "desc": "",
+    "cat": "other",
+    "stars": 391,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/cogstudio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/RMBG-2-Studio",
+    "title": "RMBG-2-Studio",
+    "desc": "Enhanced background remove and replace app built around BRIA-RMBG-2.0.  Low VRAM/RAM | 6GB Install",
+    "cat": "other",
+    "stars": 281,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/RMBG-2-Studio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/mirror",
+    "title": "mirror",
+    "desc": "",
+    "cat": "other",
+    "stars": 274,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/mirror",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/flux-webui",
+    "title": "flux-webui",
+    "desc": "",
+    "cat": "image",
+    "stars": 189,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/flux-webui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/hermes-mod",
+    "title": "hermes-mod",
+    "desc": "",
+    "cat": "other",
+    "stars": 172,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/hermes-mod",
+     "file": "pinokio.js",
+     "branch": "master"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/image-to-prompt",
+    "title": "image-to-prompt",
+    "desc": "",
+    "cat": "image",
+    "stars": 127,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/image-to-prompt",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/deus",
+    "title": "deus",
+    "desc": "",
+    "cat": "other",
+    "stars": 126,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/deus",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/e2-f5-tts",
+    "title": "e2-f5-tts",
+    "desc": "",
+    "cat": "audio",
+    "stars": 80,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/e2-f5-tts",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/audiogradio.pinokio",
+    "title": "audiogradio.pinokio",
+    "desc": "One-click launcher for Audiocraft MusicGen + AudioGen Gradio Web UI",
+    "cat": "audio",
+    "stars": 73,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/audiogradio.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/bolt",
+    "title": "bolt",
+    "desc": "",
+    "cat": "other",
+    "stars": 58,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/bolt",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/clarity-refiners-ui",
+    "title": "clarity-refiners-ui",
+    "desc": "Creative Image Enhancer/Upscaler. Powered By Refiners.  8GB VRAM | 10GB Install",
+    "cat": "image",
+    "stars": 52,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/clarity-refiners-ui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/hallucinator",
+    "title": "hallucinator",
+    "desc": "",
+    "cat": "other",
+    "stars": 52,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/hallucinator",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/deeperhermes",
+    "title": "deeperhermes",
+    "desc": "deep hermes, but decides how to respond based on its OWN decision, no need for system prompts.",
+    "cat": "other",
+    "stars": 45,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/deeperhermes",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/comfyui.pinokio",
+    "title": "comfyui.pinokio",
+    "desc": "A 1-click launcher for https://github.com/comfyanonymous/ComfyUI",
+    "cat": "image",
+    "stars": 45,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/comfyui.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/wan",
+    "title": "wan",
+    "desc": "",
+    "cat": "video",
+    "stars": 39,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/wan",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ai4animationpy.pinokio",
+    "title": "ai4animationpy.pinokio",
+    "desc": "",
+    "cat": "video",
+    "stars": 37,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ai4animationpy.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/Nari-Dia-TTS",
+    "title": "Nari-Dia-TTS",
+    "desc": "Nari Dia is a powerful text-to-speech (TTS) application based on the Dia-1.6B model from Nari Labs. This application allows you to convert text into natural-sou",
+    "cat": "audio",
+    "stars": 34,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Nari-Dia-TTS",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/facefusion.pinokio",
+    "title": "facefusion.pinokio",
+    "desc": "",
+    "cat": "avatar",
+    "stars": 31,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/facefusion.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/comfy",
+    "title": "comfy",
+    "desc": "",
+    "cat": "image",
+    "stars": 29,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/comfy",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Ultimate-TTS-Studio",
+    "title": "Ultimate-TTS-Studio",
+    "desc": "🟢 NVIDIA ONLY – All-in-One TTS App with Kokoro, KittenTTS, Higgs audio, Chatterbox, Fish-Speech, F5 & index-tts & indextts2, Supports Conversation Mode & eBook-",
+    "cat": "audio",
+    "stars": 28,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Ultimate-TTS-Studio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/openaudio",
+    "title": "openaudio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 27,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/openaudio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/axios-inspector",
+    "title": "axios-inspector",
+    "desc": "",
+    "cat": "other",
+    "stars": 27,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/axios-inspector",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/sd-webui.pinokio",
+    "title": "sd-webui.pinokio",
+    "desc": "1-click launcher for AUTOMATIC1111/stable-diffusion-webui with full SDXL 1.0 support.",
+    "cat": "image",
+    "stars": 24,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/sd-webui.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/audiocraft_plus.pinokio",
+    "title": "audiocraft_plus.pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 24,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/audiocraft_plus.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   }
+  ],
+  "shards": 8
+ },
+ "_mkt_apps_2": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "pinokiofactory/MFLUX-WEBUI",
+    "title": "MFLUX-WEBUI",
+    "desc": "A powerful and user-friendly web interface for MFLUX, powered by Gradio and MLX. https://github.com/CharafChnioune/MFLUX-WEBUI",
+    "cat": "image",
+    "stars": 23,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/MFLUX-WEBUI",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/Hunyuan3d-2-lowvram",
+    "title": "Hunyuan3d-2-lowvram",
+    "desc": "",
+    "cat": "3d",
+    "stars": 23,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Hunyuan3d-2-lowvram",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/cropper",
+    "title": "cropper",
+    "desc": "crop anything",
+    "cat": "other",
+    "stars": 23,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/cropper",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/Frame-Pack",
+    "title": "Frame-Pack",
+    "desc": "(NVIDIA) FramePack is a next-frame (next-frame-section) prediction neural network structure that generates videos progressively.",
+    "cat": "video",
+    "stars": 22,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Frame-Pack",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/stabledaw.pinokio",
+    "title": "stabledaw.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 22,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/stabledaw.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ace-step-ui.pinokio",
+    "title": "ace-step-ui.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 22,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ace-step-ui.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/diffusers-image-fill",
+    "title": "diffusers-image-fill",
+    "desc": "",
+    "cat": "image",
+    "stars": 21,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/diffusers-image-fill",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Orpheus-TTS-FastAPI",
+    "title": "Orpheus-TTS-FastAPI",
+    "desc": "",
+    "cat": "audio",
+    "stars": 21,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Orpheus-TTS-FastAPI",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/openui",
+    "title": "openui",
+    "desc": "",
+    "cat": "other",
+    "stars": 20,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/openui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ideoprompt",
+    "title": "ideoprompt",
+    "desc": "",
+    "cat": "other",
+    "stars": 20,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ideoprompt",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/hunyuanvideo",
+    "title": "hunyuanvideo",
+    "desc": "",
+    "cat": "video",
+    "stars": 19,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/hunyuanvideo",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/diffrhythm",
+    "title": "diffrhythm",
+    "desc": "",
+    "cat": "other",
+    "stars": 19,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/diffrhythm",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/open-webui",
+    "title": "open-webui",
+    "desc": "",
+    "cat": "llm",
+    "stars": 18,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/open-webui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/facepoke",
+    "title": "facepoke",
+    "desc": "",
+    "cat": "avatar",
+    "stars": 18,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/facepoke",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/TRELLIS",
+    "title": "TRELLIS",
+    "desc": "A pinokio script for https://github.com/microsoft/TRELLIS",
+    "cat": "other",
+    "stars": 18,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/TRELLIS",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/yue",
+    "title": "yue",
+    "desc": "",
+    "cat": "other",
+    "stars": 18,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/yue",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/xtts.pinokio",
+    "title": "xtts.pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 18,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/xtts.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/ai-video-composer",
+    "title": "ai-video-composer",
+    "desc": "",
+    "cat": "video",
+    "stars": 17,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ai-video-composer",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/tutorial.pinokio",
+    "title": "tutorial.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 15,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/tutorial.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/hallo",
+    "title": "hallo",
+    "desc": "",
+    "cat": "other",
+    "stars": 13,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/hallo",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/mlx-video-transcription",
+    "title": "mlx-video-transcription",
+    "desc": "",
+    "cat": "video",
+    "stars": 13,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/mlx-video-transcription",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/rvc.pinokio",
+    "title": "rvc.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 13,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/rvc.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/whisper-webui",
+    "title": "whisper-webui",
+    "desc": "Pinokio Installer for Whisper-Webui",
+    "cat": "llm",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/whisper-webui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/MMAudio",
+    "title": "MMAudio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/MMAudio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/StyleTTS2_Studio",
+    "title": "StyleTTS2_Studio",
+    "desc": "Build your own StyleTTS 2 Voice!",
+    "cat": "audio",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/StyleTTS2_Studio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_3": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "pinokiofactory/Hunyuan3D-2",
+    "title": "Hunyuan3D-2",
+    "desc": "",
+    "cat": "3d",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Hunyuan3D-2",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/macOS-use",
+    "title": "macOS-use",
+    "desc": "We Make Mac apps accessible for AI agents",
+    "cat": "other",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/macOS-use",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/clawdbot.pinokio",
+    "title": "clawdbot.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 12,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/clawdbot.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/augmentoolkit",
+    "title": "augmentoolkit",
+    "desc": "",
+    "cat": "other",
+    "stars": 11,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/augmentoolkit",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/stableaudio",
+    "title": "stableaudio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 11,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/stableaudio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/stable-diffusion-webui-forge",
+    "title": "stable-diffusion-webui-forge",
+    "desc": "",
+    "cat": "image",
+    "stars": 11,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/stable-diffusion-webui-forge",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/browser-use",
+    "title": "browser-use",
+    "desc": "",
+    "cat": "other",
+    "stars": 11,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/browser-use",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/dia",
+    "title": "dia",
+    "desc": "",
+    "cat": "other",
+    "stars": 11,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/dia",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/invoke",
+    "title": "invoke",
+    "desc": "",
+    "cat": "other",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/invoke",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/zonos",
+    "title": "zonos",
+    "desc": "",
+    "cat": "other",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/zonos",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/MatAnyone",
+    "title": "MatAnyone",
+    "desc": "[NVIDIA ONLY] \"Stable Video Matting with Consistent Memory Propagation\"   9GB install, 9GB+ VRAM",
+    "cat": "video",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/MatAnyone",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/triposplat.pinokio",
+    "title": "triposplat.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/triposplat.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ds4.pinokio",
+    "title": "ds4.pinokio",
+    "desc": "a minimal frontend for ds4.c",
+    "cat": "other",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ds4.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/automatic1111.pinokio",
+    "title": "automatic1111.pinokio",
+    "desc": "(deprecated) A one-click installer for Automatic1111/stable-diffusion-webui ",
+    "cat": "image",
+    "stars": 10,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/automatic1111.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/llamafactory",
+    "title": "llamafactory",
+    "desc": "",
+    "cat": "llm",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/llamafactory",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/autogpt",
+    "title": "autogpt",
+    "desc": "",
+    "cat": "llm",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/autogpt",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/echomimic2",
+    "title": "echomimic2",
+    "desc": "",
+    "cat": "other",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/echomimic2",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/vibevoice-realtime",
+    "title": "vibevoice-realtime",
+    "desc": "",
+    "cat": "audio",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/vibevoice-realtime",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/hermes-agent.pinokio",
+    "title": "hermes-agent.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/hermes-agent.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/animatediff.pinokio",
+    "title": "animatediff.pinokio",
+    "desc": "",
+    "cat": "video",
+    "stars": 9,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/animatediff.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/MagicQuill",
+    "title": "MagicQuill",
+    "desc": "An intelligent, interactive Image Editing System. Easily erase and add objects on a user-friendly interface.",
+    "cat": "image",
+    "stars": 8,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/MagicQuill",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Kokoro-TTS",
+    "title": "Kokoro-TTS",
+    "desc": "Welcome to Kokoro, a high-quality text-to-speech synthesis program powered by deep learning. This tool converts any text into high-fidelity speech in just a few",
+    "cat": "audio",
+    "stars": 8,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Kokoro-TTS",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/AudioLDM2.pinokio",
+    "title": "AudioLDM2.pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 8,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/AudioLDM2.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/control-lora.comfyui.pinokio",
+    "title": "control-lora.comfyui.pinokio",
+    "desc": "1 click control lora models and workflows downloader for comfyui",
+    "cat": "image",
+    "stars": 8,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/control-lora.comfyui.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/photomaker2",
+    "title": "photomaker2",
+    "desc": "",
+    "cat": "image",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/photomaker2",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_4": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "pinokiofactory/aura-sr-upscaler",
+    "title": "aura-sr-upscaler",
+    "desc": "",
+    "cat": "image",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/aura-sr-upscaler",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/applio",
+    "title": "applio",
+    "desc": "Pinokio Installer for Applio",
+    "cat": "other",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/applio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/omnigen",
+    "title": "omnigen",
+    "desc": "",
+    "cat": "other",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/omnigen",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/ai-toolkit",
+    "title": "ai-toolkit",
+    "desc": "A Pinokio installer for Ostris' ai-toolkit, The ultimate training toolkit for finetuning diffusion models. Main branch is [NVIDIA ONLY]",
+    "cat": "image",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ai-toolkit",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/overworld.pinokio",
+    "title": "overworld.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/overworld.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/discord-id-bypass-tool.pinokio",
+    "title": "discord-id-bypass-tool.pinokio",
+    "desc": "1-click launcher for https://github.com/promptpirate-x/discord-id-bypass-tool",
+    "cat": "other",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/discord-id-bypass-tool.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/voicebox.pinokio",
+    "title": "voicebox.pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 7,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/voicebox.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/moshi",
+    "title": "moshi",
+    "desc": "",
+    "cat": "other",
+    "stars": 6,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/moshi",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/texturizer",
+    "title": "texturizer",
+    "desc": "",
+    "cat": "other",
+    "stars": 6,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/texturizer",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/searxng.pinokio",
+    "title": "searxng.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 6,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/searxng.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ms-image2video.pinokio",
+    "title": "ms-image2video.pinokio",
+    "desc": "",
+    "cat": "video",
+    "stars": 6,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ms-image2video.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ace-step.pinokio",
+    "title": "ace-step.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 6,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ace-step.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/sillytavern",
+    "title": "sillytavern",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/sillytavern",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/video-background-removal",
+    "title": "video-background-removal",
+    "desc": "",
+    "cat": "video",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/video-background-removal",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/pyramidflow",
+    "title": "pyramidflow",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/pyramidflow",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/uno",
+    "title": "uno",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/uno",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/acejam.pinokio",
+    "title": "acejam.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/acejam.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/bark.pinokio",
+    "title": "bark.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/bark.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/tokenflow.pinokio",
+    "title": "tokenflow.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/tokenflow.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/directorsconsole.pinokio",
+    "title": "directorsconsole.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/directorsconsole.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/unsloth",
+    "title": "unsloth",
+    "desc": "",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/unsloth",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/heartmula-studio",
+    "title": "heartmula-studio",
+    "desc": "pinokio launcher for heartmula-studio",
+    "cat": "other",
+    "stars": 5,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/heartmula-studio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/liveportrait",
+    "title": "liveportrait",
+    "desc": "",
+    "cat": "avatar",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/liveportrait",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/rc-stableaudio",
+    "title": "rc-stableaudio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/rc-stableaudio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Allegro-txt2vid-install",
+    "title": "Allegro-txt2vid-install",
+    "desc": "Allegro-txt2vid. WARNING: takes a long time to generate a result, 1hr on a 3090. 12GB+ VRAM | 32GB+ RAM | 30GB Download. Check the README for details",
+    "cat": "other",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Allegro-txt2vid-install",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_5": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "pinokiofactory/instantir",
+    "title": "instantir",
+    "desc": "",
+    "cat": "other",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/instantir",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/LTX-Desktop-WanGP",
+    "title": "LTX-Desktop-WanGP",
+    "desc": "[NVIDIA only] [Currently Windows only]  LTX-Desktop powered By WanGP itself powered among other things by LTX-2 Engine",
+    "cat": "video",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/LTX-Desktop-WanGP",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/openclaw.rabbit.pinokio",
+    "title": "openclaw.rabbit.pinokio",
+    "desc": "connect your Rabbit R1 device to openclaw (formerly ClawdBot) with 1 click.",
+    "cat": "other",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/openclaw.rabbit.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/vibe-kanban.pinokio",
+    "title": "vibe-kanban.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/vibe-kanban.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/svd.pinokio",
+    "title": "svd.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 4,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/svd.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/ditto",
+    "title": "ditto",
+    "desc": "",
+    "cat": "other",
+    "stars": 3,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ditto",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/muscriptor.pinokio",
+    "title": "muscriptor.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 3,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/muscriptor.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/odysseus.pinokio",
+    "title": "odysseus.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 3,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/odysseus.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/worldmirror.pinokio",
+    "title": "worldmirror.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 3,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/worldmirror.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/hidream-o1",
+    "title": "hidream-o1",
+    "desc": "",
+    "cat": "other",
+    "stars": 3,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/hidream-o1",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/pcm",
+    "title": "pcm",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/pcm",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/flashdiffusion",
+    "title": "flashdiffusion",
+    "desc": "",
+    "cat": "image",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/flashdiffusion",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/florence2",
+    "title": "florence2",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/florence2",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/artist",
+    "title": "artist",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/artist",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/cogvideo",
+    "title": "cogvideo",
+    "desc": "",
+    "cat": "video",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/cogvideo",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/diamond",
+    "title": "diamond",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/diamond",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/mcp",
+    "title": "mcp",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/mcp",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/cube",
+    "title": "cube",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/cube",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/ACE-Step",
+    "title": "ACE-Step",
+    "desc": "A Step Towards Music Generation Foundation Model",
+    "cat": "audio",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ACE-Step",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/SongGeneration-Studio-MLX",
+    "title": "SongGeneration-Studio-MLX",
+    "desc": "Tencent SongGeneration Studio MLX",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/SongGeneration-Studio-MLX",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/lcm.pinokio",
+    "title": "lcm.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/lcm.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/automatic1111-dev.pinokio",
+    "title": "automatic1111-dev.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/automatic1111-dev.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/DramaBox-TTS-Pinokio",
+    "title": "DramaBox-TTS-Pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/DramaBox-TTS-Pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/stable-audio-3-small.pinokio",
+    "title": "stable-audio-3-small.pinokio",
+    "desc": "",
+    "cat": "audio",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/stable-audio-3-small.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/next-ai-draw-io-launcher",
+    "title": "next-ai-draw-io-launcher",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/next-ai-draw-io-launcher",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_6": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "cocktailpeanut/anigen.pinokio",
+    "title": "anigen.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 2,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/anigen.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/mlx",
+    "title": "mlx",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/mlx",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/audiocraft_plus",
+    "title": "audiocraft_plus",
+    "desc": "",
+    "cat": "audio",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/audiocraft_plus",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/stable-fast-3d",
+    "title": "stable-fast-3d",
+    "desc": "",
+    "cat": "3d",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/stable-fast-3d",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/omniparser",
+    "title": "omniparser",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/omniparser",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/AllTalk-TTS",
+    "title": "AllTalk-TTS",
+    "desc": "",
+    "cat": "audio",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/AllTalk-TTS",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/RuinedFooocus",
+    "title": "RuinedFooocus",
+    "desc": "(NVIDIA ONLY) Forget everything you thought you knew about AI art generation - RuinedFooocus is here to completely reinvent the game! This groundbreaking image ",
+    "cat": "image",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/RuinedFooocus",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/AudioX",
+    "title": "AudioX",
+    "desc": "AudioX: Diffusion Transformer for Anything-to-Audio Generation",
+    "cat": "audio",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/AudioX",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/z-image-turbo",
+    "title": "z-image-turbo",
+    "desc": "",
+    "cat": "image",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/z-image-turbo",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/ovis",
+    "title": "ovis",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ovis",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/mlx-video-ui",
+    "title": "mlx-video-ui",
+    "desc": "Pinokio launcher scripts for MLX Video UI",
+    "cat": "video",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/mlx-video-ui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/kanban.pinokio",
+    "title": "kanban.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/kanban.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ideogrammar.pinokio",
+    "title": "ideogrammar.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ideogrammar.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/lingbot-map.pinokio",
+    "title": "lingbot-map.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/lingbot-map.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/openclaude",
+    "title": "openclaude",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/openclaude",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/FreeMoCap.pinokio",
+    "title": "FreeMoCap.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/FreeMoCap.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/openclaw.pinokio",
+    "title": "openclaw.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 1,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/openclaw.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/forge",
+    "title": "forge",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/forge",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/applio-old",
+    "title": "applio-old",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/applio-old",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/dough",
+    "title": "dough",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/dough",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "pinokiofactory/accdiffusion",
+    "title": "accdiffusion",
+    "desc": "",
+    "cat": "image",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/accdiffusion",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/florence-sam",
+    "title": "florence-sam",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/florence-sam",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/sd35",
+    "title": "sd35",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/sd35",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/mochi",
+    "title": "mochi",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/mochi",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/oasis",
+    "title": "oasis",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/oasis",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_7": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "pinokiofactory/hertz",
+    "title": "hertz",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/hertz",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/errortest",
+    "title": "errortest",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/errortest",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/ominicontrol",
+    "title": "ominicontrol",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/ominicontrol",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/controlyourself",
+    "title": "controlyourself",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/controlyourself",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "pinokiofactory/text2midi",
+    "title": "text2midi",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/text2midi",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Hunyuan3D-2-mini",
+    "title": "Hunyuan3D-2-mini",
+    "desc": "",
+    "cat": "3d",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Hunyuan3D-2-mini",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/Ilaria-RVC",
+    "title": "Ilaria-RVC",
+    "desc": "Easily convert audio in Speech to Speech with built-in Text to Speech with RVC.",
+    "cat": "audio",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/Ilaria-RVC",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "pinokiofactory/janus",
+    "title": "janus",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/pinokiofactory/janus",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/huggingmirror",
+    "title": "huggingmirror",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/huggingmirror",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/geolibre.pinokio",
+    "title": "geolibre.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/geolibre.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/uncensored-local-studio.pinokio",
+    "title": "uncensored-local-studio.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/uncensored-local-studio.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/theDAW-Pinokio",
+    "title": "theDAW-Pinokio",
+    "desc": "Pinokio one-click launcher for theDAW, the all-in-one AI music studio by GANTASMO",
+    "cat": "audio",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/theDAW-Pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/underfit.pinokio",
+    "title": "underfit.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/underfit.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/omlx.pinokio",
+    "title": "omlx.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/omlx.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/comfyfs",
+    "title": "comfyfs",
+    "desc": "",
+    "cat": "image",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/comfyfs",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/image-extender.pinokio",
+    "title": "image-extender.pinokio",
+    "desc": "",
+    "cat": "image",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/image-extender.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/mmm.pinokio",
+    "title": "mmm.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/mmm.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/html-anything.pinokio",
+    "title": "html-anything.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/html-anything.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/openreel",
+    "title": "openreel",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/openreel",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/kimodo.pinokio",
+    "title": "kimodo.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/kimodo.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "linux",
+      "win32"
+     ],
+     "gpu": "nvidia",
+     "note": "нужна NVIDIA/CUDA — на Mac не встанет"
+    }
+   },
+   {
+    "id": "cocktailpeanut/multiline_args_test",
+    "title": "multiline_args_test",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/multiline_args_test",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/worldmonitor.pinokio",
+    "title": "worldmonitor.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/worldmonitor.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/euphony.pinokio",
+    "title": "euphony.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/euphony.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/hf-symlink-repro",
+    "title": "hf-symlink-repro",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/hf-symlink-repro",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/ovie-webui",
+    "title": "ovie-webui",
+    "desc": "",
+    "cat": "llm",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/ovie-webui",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   }
+  ]
+ },
+ "_mkt_apps_8": {
+  "v": 1,
+  "shelf": [
+   {
+    "id": "cocktailpeanut/cline-kanban.pinokio",
+    "title": "cline-kanban.pinokio",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/cline-kanban.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   },
+   {
+    "id": "cocktailpeanut/comfy.pinokio",
+    "title": "comfy.pinokio",
+    "desc": "minimal comfyui 1-click launcher",
+    "cat": "image",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/comfy.pinokio",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "any",
+     "note": "кроссплатформенно (есть Mac/Apple-ветка)"
+    }
+   },
+   {
+    "id": "cocktailpeanut/package-security-test",
+    "title": "package-security-test",
+    "desc": "",
+    "cat": "other",
+    "stars": 0,
+    "run": {
+     "type": "recipe",
+     "repo": "https://github.com/cocktailpeanut/package-security-test",
+     "file": "pinokio.js",
+     "branch": "main"
+    },
+    "compat": {
+     "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+     ],
+     "gpu": "cpu",
+     "note": "лёгкое, без GPU-требований"
+    }
+   }
+  ]
+ }
+}
