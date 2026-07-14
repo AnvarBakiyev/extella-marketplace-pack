@@ -53,13 +53,15 @@ CB=$("$PY" -c "import certifi;print(certifi.where())" 2>/dev/null || true)
 [ -n "$CB" ] && export SSL_CERT_FILE="$CB"
 echo "  ✓ SSL-сертификаты (certifi)"
 
-# Движок инструментов Homebrew (для CLI: сжатие PDF, OCR, конвертеры). Тяжёлый + просит пароль — по согласию.
+# Движки инструментов: Homebrew (CLI: PDF/OCR/конвертеры) + Node (MCP-серверы). Тяжёлое + просит пароль — по согласию.
 if [ "$(uname)" = "Darwin" ] && ! command -v brew >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
-  printf "  Поставить движок инструментов Homebrew (нужен для CLI: PDF/OCR/конвертеры)? Спросит пароль один раз [y/N]: "
+  printf "  Поставить движки инструментов (Homebrew — для CLI; Node — для MCP-серверов)? Спросит пароль один раз [y/N]: "
   read -r _hb </dev/tty || _hb=""
   case "$_hb" in y|Y|д|Д|yes|да)
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty >/dev/null 2>&1 && echo "  ✓ Homebrew" || echo "  ~ Homebrew не поставился (CLI-инструменты можно поставить позже)";;
-    *) echo "  пропущено (CLI-инструменты потребуют Homebrew позже)";;
+    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty >/dev/null 2>&1 && echo "  ✓ Homebrew" || echo "  ~ Homebrew не поставился (CLI/MCP можно поставить позже)"
+    _BREW=$(command -v brew || echo /opt/homebrew/bin/brew)
+    [ -x "$_BREW" ] && { command -v node >/dev/null 2>&1 || "$_BREW" install node >/dev/null 2>&1 && echo "  ✓ Node (для MCP)" || true; };;
+    *) echo "  пропущено (CLI/MCP потребуют Homebrew+Node позже)";;
   esac
 fi
 

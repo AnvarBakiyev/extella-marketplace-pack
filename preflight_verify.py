@@ -150,14 +150,37 @@ def verify_knowledge():
     for u in bad: print("    %s недоступен: %s" % (BAD, u))
     return (len(good), len(srcs), bad)
 
-# ---- MCP: в паке не бандлится (KV-харвест) — отметить, чтобы не создавать ложной гарантии ----
+# ---- MCP: каждый сервер = живой npm/pypi пакет (рантайм Node/Python — разовый brew, как CLI) ----
 def verify_mcp():
-    _title("MCP / API")
-    if glob.glob(os.path.join(HERE, "experts", "mcp_*.py")) or os.path.exists(os.path.join(HERE, "mcp_catalog.json")):
-        print("  (есть bundled MCP — добавить проверку пакетов)")
-        return (0, 0, [])
-    print("  ℹ️ MCP не в паке (KV-харвест). Для гарантии — бандлить mcp_catalog.json как модели.")
-    return (0, 0, [])
+    _title("MCP-серверы")
+    import urllib.parse
+    mc = os.path.join(HERE, "mcp_catalog.json")
+    if not os.path.exists(mc):
+        print("  ℹ️ MCP не в паке (KV-харвест). Для гарантии — бандлить mcp_catalog.json."); return (0, 0, [])
+    cat = json.load(open(mc, encoding="utf-8"))
+    items = []
+    for shard in cat.values():
+        items += (shard.get("shelf") or shard.get("items") or [])
+    def alive(it):
+        run = it.get("run") or {}; t = (run.get("type") or "").lower(); pkg = run.get("pkg", "")
+        try:
+            if t in ("npm", "npx") and pkg:
+                urllib.request.urlopen("https://registry.npmjs.org/" + urllib.parse.quote(pkg, safe="@/"), timeout=12).read(64); return (it.get("id"), "ok")
+            if t in ("pip", "pypi", "python") and pkg:
+                urllib.request.urlopen("https://pypi.org/pypi/%s/json" % pkg, timeout=12).read(64); return (it.get("id"), "ok")
+            return (it.get("id"), "other")
+        except Exception:
+            return (it.get("id"), "dead")
+    res = {}
+    with cf.ThreadPoolExecutor(max_workers=12) as ex:
+        for i, c in ex.map(alive, items): res[i] = c
+    dead = [i for i, v in res.items() if v == "dead"]
+    good = sum(1 for v in res.values() if v == "ok")
+    npm = sum(1 for it in items if (it.get("run") or {}).get("type", "").lower() in ("npm", "npx"))
+    print("  %s пакеты живы: %d / %d (npm %d → рантайм Node/разовый brew; pypi %d)" % (
+        OK if not dead else BAD, good, len(items), npm, len(items) - npm))
+    for i in dead: print("    %s мёртвый пакет: %s" % (BAD, i))
+    return (len(items) - len(dead), len(items), dead)
 
 def main():
     args = [a.lower() for a in sys.argv[1:]]
@@ -174,7 +197,7 @@ def main():
     if want("experts"):   g, t, _ = verify_experts();  summary.append(("Эксперты", g, t))
     if want("cli"):       g, t, _ = verify_cli();      summary.append(("CLI", g, t))
     if want("knowledge"): g, t, _ = verify_knowledge(); summary.append(("Знания", g, t))
-    if want("mcp"):       verify_mcp()
+    if want("mcp"):       g, t, _ = verify_mcp(); summary.append(("MCP", g, t))
     if want("services"):  g, t, _ = verify_services(tok, agent); summary.append(("Сервисы", g, t))
     print("\n== ИТОГ ==")
     allgreen = True

@@ -139,6 +139,20 @@ if os.path.exists(mc):
     except Exception as e:
         print("  ⚠️ _mkt_models:", str(e)[:60])
 
+# ---- _mkt_mcp (verified-каталог MCP-серверов: npm/pypi проверены; шардирован) ----
+mcp = os.path.join(HERE, "mcp_catalog.json")
+if os.path.exists(mcp):
+    try:
+        cat = json.load(open(mcp, encoding="utf-8"))
+        n = 0
+        for key, shard in cat.items():  # _mkt_mcp, _mkt_mcp_2, ...
+            api("/api/kv/set", {"key": key, "value": json.dumps(shard, ensure_ascii=False),
+                                "description": "verified MCP catalog", "global": True})
+            n += len(shard.get("shelf") or shard.get("items") or [])
+        print("== Каталог MCP ==\n  ✅ засеян verified-каталог: %d серверов" % n)
+    except Exception as e:
+        print("  ⚠️ _mkt_mcp:", str(e)[:60])
+
 # ---- 5. Автоматизации (готовые паки: Travel Agency, Контракты, Competitor Intelligence) ----
 AUTO = os.path.join(HERE, "automations")
 AGENT_ID = os.environ.get("EXTELLA_AGENT_ID") or cfg.get("agent_id") or "agent_extella_alibaba_default"

@@ -1,9 +1,9 @@
 {
-  "version": "1.1.8",
+  "version": "1.1.9",
   "built": "2026-07-13T08:39:42Z",
   "sha": "446c00a",
   "bytes": 4398544,
   "file": "toolbar.js",
   "marker": "Extella Plugins",
-  "note": "Verified-каталог моделей (197, пред-проверен) теперь в паке — клиент видит только рабочее"
+  "note": "Verified-каталог MCP (198 серверов, npm/pypi проверены) в паке + сидинг + проверка в гейте; Node в разовый Homebrew-шаг"
 }
