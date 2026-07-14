@@ -5,14 +5,33 @@ def wz_self_update(what="all"):
     RAW = "https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar/toolbar.js"
     TARBALL = "https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
     res = {"status": "success", "toolbar_updated": False, "seeded": False, "message": ""}
+    import shutil
     ctx = ssl.create_default_context()
     try:
         import certifi; ctx = ssl.create_default_context(cafile=certifi.where())
     except Exception: pass
 
-    def _dl(url, timeout=120):
-        req = urllib.request.Request(url, headers={"User-Agent": "extella-updater"})
-        return urllib.request.urlopen(req, timeout=timeout, context=ctx).read()
+    # Загрузка в файл: СНАЧАЛА curl (системные сертификаты — как у пользователя вручную, надёжно),
+    # фолбэк — python urllib. Возвращает (ok, err).
+    def _dl_to(url, dest, timeout=180):
+        curl = shutil.which("curl")
+        if curl:
+            try:
+                r = subprocess.run([curl, "-fsSL", url, "-o", dest], capture_output=True, text=True, timeout=timeout)
+                if r.returncode == 0 and os.path.exists(dest) and os.path.getsize(dest) > 0:
+                    return True, ""
+                cerr = (r.stderr or "").strip()[-80:]
+            except Exception as e:
+                cerr = str(e)[:80]
+        else:
+            cerr = "нет curl"
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "extella-updater"})
+            data = urllib.request.urlopen(req, timeout=timeout, context=ctx).read()
+            open(dest, "wb").write(data)
+            return (os.path.getsize(dest) > 0), ""
+        except Exception as e:
+            return False, "curl:%s / py:%s" % (cerr, str(e)[:60])
 
     # 1. свежий toolbar.js → папка Electron (по ОС)
     if what in ("all", "toolbar"):
@@ -24,18 +43,25 @@ def wz_self_update(what="all"):
         ]
         target = next((p for p in cands if p and os.path.isdir(os.path.dirname(p))), None)
         if target:
-            try:
-                data = _dl(RAW)
-                if b"Extella Plugins" in data or b"renderApps" in data:   # sanity: это наш toolbar
-                    if os.path.exists(target):
-                        try: open(target + ".bak", "wb").write(open(target, "rb").read())
+            tmpf = target + ".new"
+            ok, err = _dl_to(RAW, tmpf)
+            if ok:
+                try:
+                    data = open(tmpf, "rb").read()
+                    if b"Extella Plugins" in data or b"renderApps" in data:   # sanity: это наш toolbar
+                        if os.path.exists(target):
+                            try: shutil.copy(target, target + ".bak")
+                            except Exception: pass
+                        os.replace(tmpf, target)
+                        res["toolbar_updated"] = True
+                    else:
+                        res["message"] += "toolbar.js не прошёл проверку; "
+                        try: os.remove(tmpf)
                         except Exception: pass
-                    open(target, "wb").write(data)
-                    res["toolbar_updated"] = True
-                else:
-                    res["message"] += "toolbar.js не прошёл проверку; "
-            except Exception as e:
-                res["message"] += "toolbar: " + str(e)[:60] + "; "
+                except Exception as e:
+                    res["message"] += "toolbar-запись: " + str(e)[:60] + "; "
+            else:
+                res["message"] += "toolbar-загрузка: " + err + "; "
         else:
             res["message"] += "папка Extella не найдена; "
 
@@ -44,7 +70,10 @@ def wz_self_update(what="all"):
         try:
             tmp = tempfile.mkdtemp(prefix="extella_upd_")
             tgz = os.path.join(tmp, "pack.tgz")
-            open(tgz, "wb").write(_dl(TARBALL, timeout=180))
+            ok, err = _dl_to(TARBALL, tgz, timeout=180)
+            if not ok:
+                res["message"] += "пак-загрузка: " + err + "; "
+                raise RuntimeError("tarball")
             with tarfile.open(tgz) as tf: tf.extractall(tmp)
             pack = next((os.path.join(tmp, d) for d in os.listdir(tmp)
                          if d.startswith("extella-marketplace-pack") and os.path.isdir(os.path.join(tmp, d))), None)
