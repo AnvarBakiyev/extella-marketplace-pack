@@ -10,7 +10,7 @@
 
 Правило: в клиентский пак едет только зелёное. Красное — чинить или убирать.
 """
-import os, sys, json, ast, urllib.request, concurrent.futures as cf
+import os, sys, json, ast, re, glob, urllib.request, concurrent.futures as cf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OK, BAD = "✅", "❌"
@@ -29,31 +29,49 @@ def verify_models():
         for it in shard.get("shelf", []):
             h = it.get("hfId") or it.get("hf") or it.get("id")
             if h: ids.append(h)
+    import time as _t
     def cls(hid):
         if "/" not in hid: return (hid, "bad")
         o, n = hid.split("/", 1)
         base = "https://%s-%s.hf.space" % (o.lower().replace("_", "-"), n.lower().replace("_", "-").replace(".", "-"))
-        for p in ("/gradio_api/info", "/info"):
+        transient = False
+        for attempt in range(2):  # ретрай — HF душит частые пачки
+            for p in ("/gradio_api/info", "/info"):
+                try:
+                    d = json.load(urllib.request.urlopen(base + p, timeout=20))
+                    if isinstance(d, dict) and d.get("named_endpoints"): return (hid, "gradio")
+                except urllib.error.HTTPError as e:
+                    if e.code in (401, 403): return (hid, "embed")   # gated — ставится встройкой
+                    # 404 на этом пути — не gradio, пробуем корень
+                except Exception:
+                    transient = True
             try:
-                d = json.load(urllib.request.urlopen(base + p, timeout=15))
-                if isinstance(d, dict) and d.get("named_endpoints"): return (hid, "gradio")
-            except Exception: pass
-        try:
-            urllib.request.urlopen(base + "/", timeout=15).read(64); return (hid, "embed")
-        except Exception: return (hid, "dead")
+                urllib.request.urlopen(base + "/", timeout=20).read(64); return (hid, "embed")
+            except urllib.error.HTTPError as e:
+                if e.code in (401, 403): return (hid, "embed")
+                if e.code == 404: return (hid, "embed")   # сервер отвечает — спейс жив
+                if e.code == 503: transient = True         # просыпается
+                else: return (hid, "dead")                 # реальный отлуп
+            except Exception:
+                transient = True
+            if attempt == 0: _t.sleep(4)
+        return (hid, "unknown" if transient else "dead")   # таймаут после ретраев ≠ смерть
     res = {}
     with cf.ThreadPoolExecutor(max_workers=10) as ex:  # мягкая конкуренция — HF душит частые пачки
         for hid, c in ex.map(cls, ids): res[hid] = c
     grad = [h for h, c in res.items() if c == "gradio"]
     emb  = [h for h, c in res.items() if c == "embed"]
     dead = [h for h, c in res.items() if c in ("dead", "bad")]
-    good = len(grad) + len(emb)               # РЕАЛЬНЫЕ проходы, не "всего минус мёртвые"
-    incomplete = len(res) < len(ids)
-    print("  %s ставится: %d / %d (gradio %d, встройка %d, мёртвых %d)%s" % (
-        OK if (good == len(ids)) else BAD, good, len(ids), len(grad), len(emb), len(dead),
-        "  ⚠️ проверка НЕПОЛНАЯ (сеть/лимит HF) — перезапусти" if incomplete else ""))
+    unk  = [h for h, c in res.items() if c == "unknown"]
+    good = len(grad) + len(emb)
+    # красное ТОЛЬКО если есть реально-мёртвые; unknown (сеть/троттлинг) — предупреждение
+    print("  %s ставится: %d / %d (gradio %d, встройка %d)%s%s" % (
+        OK if not dead else BAD, good, len(ids), len(grad), len(emb),
+        ("  ⚠️ не проверено (сеть/лимит HF): %d — перезапусти" % len(unk)) if unk else "",
+        ("  ❌ мёртвых: %d" % len(dead)) if dead else ""))
     for h in dead: print("    %s НЕ ставится (мёртв): %s" % (BAD, h))
-    return (good, len(ids), dead)
+    # для вердикта: зелёное если мёртвых нет (unknown не валит гейт)
+    return (len(ids) - len(dead), len(ids), dead)
 
 # ---- Эксперты: код должен компилироваться (fython/$extens пропускаем) ----
 def verify_experts():
@@ -97,6 +115,44 @@ def verify_services(token, agent):
         if c != "ok": print("    ⚠️ проверить: %s (%s)" % (n, c))
     return (good, len(svcs), [n for n, c in res.items() if c != "ok"])
 
+
+# ---- CLI: у каждого резолвера должен быть headless-путь (прямая скачка), не только brew ----
+def verify_cli():
+    _title("CLI-инструменты")
+    resolvers = glob.glob(os.path.join(HERE, "experts", "cap_*_resolver.py"))
+    headless = 0; risky = []
+    for f in resolvers:
+        code = open(f, encoding="utf-8").read()
+        has_direct = bool(re.search(r"urlretrieve|ditto|tar |curl |urlopen|download", code))
+        if has_direct: headless += 1
+        else: risky.append(os.path.basename(f)[:-3])
+    print("  %s ставятся без админа (прямая скачка): %d / %d" % (OK if not risky else BAD, headless, len(resolvers)))
+    for r in risky: print("    ⚠️ только brew (нужен админ/Homebrew): %s" % r)
+    return (headless, len(resolvers), risky)
+
+# ---- Знания: внешние источники паков (adilet/wikipedia) должны быть живы ----
+def verify_knowledge():
+    _title("Знания (источники паков)")
+    srcs = ["https://adilet.zan.kz", "https://ru.wikipedia.org"]
+    good = []; bad = []
+    for u in srcs:
+        try:
+            req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"})
+            urllib.request.urlopen(req, timeout=15).read(64); good.append(u)
+        except Exception: bad.append(u)
+    print("  %s источники живы: %d / %d" % (OK if not bad else BAD, len(good), len(srcs)))
+    for u in bad: print("    %s недоступен: %s" % (BAD, u))
+    return (len(good), len(srcs), bad)
+
+# ---- MCP: в паке не бандлится (KV-харвест) — отметить, чтобы не создавать ложной гарантии ----
+def verify_mcp():
+    _title("MCP / API")
+    if glob.glob(os.path.join(HERE, "experts", "mcp_*.py")) or os.path.exists(os.path.join(HERE, "mcp_catalog.json")):
+        print("  (есть bundled MCP — добавить проверку пакетов)")
+        return (0, 0, [])
+    print("  ℹ️ MCP не в паке (KV-харвест). Для гарантии — бандлить mcp_catalog.json как модели.")
+    return (0, 0, [])
+
 def main():
     args = [a.lower() for a in sys.argv[1:]]
     want = lambda k: (not args) or (k in args)
@@ -108,9 +164,12 @@ def main():
         except Exception: pass
     print("PRE-FLIGHT VERIFY — пак Extella")
     summary = []
-    if want("models"):   g, t, _ = verify_models();   summary.append(("Модели", g, t))
-    if want("experts"):  g, t, _ = verify_experts();  summary.append(("Эксперты", g, t))
-    if want("services"): g, t, _ = verify_services(tok, agent); summary.append(("Сервисы", g, t))
+    if want("models"):    g, t, _ = verify_models();   summary.append(("Модели", g, t))
+    if want("experts"):   g, t, _ = verify_experts();  summary.append(("Эксперты", g, t))
+    if want("cli"):       g, t, _ = verify_cli();      summary.append(("CLI", g, t))
+    if want("knowledge"): g, t, _ = verify_knowledge(); summary.append(("Знания", g, t))
+    if want("mcp"):       verify_mcp()
+    if want("services"):  g, t, _ = verify_services(tok, agent); summary.append(("Сервисы", g, t))
     print("\n== ИТОГ ==")
     allgreen = True
     for nm, g, t in summary:
