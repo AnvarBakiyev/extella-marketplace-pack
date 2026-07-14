@@ -118,17 +118,23 @@ def verify_services(token, agent):
 
 # ---- CLI: у каждого резолвера должен быть headless-путь (прямая скачка), не только brew ----
 def verify_cli():
-    _title("CLI-инструменты")
+    # Решение Анвара: CLI ставятся через РАЗОВЫЙ Homebrew (поддерживаемый путь установщика).
+    # Значит brew-резолвер = ОК; красное только если у резолвера НЕТ пути установки вообще.
+    _title("CLI-инструменты (Homebrew — разовый шаг установщика)")
     resolvers = glob.glob(os.path.join(HERE, "experts", "cap_*_resolver.py"))
-    headless = 0; risky = []
+    direct = 0; viabrew = 0; nomethod = []
     for f in resolvers:
         code = open(f, encoding="utf-8").read()
         has_direct = bool(re.search(r"urlretrieve|ditto|tar |curl |urlopen|download", code))
-        if has_direct: headless += 1
-        else: risky.append(os.path.basename(f)[:-3])
-    print("  %s ставятся без админа (прямая скачка): %d / %d" % (OK if not risky else BAD, headless, len(resolvers)))
-    for r in risky: print("    ⚠️ только brew (нужен админ/Homebrew): %s" % r)
-    return (headless, len(resolvers), risky)
+        has_brew = "brew" in code and "install" in code
+        if has_direct: direct += 1
+        elif has_brew: viabrew += 1
+        else: nomethod.append(os.path.basename(f)[:-3])
+    good = direct + viabrew
+    print("  %s ставятся: %d / %d (headless %d, через Homebrew %d)" % (
+        OK if not nomethod else BAD, good, len(resolvers), direct, viabrew))
+    for r in nomethod: print("    %s нет пути установки: %s" % (BAD, r))
+    return (good, len(resolvers), nomethod)
 
 # ---- Знания: внешние источники паков (adilet/wikipedia) должны быть живы ----
 def verify_knowledge():
