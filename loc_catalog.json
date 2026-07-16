@@ -1,7 +1,7 @@
 {
  "_mkt_loc": {
   "v": 1,
-  "shards": 17,
+  "shards": 19,
   "map": {
    "ACE-Step/ACE-Step": {
     "func_ru": "Генерация музыки",
@@ -919,11 +919,82 @@
     "desc_ru": "Проверка промптов на инъекции, скрытие персональных данных и аудит вызовов моделей",
     "desc_en": "Scans prompts for injection, redacts PII and audits LLM SDK usage"
    },
+   "cocktailpeanut/AudioLDM2.pinokio": {
+    "func_ru": "Генерация звука по тексту",
+    "func_en": "Text to audio",
+    "desc_ru": "Создание звуков и музыки по описанию",
+    "desc_en": "Creates sounds and music from a description"
+   },
+   "cocktailpeanut/DramaBox-TTS-Pinokio": {
+    "func_ru": "Озвучка текста голосом",
+    "func_en": "Text-to-speech synthesis",
+    "desc_ru": "Преобразует текст в речь",
+    "desc_en": "Converts text into spoken audio"
+   },
+   "cocktailpeanut/FreeMoCap.pinokio": {
+    "func_ru": "Захват движения по видео",
+    "func_en": "Markerless motion capture",
+    "desc_ru": "Извлекает движение человека из видеозаписи",
+    "desc_en": "Extracts human motion from video footage"
+   },
+   "cocktailpeanut/ace-step-ui.pinokio": {
+    "func_ru": "Генерация музыки",
+    "func_en": "Music generation",
+    "desc_ru": "Интерфейс для создания музыкальных треков",
+    "desc_en": "Interface for generating music tracks"
+   },
+   "cocktailpeanut/ace-step.pinokio": {
+    "func_ru": "Генерация музыки",
+    "func_en": "Music generation",
+    "desc_ru": "Создание музыкальных треков по описанию",
+    "desc_en": "Generates music tracks from a description"
+   },
+   "cocktailpeanut/acejam.pinokio": {
+    "func_ru": "Генерация музыки",
+    "func_en": "Music generation",
+    "desc_ru": "Приложение для создания музыки",
+    "desc_en": "App for making music"
+   },
+   "cocktailpeanut/ai4animationpy.pinokio": {
+    "func_ru": "Анимация движения",
+    "func_en": "Motion animation",
+    "desc_ru": "Инструмент для работы с анимацией движения",
+    "desc_en": "Tool for motion animation"
+   },
+   "cocktailpeanut/anigen.pinokio": {
+    "func_ru": "Генерация анимации",
+    "func_en": "Animation generation",
+    "desc_ru": "Создание анимационных изображений",
+    "desc_en": "Creates animated visuals"
+   },
+   "cocktailpeanut/animatediff.pinokio": {
+    "func_ru": "Создание анимации из изображений",
+    "func_en": "Image animation",
+    "desc_ru": "Генерация коротких анимаций по описанию",
+    "desc_en": "Generates short animations from a prompt"
+   },
+   "cocktailpeanut/audiocraft_plus.pinokio": {
+    "func_ru": "Генерация музыки и звука",
+    "func_en": "Music and sound generation",
+    "desc_ru": "Создание музыки и звуковых эффектов",
+    "desc_en": "Creates music and sound effects"
+   },
    "cocktailpeanut/audiogradio.pinokio": {
     "func_ru": "Генерация музыки и звуков",
     "func_en": "Generate music & sound",
     "desc_ru": "Создаёт музыку и звуковые эффекты (Audiocraft)",
     "desc_en": "MusicGen + AudioGen UI"
+   }
+  }
+ },
+ "_mkt_loc_4": {
+  "v": 1,
+  "map": {
+   "cocktailpeanut/automatic1111-dev.pinokio": {
+    "func_ru": "Веб-интерфейс генерации изображений",
+    "func_en": "Image generation web UI",
+    "desc_ru": "Интерфейс для создания изображений моделями Stable Diffusion",
+    "desc_en": "Web UI for creating images with Stable Diffusion models"
    },
    "cocktailpeanut/automatic1111.pinokio": {
     "func_ru": "Генерация картинок (устарело)",
@@ -931,11 +1002,41 @@
     "desc_ru": "Старый установщик Automatic1111 SD WebUI",
     "desc_en": "Old Automatic1111"
    },
+   "cocktailpeanut/axios-inspector": {
+    "func_ru": "Просмотр сетевых запросов",
+    "func_en": "Network request inspector",
+    "desc_ru": "Служебный просмотр HTTP-запросов",
+    "desc_en": "Utility for inspecting HTTP requests"
+   },
+   "cocktailpeanut/bark.pinokio": {
+    "func_ru": "Синтез речи и звуков",
+    "func_en": "Speech and sound synthesis",
+    "desc_ru": "Озвучивание текста и генерация звуков",
+    "desc_en": "Generates speech and sounds from text"
+   },
+   "cocktailpeanut/clawdbot.pinokio": {
+    "func_ru": "Чат-бот на базе модели",
+    "func_en": "Model-based chatbot",
+    "desc_ru": "Приложение для запуска чат-бота",
+    "desc_en": "App for running a chatbot"
+   },
+   "cocktailpeanut/cline-kanban.pinokio": {
+    "func_ru": "Канбан-доска задач",
+    "func_en": "Kanban task board",
+    "desc_ru": "Доска задач в формате канбан",
+    "desc_en": "Task board in kanban format"
+   },
    "cocktailpeanut/comfy.pinokio": {
     "func_ru": "Узловой редактор (ComfyUI)",
     "func_en": "ComfyUI (minimal)",
     "desc_ru": "Минимальный лаунчер ComfyUI",
     "desc_en": "Minimal ComfyUI"
+   },
+   "cocktailpeanut/comfyfs": {
+    "func_ru": "Работа с файлами ComfyUI",
+    "func_en": "ComfyUI file access",
+    "desc_ru": "Доступ к моделям и файлам ComfyUI",
+    "desc_en": "Access to ComfyUI models and files"
    },
    "cocktailpeanut/comfyui.pinokio": {
     "func_ru": "Узловой редактор генерации",
@@ -961,6 +1062,18 @@
     "desc_ru": "Сам решает — рассуждать или отвечать сразу",
     "desc_en": "Decides when to reason"
    },
+   "cocktailpeanut/deus": {
+    "func_ru": "Локальный инструмент",
+    "func_en": "Local tool",
+    "desc_ru": "Приложение для локального запуска",
+    "desc_en": "Application for local use"
+   },
+   "cocktailpeanut/directorsconsole.pinokio": {
+    "func_ru": "Управление съёмкой видео",
+    "func_en": "Video production console",
+    "desc_ru": "Пульт для сборки видеосцен",
+    "desc_en": "Console for assembling video scenes"
+   },
    "cocktailpeanut/discord-id-bypass-tool.pinokio": {
     "func_ru": "Утилита для Discord",
     "func_en": "Discord utility",
@@ -973,11 +1086,35 @@
     "desc_ru": "Минимальный фронтенд ds4.c",
     "desc_en": "Minimal ds4.c UI"
    },
+   "cocktailpeanut/euphony.pinokio": {
+    "func_ru": "Работа со звуком",
+    "func_en": "Audio tool",
+    "desc_ru": "Приложение для работы с аудио",
+    "desc_en": "App for working with audio"
+   },
+   "cocktailpeanut/facefusion.pinokio": {
+    "func_ru": "Замена лица на видео",
+    "func_en": "Face swapping",
+    "desc_ru": "Замена и обработка лиц в фото и видео",
+    "desc_en": "Face swapping and editing in photos and video"
+   },
    "cocktailpeanut/fluxgym": {
     "func_ru": "Обучение LoRA для FLUX",
     "func_en": "Train FLUX LoRA",
     "desc_ru": "Дообучение модели-художника, экономно к видеопамяти",
     "desc_en": "LoRA training UI, low VRAM"
+   },
+   "cocktailpeanut/geolibre.pinokio": {
+    "func_ru": "Работа с картой",
+    "func_en": "Map tool",
+    "desc_ru": "Приложение с картографическим интерфейсом",
+    "desc_en": "App with a map-based interface"
+   },
+   "cocktailpeanut/hallucinator": {
+    "func_ru": "Локальный инструмент",
+    "func_en": "Local tool",
+    "desc_ru": "Приложение для локального запуска",
+    "desc_en": "Application for local use"
    },
    "cocktailpeanut/heartmula-studio": {
     "func_ru": "Студия heartmula",
@@ -985,28 +1122,298 @@
     "desc_ru": "Лаунчер heartmula-studio",
     "desc_en": "heartmula launcher"
    },
+   "cocktailpeanut/hermes-agent.pinokio": {
+    "func_ru": "ИИ-агент для задач",
+    "func_en": "AI task agent",
+    "desc_ru": "Приложение-агент для выполнения задач",
+    "desc_en": "Agent application for running tasks"
+   },
+   "cocktailpeanut/hermes-mod": {
+    "func_ru": "Запуск языковой модели",
+    "func_en": "Language model runner",
+    "desc_ru": "Приложение для работы с языковой моделью",
+    "desc_en": "App for running a language model"
+   },
+   "cocktailpeanut/hf-symlink-repro": {
+    "func_ru": "Тестовый сценарий установки",
+    "func_en": "Install test script",
+    "desc_ru": "Служебный рецепт для воспроизведения проблемы с ссылками",
+    "desc_en": "Utility recipe reproducing a symlink issue"
+   },
+   "cocktailpeanut/hidream-o1": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Создание изображений по текстовому описанию",
+    "desc_en": "Creates images from text prompts"
+   },
+   "cocktailpeanut/html-anything.pinokio": {
+    "func_ru": "Генерация HTML-страниц",
+    "func_en": "HTML page generation",
+    "desc_ru": "Создаёт веб-страницы по описанию",
+    "desc_en": "Creates web pages from a description"
+   },
+   "cocktailpeanut/huggingmirror": {
+    "func_ru": "Зеркало загрузки моделей",
+    "func_en": "Model download mirror",
+    "desc_ru": "Загрузка моделей с Hugging Face через зеркало",
+    "desc_en": "Downloads Hugging Face models through a mirror"
+   },
+   "cocktailpeanut/ideogrammar.pinokio": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Создание изображений по текстовому описанию",
+    "desc_en": "Creates images from text prompts"
+   },
+   "cocktailpeanut/ideoprompt": {
+    "func_ru": "Подготовка промптов",
+    "func_en": "Prompt authoring",
+    "desc_ru": "Инструмент для составления промптов",
+    "desc_en": "Tool for composing prompts"
+   },
+   "cocktailpeanut/image-extender.pinokio": {
+    "func_ru": "Расширение границ изображения",
+    "func_en": "Image outpainting",
+    "desc_ru": "Достраивает изображение за пределы исходных границ",
+    "desc_en": "Extends an image beyond its original borders"
+   },
+   "cocktailpeanut/image-to-prompt": {
+    "func_ru": "Описание изображения текстом",
+    "func_en": "Image to text prompt",
+    "desc_ru": "Получение текстового описания по изображению",
+    "desc_en": "Produces a text prompt from an image"
+   },
+   "cocktailpeanut/kanban.pinokio": {
+    "func_ru": "Канбан-доска задач",
+    "func_en": "Kanban task board",
+    "desc_ru": "Доска задач в формате канбан",
+    "desc_en": "Task board in kanban format"
+   },
+   "cocktailpeanut/kimodo.pinokio": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "cocktailpeanut/lcm.pinokio": {
+    "func_ru": "Быстрая генерация изображений",
+    "func_en": "Fast image generation",
+    "desc_ru": "Ускоренное создание изображений по описанию",
+    "desc_en": "Accelerated image generation from prompts"
+   },
+   "cocktailpeanut/lingbot-map.pinokio": {
+    "func_ru": "Работа с картой",
+    "func_en": "Map tool",
+    "desc_ru": "Приложение с картографическим интерфейсом",
+    "desc_en": "App with a map-based interface"
+   },
+   "cocktailpeanut/mirror": {
+    "func_ru": "Локальный инструмент",
+    "func_en": "Local tool",
+    "desc_ru": "Приложение для локального запуска",
+    "desc_en": "Application for local use"
+   },
+   "cocktailpeanut/mmm.pinokio": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "cocktailpeanut/ms-image2video.pinokio": {
+    "func_ru": "Оживление фото в видео",
+    "func_en": "Image to video",
+    "desc_ru": "Создание видео из статичного изображения",
+    "desc_en": "Creates video from a still image"
+   },
+   "cocktailpeanut/multiline_args_test": {
+    "func_ru": "Тестовый сценарий установки",
+    "func_en": "Install test script",
+    "desc_ru": "Служебный рецепт для проверки аргументов",
+    "desc_en": "Utility recipe for checking argument handling"
+   },
+   "cocktailpeanut/muscriptor.pinokio": {
+    "func_ru": "Работа с музыкальными партитурами",
+    "func_en": "Music score tool",
+    "desc_ru": "Приложение для работы с музыкальной нотацией",
+    "desc_en": "App for working with music notation"
+   },
+   "cocktailpeanut/next-ai-draw-io-launcher": {
+    "func_ru": "Построение диаграмм",
+    "func_en": "Diagram building",
+    "desc_ru": "Создание схем и диаграмм в редакторе draw.io",
+    "desc_en": "Creates charts and diagrams in a draw.io editor"
+   },
+   "cocktailpeanut/odysseus.pinokio": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "cocktailpeanut/omlx.pinokio": {
+    "func_ru": "Запуск моделей на Apple Silicon",
+    "func_en": "Model runtime for Apple Silicon",
+    "desc_ru": "Локальный запуск моделей через MLX",
+    "desc_en": "Runs models locally via MLX"
+   },
+   "cocktailpeanut/openclaude": {
+    "func_ru": "Чат с языковой моделью",
+    "func_en": "Chat with a language model",
+    "desc_ru": "Интерфейс для диалога с языковой моделью",
+    "desc_en": "Interface for conversing with a language model"
+   },
+   "cocktailpeanut/openclaw.pinokio": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
    "cocktailpeanut/openclaw.rabbit.pinokio": {
     "func_ru": "Подключение Rabbit R1",
     "func_en": "Connect Rabbit R1",
     "desc_ru": "Связывает устройство Rabbit R1 с openclaw",
     "desc_en": "Rabbit R1 to openclaw"
-   }
-  }
- },
- "_mkt_loc_4": {
-  "v": 1,
-  "map": {
+   },
+   "cocktailpeanut/openreel": {
+    "func_ru": "Сборка видеороликов",
+    "func_en": "Video reel creation",
+    "desc_ru": "Инструмент подготовки коротких видеороликов",
+    "desc_en": "Tool for producing short video reels"
+   },
+   "cocktailpeanut/overworld.pinokio": {
+    "func_ru": "Локальный инструмент",
+    "func_en": "Local tool",
+    "desc_ru": "Приложение для локального запуска",
+    "desc_en": "Application for local use"
+   },
+   "cocktailpeanut/ovie-webui": {
+    "func_ru": "Чат с языковой моделью",
+    "func_en": "Chat with a language model",
+    "desc_ru": "Веб-интерфейс для диалога с моделью",
+    "desc_en": "Web interface for conversing with a model"
+   },
+   "cocktailpeanut/package-security-test": {
+    "func_ru": "Тестовый сценарий установки",
+    "func_en": "Install test script",
+    "desc_ru": "Служебный рецепт для проверки безопасности пакета",
+    "desc_en": "Utility recipe for package security checks"
+   },
+   "cocktailpeanut/rvc.pinokio": {
+    "func_ru": "Смена голоса в записи",
+    "func_en": "Voice conversion",
+    "desc_ru": "Преобразование голоса в аудиозаписи",
+    "desc_en": "Converts a voice in an audio recording"
+   },
    "cocktailpeanut/sd-webui.pinokio": {
     "func_ru": "Генерация картинок (SD WebUI)",
     "func_en": "Stable Diffusion WebUI",
     "desc_ru": "AUTOMATIC1111 — интерфейс Stable Diffusion",
     "desc_en": "AUTOMATIC1111 SDXL"
    },
+   "cocktailpeanut/searxng.pinokio": {
+    "func_ru": "Локальный поиск в интернете",
+    "func_en": "Self-hosted web search",
+    "desc_ru": "Собственный поисковый сервис по интернету",
+    "desc_en": "Self-hosted web search service"
+   },
+   "cocktailpeanut/stable-audio-3-small.pinokio": {
+    "func_ru": "Генерация аудио по тексту",
+    "func_en": "Text-to-audio generation",
+    "desc_ru": "Создание аудиодорожек по текстовому описанию",
+    "desc_en": "Generates audio tracks from text prompts"
+   },
+   "cocktailpeanut/stabledaw.pinokio": {
+    "func_ru": "Работа с музыкой",
+    "func_en": "Music workstation",
+    "desc_ru": "Среда для создания музыки",
+    "desc_en": "Environment for making music"
+   },
+   "cocktailpeanut/svd.pinokio": {
+    "func_ru": "Создание видео из изображения",
+    "func_en": "Image-to-video generation",
+    "desc_ru": "Превращает статичное изображение в видеоролик",
+    "desc_en": "Turns a still image into a video clip"
+   },
+   "cocktailpeanut/texturizer": {
+    "func_ru": "Создание текстур",
+    "func_en": "Texture generation",
+    "desc_ru": "Генерация текстур для моделей и сцен",
+    "desc_en": "Generates textures for models and scenes"
+   },
    "cocktailpeanut/theDAW-Pinokio": {
     "func_ru": "ИИ музыкальная студия",
     "func_en": "AI music studio",
     "desc_ru": "theDAW — всё-в-одном для создания музыки",
     "desc_en": "theDAW all-in-one"
+   },
+   "cocktailpeanut/tokenflow.pinokio": {
+    "func_ru": "Редактирование видео по тексту",
+    "func_en": "Text-based video editing",
+    "desc_ru": "Изменение стиля видео по текстовому запросу",
+    "desc_en": "Restyles video from a text prompt"
+   },
+   "cocktailpeanut/triposplat.pinokio": {
+    "func_ru": "Создание 3D по фото",
+    "func_en": "Image to 3D",
+    "desc_ru": "Построение 3D-объекта по изображению",
+    "desc_en": "Builds a 3D object from an image"
+   },
+   "cocktailpeanut/tutorial.pinokio": {
+    "func_ru": "Обучающее приложение",
+    "func_en": "Tutorial app",
+    "desc_ru": "Учебный пример для знакомства с платформой",
+    "desc_en": "Sample app for learning the platform"
+   },
+   "cocktailpeanut/uncensored-local-studio.pinokio": {
+    "func_ru": "Локальная генерация без фильтров",
+    "func_en": "Unfiltered local generation",
+    "desc_ru": "Локальная студия генерации без контентных ограничений",
+    "desc_en": "Local generation studio without content filters"
+   },
+   "cocktailpeanut/underfit.pinokio": {
+    "func_ru": "Обучение модели",
+    "func_en": "Model training",
+    "desc_ru": "Приложение для обучения моделей",
+    "desc_en": "App for training models"
+   },
+   "cocktailpeanut/unsloth": {
+    "func_ru": "Дообучение языковых моделей",
+    "func_en": "LLM fine-tuning",
+    "desc_ru": "Ускоренное дообучение языковых моделей",
+    "desc_en": "Accelerated fine-tuning of language models"
+   }
+  }
+ },
+ "_mkt_loc_5": {
+  "v": 1,
+  "map": {
+   "cocktailpeanut/vibe-kanban.pinokio": {
+    "func_ru": "Канбан-доска задач",
+    "func_en": "Kanban task board",
+    "desc_ru": "Доска задач в формате канбан",
+    "desc_en": "Task board in kanban format"
+   },
+   "cocktailpeanut/voicebox.pinokio": {
+    "func_ru": "Работа с голосом",
+    "func_en": "Voice tool",
+    "desc_ru": "Инструмент для генерации и обработки голоса",
+    "desc_en": "Tool for voice generation and processing"
+   },
+   "cocktailpeanut/worldmirror.pinokio": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "cocktailpeanut/worldmonitor.pinokio": {
+    "func_ru": "Мониторинг событий",
+    "func_en": "Event monitoring",
+    "desc_ru": "Приложение для наблюдения за событиями",
+    "desc_en": "App for monitoring events"
+   },
+   "cocktailpeanut/xtts.pinokio": {
+    "func_ru": "Клонирование голоса",
+    "func_en": "Voice cloning",
+    "desc_ru": "Озвучивание текста заданным голосом",
+    "desc_en": "Speaks text in a chosen voice"
    },
    "com.636865636b73756d/mcp-v1": {
     "func_ru": "Проверка фактических утверждений",
@@ -1271,7 +1678,12 @@
     "func_en": "AI service verification",
     "desc_ru": "Оценки доверия, поиск, сравнение и проверка ИИ-решений",
     "desc_en": "Trust scores, search, comparison and verification for AI solutions"
-   },
+   }
+  }
+ },
+ "_mkt_loc_6": {
+  "v": 1,
+  "map": {
    "com.files/python-mcp": {
     "func_ru": "Управление файлами Files.com",
     "func_en": "Files.com file management",
@@ -1283,12 +1695,7 @@
     "func_en": "Utility API toolkit",
     "desc_ru": "Набор бесплатных инструментов: погода, DNS, поиск, текст, QR, калькуляторы",
     "desc_en": "Free tools: weather, crypto, DNS, search, text, colors, QR and calculators"
-   }
-  }
- },
- "_mkt_loc_5": {
-  "v": 1,
-  "map": {
+   },
    "com.gadgethumans.swarm/x402-middleware": {
     "func_ru": "Приём платежей в MCP-серверах",
     "func_en": "Payment middleware for MCP",
@@ -1558,7 +1965,12 @@
     "func_en": "File format conversion",
     "desc_ru": "Преобразование документов, PDF и изображений между множеством форматов",
     "desc_en": "Convert documents, PDFs and images across many file formats"
-   },
+   }
+  }
+ },
+ "_mkt_loc_7": {
+  "v": 1,
+  "map": {
    "com.mcparmory/customerio-journeys-track": {
     "func_ru": "Управление маркетинговыми кампаниями",
     "func_en": "Marketing campaign management",
@@ -1570,12 +1982,7 @@
     "func_en": "Infrastructure monitoring",
     "desc_ru": "Мониторинг инфраструктуры, развёртываний, метрик, логов и событий",
     "desc_en": "Monitor infrastructure, deployments, metrics, logs and events"
-   }
-  }
- },
- "_mkt_loc_6": {
-  "v": 1,
-  "map": {
+   },
    "com.mcparmory/e2b": {
     "func_ru": "Изолированный запуск кода",
     "func_en": "Sandboxed code execution",
@@ -1845,7 +2252,12 @@
     "func_en": "Image inpainting",
     "desc_ru": "Замена и дорисовка выделенных участков изображения",
     "desc_en": "Replaces and fills in selected areas of an image"
-   },
+   }
+  }
+ },
+ "_mkt_loc_8": {
+  "v": 1,
+  "map": {
    "diffusers/unofficial-SDXL-Turbo-i2i-t2i": {
     "func_ru": "Генерация изображений по тексту и фото",
     "func_en": "Text and image to image generation",
@@ -1863,12 +2275,7 @@
     "func_en": "Image-to-video generation",
     "desc_ru": "Делает видео из изображений на модели Wan2.2",
     "desc_en": "Turns images into video using the Wan2.2 model"
-   }
-  }
- },
- "_mkt_loc_7": {
-  "v": 1,
-  "map": {
+   },
    "ehristoforu/dalle-3-xl-lora-v2": {
     "func_ru": "Генерация изображений по тексту",
     "func_en": "Text-to-image generation",
@@ -2180,7 +2587,12 @@
     "func_en": "RSS reading and knowledge management",
     "desc_ru": "Self-hosted RSS-читалка с личной базой знаний",
     "desc_en": "Self-hosted RSS reader with personal knowledge management"
-   },
+   }
+  }
+ },
+ "_mkt_loc_9": {
+  "v": 1,
+  "map": {
    "https://github.com/LycheeMem/LycheeMem": {
     "func_ru": "Долговременная память агентов",
     "func_en": "Long-term agent memory",
@@ -2198,12 +2610,7 @@
     "func_en": "Brazilian open data access",
     "desc_ru": "MCP-сервер для набора открытых государственных API Бразилии",
     "desc_en": "MCP server for a set of Brazilian public open APIs"
-   }
-  }
- },
- "_mkt_loc_8": {
-  "v": 1,
-  "map": {
+   },
    "https://github.com/MemPalace/mempalace": {
     "func_ru": "Память для AI-агентов",
     "func_en": "Memory for AI agents",
@@ -2491,7 +2898,12 @@
     "func_en": "Chat summarization",
     "desc_ru": "Запрос и краткое изложение сообщений из чатов",
     "desc_en": "Query and summarize your chat messages"
-   },
+   }
+  }
+ },
+ "_mkt_loc_10": {
+  "v": 1,
+  "map": {
    "https://github.com/chrisryugj/korean-law-mcp": {
     "func_ru": "Поиск по законодательству Кореи",
     "func_en": "Korean law search",
@@ -2515,12 +2927,7 @@
     "func_en": "Note taking",
     "desc_ru": "Кроссплатформенное приложение для заметок в Markdown с AI",
     "desc_en": "Cross-platform Markdown note-taking app with AI"
-   }
-  }
- },
- "_mkt_loc_9": {
-  "v": 1,
-  "map": {
+   },
    "https://github.com/cookjohn/zotero-mcp": {
     "func_ru": "Доступ к библиотеке ссылок",
     "func_en": "Reference library access",
@@ -2808,7 +3215,12 @@
     "func_en": "Voice interaction with assistant",
     "desc_ru": "Голосовые диалоги с ассистентом разработки",
     "desc_en": "Voice conversations with a coding assistant"
-   },
+   }
+  }
+ },
+ "_mkt_loc_11": {
+  "v": 1,
+  "map": {
    "https://github.com/mcp-router/mcp-router": {
     "func_ru": "Управление MCP-серверами",
     "func_en": "MCP server management",
@@ -2832,12 +3244,7 @@
     "func_en": "Project memory for agents",
     "desc_ru": "Структурированное хранение контекста проекта для агентов разработки",
     "desc_en": "Structured project context storage for development agents"
-   }
-  }
- },
- "_mkt_loc_10": {
-  "v": 1,
-  "map": {
+   },
    "https://github.com/microsoft/flint-chart": {
     "func_ru": "Описание диаграмм для агентов",
     "func_en": "Chart specification for agents",
@@ -3125,7 +3532,12 @@
     "func_en": "Postgres development assistance",
     "desc_ru": "MCP-сервер с навыками и документацией по Postgres",
     "desc_en": "MCP server with Postgres skills and documentation"
-   },
+   }
+  }
+ },
+ "_mkt_loc_12": {
+  "v": 1,
+  "map": {
    "https://github.com/tirth8205/code-review-graph": {
     "func_ru": "Граф знаний по коду",
     "func_en": "Code intelligence graph",
@@ -3149,12 +3561,7 @@
     "func_en": "Rich text editor",
     "desc_ru": "Редактор текста для веб-приложений с AI-функциями",
     "desc_en": "Rich text editor for web apps with AI features"
-   }
-  }
- },
- "_mkt_loc_11": {
-  "v": 1,
-  "map": {
+   },
    "https://github.com/upstash/context7": {
     "func_ru": "Поставка документации моделям",
     "func_en": "Documentation delivery for models",
@@ -3436,7 +3843,12 @@
     "func_en": "Image generation with LoRA adapters",
     "desc_ru": "Генерация изображений с подключением LoRA-адаптеров",
     "desc_en": "Image generation using LoRA adapters"
-   },
+   }
+  }
+ },
+ "_mkt_loc_13": {
+  "v": 1,
+  "map": {
    "multimodalart/flux-lora-the-explorer": {
     "func_ru": "Генерация изображений по тексту",
     "func_en": "Text-to-image generation",
@@ -3466,12 +3878,7 @@
     "func_en": "Text-to-image generation",
     "desc_ru": "Создаёт изображения по текстовому описанию",
     "desc_en": "Creates images from a text description"
-   }
-  }
- },
- "_mkt_loc_12": {
-  "v": 1,
-  "map": {
+   },
    "multimodalart/stable-video-diffusion": {
     "func_ru": "Генерация видео из изображения",
     "func_en": "Image-to-video generation",
@@ -3550,6 +3957,12 @@
     "desc_ru": "ACE-Step — базовая модель создания музыки",
     "desc_en": "ACE-Step music model"
    },
+   "pinokiofactory/AllTalk-TTS": {
+    "func_ru": "Озвучка текста голосом",
+    "func_en": "Text-to-speech synthesis",
+    "desc_ru": "Преобразует текст в речь с выбором голосов",
+    "desc_en": "Converts text into speech with voice selection"
+   },
    "pinokiofactory/Allegro-txt2vid-install": {
     "func_ru": "Генерация видео из текста",
     "func_en": "Text-to-video",
@@ -3567,6 +3980,24 @@
     "func_en": "Next-frame video gen",
     "desc_ru": "Предсказывает следующие кадры видео (NVIDIA)",
     "desc_en": "FramePack (NVIDIA)"
+   },
+   "pinokiofactory/Hunyuan3D-2": {
+    "func_ru": "Создание 3D-моделей",
+    "func_en": "3D model generation",
+    "desc_ru": "Генерация 3D-моделей по изображению и тексту",
+    "desc_en": "Generates 3D models from image and text"
+   },
+   "pinokiofactory/Hunyuan3D-2-mini": {
+    "func_ru": "3D-модель из изображения",
+    "func_en": "Image-to-3D model",
+    "desc_ru": "Строит трёхмерную модель по картинке",
+    "desc_en": "Builds a 3D model from an image"
+   },
+   "pinokiofactory/Hunyuan3d-2-lowvram": {
+    "func_ru": "Создание 3D-моделей",
+    "func_en": "3D model generation",
+    "desc_ru": "Генерация 3D-моделей на слабой видеопамяти",
+    "desc_en": "3D model generation for low VRAM setups"
    },
    "pinokiofactory/Ilaria-RVC": {
     "func_ru": "Смена голоса и озвучка",
@@ -3592,6 +4023,12 @@
     "desc_ru": "Веб-интерфейс MFLUX для Apple Silicon",
     "desc_en": "MFLUX web UI"
    },
+   "pinokiofactory/MMAudio": {
+    "func_ru": "Озвучивание видео",
+    "func_en": "Audio for video",
+    "desc_ru": "Создание звуковой дорожки к видео",
+    "desc_en": "Generates a soundtrack for video"
+   },
    "pinokiofactory/MagicQuill": {
     "func_ru": "Умное редактирование картинок",
     "func_en": "Smart image editing",
@@ -3609,6 +4046,12 @@
     "func_en": "Text-to-speech",
     "desc_ru": "Озвучивает текст голосом (модель Dia)",
     "desc_en": "TTS via Dia model"
+   },
+   "pinokiofactory/Orpheus-TTS-FastAPI": {
+    "func_ru": "Синтез речи из текста",
+    "func_en": "Text to speech",
+    "desc_ru": "Озвучивание текста через API-сервис",
+    "desc_en": "Text to speech served over an API"
    },
    "pinokiofactory/RMBG-2-Studio": {
     "func_ru": "Удаление и замена фона",
@@ -3646,11 +4089,23 @@
     "desc_ru": "Озвучка несколькими TTS-движками (нужна NVIDIA)",
     "desc_en": "Multi-engine TTS (NVIDIA)"
    },
+   "pinokiofactory/accdiffusion": {
+    "func_ru": "Генерация изображений высокого разрешения",
+    "func_en": "High-resolution image generation",
+    "desc_ru": "Создание изображений большого размера по описанию",
+    "desc_en": "Creates large-resolution images from prompts"
+   },
    "pinokiofactory/ai-toolkit": {
     "func_ru": "Обучение моделей генерации",
     "func_en": "Model training toolkit",
     "desc_ru": "Ostris ai-toolkit — тренировка LoRA/моделей",
     "desc_en": "Ostris ai-toolkit"
+   },
+   "pinokiofactory/ai-video-composer": {
+    "func_ru": "Монтаж видео",
+    "func_en": "Video composition",
+    "desc_ru": "Сборка видео из медиафайлов по запросу",
+    "desc_en": "Assembles video from media files by request"
    },
    "pinokiofactory/applio": {
     "func_ru": "Клонирование голоса",
@@ -3658,11 +4113,232 @@
     "desc_ru": "Applio — преобразование и клонирование голоса",
     "desc_en": "Applio voice cloning"
    },
+   "pinokiofactory/applio-old": {
+    "func_ru": "Клонирование и замена голоса",
+    "func_en": "Voice cloning and conversion",
+    "desc_ru": "Преобразует голос в записи в другой голос",
+    "desc_en": "Converts a voice in a recording into another voice"
+   },
+   "pinokiofactory/artist": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Создание изображений по текстовому описанию",
+    "desc_en": "Creates images from text prompts"
+   },
+   "pinokiofactory/audiocraft_plus": {
+    "func_ru": "Генерация музыки и звуков",
+    "func_en": "Music and sound generation",
+    "desc_ru": "Создание музыкальных и звуковых фрагментов",
+    "desc_en": "Creates music and sound clips"
+   },
+   "pinokiofactory/augmentoolkit": {
+    "func_ru": "Подготовка данных для обучения",
+    "func_en": "Training data preparation",
+    "desc_ru": "Сборка обучающих наборов данных из текстов",
+    "desc_en": "Builds training datasets from text"
+   },
+   "pinokiofactory/aura-sr-upscaler": {
+    "func_ru": "Увеличение разрешения фото",
+    "func_en": "Image upscaling",
+    "desc_ru": "Повышение разрешения изображений",
+    "desc_en": "Increases image resolution"
+   },
+   "pinokiofactory/autogpt": {
+    "func_ru": "Автономный ИИ-агент",
+    "func_en": "Autonomous AI agent",
+    "desc_ru": "Выполнение задач агентом по заданной цели",
+    "desc_en": "Agent that performs tasks toward a goal"
+   },
+   "pinokiofactory/bolt": {
+    "func_ru": "Генерация кода приложений",
+    "func_en": "App code generation",
+    "desc_ru": "Создание веб-приложений по текстовому запросу",
+    "desc_en": "Builds web apps from a text prompt"
+   },
+   "pinokiofactory/browser-use": {
+    "func_ru": "Управление браузером агентом",
+    "func_en": "Agent browser control",
+    "desc_ru": "Автоматизация действий в браузере агентом",
+    "desc_en": "Agent-driven browser automation"
+   },
    "pinokiofactory/clarity-refiners-ui": {
     "func_ru": "Улучшение и апскейл картинок",
     "func_en": "Enhance & upscale images",
     "desc_ru": "Повышает чёткость и разрешение изображений",
     "desc_en": "Image enhancer/upscaler"
+   },
+   "pinokiofactory/cogstudio": {
+    "func_ru": "Генерация видео",
+    "func_en": "Video generation",
+    "desc_ru": "Интерфейс для генерации и редактирования видео",
+    "desc_en": "Interface for video generation and editing"
+   },
+   "pinokiofactory/cogvideo": {
+    "func_ru": "Генерация видео по тексту",
+    "func_en": "Text-to-video generation",
+    "desc_ru": "Создание видеороликов по текстовому описанию",
+    "desc_en": "Creates video clips from text prompts"
+   },
+   "pinokiofactory/comfy": {
+    "func_ru": "Сборка процессов генерации",
+    "func_en": "Generation workflow builder",
+    "desc_ru": "Узловой редактор процессов генерации изображений",
+    "desc_en": "Node editor for image generation workflows"
+   },
+   "pinokiofactory/controlyourself": {
+    "func_ru": "Управляемая генерация изображений",
+    "func_en": "Controlled image generation",
+    "desc_ru": "Создание изображений по референсным условиям",
+    "desc_en": "Creates images from reference conditions"
+   },
+   "pinokiofactory/cube": {
+    "func_ru": "Генерация 3D-моделей",
+    "func_en": "3D model generation",
+    "desc_ru": "Создание трёхмерных моделей",
+    "desc_en": "Creates three-dimensional models"
+   },
+   "pinokiofactory/dia": {
+    "func_ru": "Синтез диалоговой речи",
+    "func_en": "Dialogue speech synthesis",
+    "desc_ru": "Озвучивание диалогов по тексту",
+    "desc_en": "Generates spoken dialogue from text"
+   },
+   "pinokiofactory/diamond": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "pinokiofactory/diffrhythm": {
+    "func_ru": "Генерация музыки",
+    "func_en": "Music generation",
+    "desc_ru": "Создание музыкальных композиций",
+    "desc_en": "Generates music tracks"
+   },
+   "pinokiofactory/diffusers-image-fill": {
+    "func_ru": "Дорисовка областей фото",
+    "func_en": "Image inpainting",
+    "desc_ru": "Заполнение и дорисовка участков изображения",
+    "desc_en": "Fills and repaints parts of an image"
+   },
+   "pinokiofactory/ditto": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   }
+  }
+ },
+ "_mkt_loc_14": {
+  "v": 1,
+  "map": {
+   "pinokiofactory/dough": {
+    "func_ru": "Создание анимации и видео",
+    "func_en": "Animation and video creation",
+    "desc_ru": "Инструмент сборки анимационных роликов",
+    "desc_en": "Tool for assembling animated clips"
+   },
+   "pinokiofactory/e2-f5-tts": {
+    "func_ru": "Синтез речи из текста",
+    "func_en": "Text to speech",
+    "desc_ru": "Озвучивание текста голосом",
+    "desc_en": "Turns text into spoken audio"
+   },
+   "pinokiofactory/echomimic2": {
+    "func_ru": "Оживление фото под речь",
+    "func_en": "Talking portrait animation",
+    "desc_ru": "Анимация человека на фото под аудио",
+    "desc_en": "Animates a person in a photo to audio"
+   },
+   "pinokiofactory/errortest": {
+    "func_ru": "Тестовый сценарий установки",
+    "func_en": "Install test script",
+    "desc_ru": "Служебный рецепт для проверки обработки ошибок",
+    "desc_en": "Utility recipe for checking error handling"
+   },
+   "pinokiofactory/facepoke": {
+    "func_ru": "Редактирование выражения лица",
+    "func_en": "Face expression editing",
+    "desc_ru": "Изменение мимики и черт лица на фото",
+    "desc_en": "Edits facial expression on a photo"
+   },
+   "pinokiofactory/flashdiffusion": {
+    "func_ru": "Быстрая генерация изображений",
+    "func_en": "Fast image generation",
+    "desc_ru": "Ускоренное создание изображений по описанию",
+    "desc_en": "Accelerated image generation from prompts"
+   },
+   "pinokiofactory/florence-sam": {
+    "func_ru": "Выделение объектов на изображении",
+    "func_en": "Object detection and segmentation",
+    "desc_ru": "Находит и выделяет объекты на изображении",
+    "desc_en": "Finds and segments objects in an image"
+   },
+   "pinokiofactory/florence2": {
+    "func_ru": "Описание и разметка изображений",
+    "func_en": "Image captioning and detection",
+    "desc_ru": "Модель распознаёт содержимое изображения и описывает его",
+    "desc_en": "Model recognizes image content and describes it"
+   },
+   "pinokiofactory/flux-webui": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Веб-интерфейс для генерации изображений",
+    "desc_en": "Web interface for image generation"
+   },
+   "pinokiofactory/forge": {
+    "func_ru": "Веб-интерфейс генерации изображений",
+    "func_en": "Image generation web UI",
+    "desc_ru": "Интерфейс для создания изображений диффузионными моделями",
+    "desc_en": "Web UI for creating images with diffusion models"
+   },
+   "pinokiofactory/hallo": {
+    "func_ru": "Оживление фото под речь",
+    "func_en": "Talking portrait animation",
+    "desc_ru": "Анимация портрета под звуковую дорожку",
+    "desc_en": "Animates a portrait to an audio track"
+   },
+   "pinokiofactory/hertz": {
+    "func_ru": "Голосовой диалог с моделью",
+    "func_en": "Voice conversation with a model",
+    "desc_ru": "Аудио-модель для разговорного взаимодействия",
+    "desc_en": "Audio model for spoken interaction"
+   },
+   "pinokiofactory/hunyuanvideo": {
+    "func_ru": "Генерация видео по тексту",
+    "func_en": "Text to video",
+    "desc_ru": "Создание видеороликов по текстовому описанию",
+    "desc_en": "Creates video clips from a text description"
+   },
+   "pinokiofactory/instantir": {
+    "func_ru": "Работа с изображениями",
+    "func_en": "Image tool",
+    "desc_ru": "Приложение для обработки изображений",
+    "desc_en": "App for image processing"
+   },
+   "pinokiofactory/invoke": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Рабочая среда для создания изображений",
+    "desc_en": "Workspace for creating images"
+   },
+   "pinokiofactory/janus": {
+    "func_ru": "Понимание и генерация изображений",
+    "func_en": "Image understanding and generation",
+    "desc_ru": "Мультимодальная модель: разбирает и создаёт изображения",
+    "desc_en": "Multimodal model that reads and creates images"
+   },
+   "pinokiofactory/liveportrait": {
+    "func_ru": "Оживление портрета",
+    "func_en": "Portrait animation",
+    "desc_ru": "Анимация лица на фото по видео-образцу",
+    "desc_en": "Animates a face in a photo from a driving video"
+   },
+   "pinokiofactory/llamafactory": {
+    "func_ru": "Дообучение языковых моделей",
+    "func_en": "LLM fine-tuning",
+    "desc_ru": "Обучение и настройка языковых моделей",
+    "desc_en": "Training and fine-tuning language models"
    },
    "pinokiofactory/macOS-use": {
     "func_ru": "Управление Mac для ИИ-агентов",
@@ -3670,17 +4346,197 @@
     "desc_ru": "Даёт агентам доступ к приложениям macOS",
     "desc_en": "Make Mac apps agent-accessible"
    },
+   "pinokiofactory/mcp": {
+    "func_ru": "Запуск MCP-сервера",
+    "func_en": "MCP server runner",
+    "desc_ru": "Локальный запуск сервера Model Context Protocol",
+    "desc_en": "Runs a Model Context Protocol server locally"
+   },
+   "pinokiofactory/mlx": {
+    "func_ru": "Запуск моделей на Apple Silicon",
+    "func_en": "Model runtime for Apple Silicon",
+    "desc_ru": "Локальный запуск моделей через фреймворк MLX",
+    "desc_en": "Runs models locally via the MLX framework"
+   },
+   "pinokiofactory/mlx-video-transcription": {
+    "func_ru": "Расшифровка видео в текст",
+    "func_en": "Video transcription",
+    "desc_ru": "Перевод речи из видео в текст",
+    "desc_en": "Turns speech in video into text"
+   },
    "pinokiofactory/mlx-video-ui": {
     "func_ru": "Генерация видео (Mac)",
     "func_en": "MLX video UI",
     "desc_ru": "Интерфейс MLX Video для Apple Silicon",
     "desc_en": "MLX Video launcher"
    },
+   "pinokiofactory/mochi": {
+    "func_ru": "Генерация видео по тексту",
+    "func_en": "Text-to-video generation",
+    "desc_ru": "Создание видеороликов по текстовому описанию",
+    "desc_en": "Creates video clips from text prompts"
+   },
+   "pinokiofactory/moshi": {
+    "func_ru": "Голосовой диалог с моделью",
+    "func_en": "Voice chat with model",
+    "desc_ru": "Разговор с моделью голосом в реальном времени",
+    "desc_en": "Realtime spoken conversation with a model"
+   },
+   "pinokiofactory/oasis": {
+    "func_ru": "Генерация игрового мира",
+    "func_en": "Generative game world",
+    "desc_ru": "Интерактивная сцена, создаваемая моделью в реальном времени",
+    "desc_en": "Interactive scene generated by a model in real time"
+   },
+   "pinokiofactory/ominicontrol": {
+    "func_ru": "Управляемая генерация изображений",
+    "func_en": "Controlled image generation",
+    "desc_ru": "Создание изображений с заданием условий и референсов",
+    "desc_en": "Creates images guided by conditions and references"
+   },
+   "pinokiofactory/omnigen": {
+    "func_ru": "Генерация и правка изображений",
+    "func_en": "Image generation and editing",
+    "desc_ru": "Создание и редактирование изображений по тексту",
+    "desc_en": "Creates and edits images from text"
+   },
+   "pinokiofactory/omniparser": {
+    "func_ru": "Разбор интерфейсов на скриншотах",
+    "func_en": "Screen UI parsing",
+    "desc_ru": "Распознаёт элементы интерфейса на изображении экрана",
+    "desc_en": "Detects UI elements in screen images"
+   },
+   "pinokiofactory/open-webui": {
+    "func_ru": "Чат с языковыми моделями",
+    "func_en": "Chat with LLMs",
+    "desc_ru": "Веб-интерфейс для общения с локальными моделями",
+    "desc_en": "Web interface for chatting with local models"
+   },
+   "pinokiofactory/openaudio": {
+    "func_ru": "Работа со звуком",
+    "func_en": "Audio generation",
+    "desc_ru": "Генерация и обработка аудио",
+    "desc_en": "Audio generation and processing"
+   },
+   "pinokiofactory/openui": {
+    "func_ru": "Генерация интерфейсов",
+    "func_en": "UI generation",
+    "desc_ru": "Создание элементов интерфейса по описанию",
+    "desc_en": "Builds UI elements from a description"
+   },
+   "pinokiofactory/ovis": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "pinokiofactory/pcm": {
+    "func_ru": "Локальное ИИ-приложение",
+    "func_en": "Local AI app",
+    "desc_ru": "Приложение из каталога, запускается локально",
+    "desc_en": "App from the catalog, runs locally"
+   },
+   "pinokiofactory/photomaker2": {
+    "func_ru": "Портреты по фото человека",
+    "func_en": "Personalized portrait generation",
+    "desc_ru": "Создание портретов с сохранением внешности",
+    "desc_en": "Creates portraits preserving a person's likeness"
+   },
+   "pinokiofactory/pyramidflow": {
+    "func_ru": "Генерация видео по тексту",
+    "func_en": "Text to video",
+    "desc_ru": "Создание видеороликов по описанию",
+    "desc_en": "Creates video clips from a description"
+   },
+   "pinokiofactory/rc-stableaudio": {
+    "func_ru": "Генерация аудио по тексту",
+    "func_en": "Text-to-audio generation",
+    "desc_ru": "Создание аудиодорожек по текстовому описанию",
+    "desc_en": "Generates audio tracks from text prompts"
+   },
+   "pinokiofactory/sd35": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Создание изображений моделью Stable Diffusion 3.5",
+    "desc_en": "Creates images with the Stable Diffusion 3.5 model"
+   },
+   "pinokiofactory/sillytavern": {
+    "func_ru": "Ролевой чат с моделями",
+    "func_en": "Roleplay chat with models",
+    "desc_ru": "Интерфейс для чата с персонажами и моделями",
+    "desc_en": "Interface for chatting with characters and models"
+   },
+   "pinokiofactory/stable-diffusion-webui-forge": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Веб-интерфейс генерации изображений по тексту",
+    "desc_en": "Web interface for text to image generation"
+   },
+   "pinokiofactory/stable-fast-3d": {
+    "func_ru": "3D-модель из изображения",
+    "func_en": "Image-to-3D model",
+    "desc_ru": "Строит трёхмерную модель по фотографии объекта",
+    "desc_en": "Builds a 3D model from a single image"
+   },
+   "pinokiofactory/stableaudio": {
+    "func_ru": "Генерация аудио по тексту",
+    "func_en": "Text to audio",
+    "desc_ru": "Создание звука и музыки по описанию",
+    "desc_en": "Creates sound and music from a description"
+   },
+   "pinokiofactory/text2midi": {
+    "func_ru": "Генерация MIDI по тексту",
+    "func_en": "Text-to-MIDI generation",
+    "desc_ru": "Создаёт музыкальные MIDI-партии по описанию",
+    "desc_en": "Generates MIDI music parts from text"
+   },
+   "pinokiofactory/uno": {
+    "func_ru": "Генерация изображений",
+    "func_en": "Image generation",
+    "desc_ru": "Создание изображений с заданными объектами",
+    "desc_en": "Creates images with given subjects"
+   },
+   "pinokiofactory/vibevoice-realtime": {
+    "func_ru": "Синтез речи в реальном времени",
+    "func_en": "Realtime speech synthesis",
+    "desc_ru": "Озвучивание текста голосом в реальном времени",
+    "desc_en": "Realtime text to speech output"
+   },
+   "pinokiofactory/video-background-removal": {
+    "func_ru": "Удаление фона на видео",
+    "func_en": "Video background removal",
+    "desc_ru": "Отделение объекта от фона в видео",
+    "desc_en": "Separates the subject from the video background"
+   },
+   "pinokiofactory/wan": {
+    "func_ru": "Генерация видео",
+    "func_en": "Video generation",
+    "desc_ru": "Создание видео по тексту и изображению",
+    "desc_en": "Creates video from text and images"
+   },
    "pinokiofactory/whisper-webui": {
     "func_ru": "Расшифровка аудио в текст",
     "func_en": "Speech-to-text",
     "desc_ru": "Whisper — транскрипция речи из аудио/видео",
     "desc_en": "Whisper transcription"
+   },
+   "pinokiofactory/yue": {
+    "func_ru": "Генерация песен",
+    "func_en": "Song generation",
+    "desc_ru": "Создание музыки с вокалом",
+    "desc_en": "Generates music with vocals"
+   },
+   "pinokiofactory/z-image-turbo": {
+    "func_ru": "Быстрая генерация изображений",
+    "func_en": "Fast image generation",
+    "desc_ru": "Ускоренное создание изображений по описанию",
+    "desc_en": "Accelerated image generation from prompts"
+   },
+   "pinokiofactory/zonos": {
+    "func_ru": "Синтез речи из текста",
+    "func_en": "Text to speech",
+    "desc_ru": "Озвучивание текста голосом",
+    "desc_en": "Turns text into spoken audio"
    },
    "playgroundai/playground-v2.5": {
     "func_ru": "Генерация изображений по тексту",
@@ -3735,7 +4591,12 @@
     "func_en": "Image-to-video generation",
     "desc_ru": "Создание видео из изображения по текстовому промпту",
     "desc_en": "Creates video from an image and a text prompt"
-   },
+   }
+  }
+ },
+ "_mkt_loc_15": {
+  "v": 1,
+  "map": {
    "r3gm/wan2-2-fp8da-aoti-preview-2c": {
     "func_ru": "Генерация видео из изображения",
     "func_en": "Image-to-video generation",
@@ -3825,12 +4686,7 @@
     "func_en": "Assumption challenging",
     "desc_ru": "Выявляет и оспаривает скрытые предположения до превращения в риски",
     "desc_en": "Surfaces and challenges hidden assumptions before they become risks"
-   }
-  }
- },
- "_mkt_loc_13": {
-  "v": 1,
-  "map": {
+   },
    "skill_assumption_surfacing": {
     "func_ru": "Вскрытие скрытых допущений",
     "func_en": "Surfacing hidden assumptions",
@@ -4034,7 +4890,12 @@
     "func_en": "Cross-checking facts",
     "desc_ru": "Подтверждает каждый факт минимум двумя независимыми источниками",
     "desc_en": "Confirms each fact with at least two independent sources"
-   },
+   }
+  }
+ },
+ "_mkt_loc_16": {
+  "v": 1,
+  "map": {
    "skill_currency_conversion": {
     "func_ru": "Пересчёт валютных операций по курсу",
     "func_en": "Currency conversion at rate",
@@ -4118,12 +4979,7 @@
     "func_en": "Document contradiction check",
     "desc_ru": "Сканирует документ на логические противоречия и несоответствия данных",
     "desc_en": "Scans a document for logical contradictions and data mismatches"
-   }
-  }
- },
- "_mkt_loc_14": {
-  "v": 1,
-  "map": {
+   },
    "skill_doc_executive_summary": {
     "func_ru": "Резюме документа для руководства",
     "func_en": "Executive summary of documents",
@@ -4321,7 +5177,12 @@
     "func_en": "Job description writing",
     "desc_ru": "Пишет вакансии с разделением требований и нейтральным языком",
     "desc_en": "Writes job ads with separated requirements and neutral language"
-   },
+   }
+  }
+ },
+ "_mkt_loc_17": {
+  "v": 1,
+  "map": {
    "skill_hr_offer_benchmark": {
     "func_ru": "Сравнение оффера с рынком",
     "func_en": "Offer market benchmarking",
@@ -4405,12 +5266,7 @@
     "func_en": "Campaign KPI definition",
     "desc_ru": "Определяет KPI с целевыми значениями до старта кампании",
     "desc_en": "Defines KPIs with target values before a campaign starts"
-   }
-  }
- },
- "_mkt_loc_15": {
-  "v": 1,
-  "map": {
+   },
    "skill_lead_qualification": {
     "func_ru": "Квалификация потенциального клиента",
     "func_en": "Lead qualification",
@@ -4614,7 +5470,12 @@
     "func_en": "Sequencing service recovery",
     "desc_ru": "Определяет последовательность восстановления сервисов с учётом их зависимостей",
     "desc_en": "Determines the order of service recovery accounting for dependencies"
-   },
+   }
+  }
+ },
+ "_mkt_loc_18": {
+  "v": 1,
+  "map": {
    "skill_refactor_metrics": {
     "func_ru": "Замер эффекта рефакторинга",
     "func_en": "Refactoring impact measurement",
@@ -4698,12 +5559,7 @@
     "func_en": "Root cause isolation",
     "desc_ru": "Сужает круг возможных причин через исключение, а не предположения",
     "desc_en": "Narrows down possible causes by elimination rather than assumption"
-   }
-  }
- },
- "_mkt_loc_16": {
-  "v": 1,
-  "map": {
+   },
    "skill_say_no_filter": {
     "func_ru": "Отсев низкоценных задач",
     "func_en": "Low-value task filtering",
@@ -4907,7 +5763,12 @@
     "func_en": "Articulating trade-offs",
     "desc_ru": "При рекомендации решения явно называет, чем придётся пожертвовать",
     "desc_en": "States explicitly what must be sacrificed when recommending a decision"
-   },
+   }
+  }
+ },
+ "_mkt_loc_19": {
+  "v": 1,
+  "map": {
    "skill_transparency_first": {
     "func_ru": "Открытые ответы на критику",
     "func_en": "Transparent replies to criticism",
@@ -4997,12 +5858,7 @@
     "func_en": "Image-to-3D model generation",
     "desc_ru": "Быстро строит 3D-модель по изображению",
     "desc_en": "Quickly builds a 3D model from an image"
-   }
-  }
- },
- "_mkt_loc_17": {
-  "v": 1,
-  "map": {
+   },
    "styletts2/styletts2": {
     "func_ru": "Синтез речи по тексту",
     "func_en": "Text-to-speech synthesis",
