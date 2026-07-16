@@ -70,6 +70,10 @@ TMP=$(mktemp -d)
 curl -fsSL "$PACK" -o "$TMP/p.tgz"; tar -xzf "$TMP/p.tgz" -C "$TMP"
 PD=$(find "$TMP" -maxdepth 1 -type d -name "extella-marketplace-pack*"|head -1)
 ( cd "$PD" && "$PY" install.py ) || echo "  ⚠️ pack install.py частично"
+# Activity Center: панель уже в toolbar.js; ставим мост+наблюдатель (LaunchAgent) на macOS
+if [ "$(uname)" = "Darwin" ] && [ -f "$PD/device/activity-center/install.py" ]; then
+  "$PY" "$PD/device/activity-center/install.py" >/dev/null 2>&1 && echo "  \u2713 Activity Center (\u043c\u043e\u0441\u0442 :8799)" || echo "  ~ Activity Center \u043f\u0440\u043e\u043f\u0443\u0449\u0435\u043d"
+fi
 curl -fsSL "$WIZ" -o "$TMP/w.tgz"; tar -xzf "$TMP/w.tgz" -C "$TMP"
 WD=$(find "$TMP" -maxdepth 1 -type d -name "extella-adoption-wizard*"|head -1)
 cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
