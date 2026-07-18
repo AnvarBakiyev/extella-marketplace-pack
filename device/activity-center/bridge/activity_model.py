@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict, deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -76,6 +76,36 @@ SEMANTICS: dict[str, dict[str, Any]] = {
         "purpose": "Проверяет, что локальный исполнитель доступен для новых задач.",
         "recurring": False,
     },
+    "excel_query": {
+        "running": "Выполняется запрос к Excel",
+        "completed": "Выполнен запрос к Excel",
+        "interrupted": "Прерван запрос к Excel",
+        "detail": "Extella выполнила разовый запрос к данным Excel.",
+        "category": "action",
+        "origin": "Excel · разовая локальная операция",
+        "purpose": "Читает или выбирает данные из книги Excel для текущей задачи пользователя или агента.",
+        "recurring": False,
+    },
+    "excel_merger": {
+        "running": "Объединяются данные Excel",
+        "completed": "Объединены данные Excel",
+        "interrupted": "Прервано объединение данных Excel",
+        "detail": "Extella объединила данные нескольких таблиц Excel.",
+        "category": "action",
+        "origin": "Excel · разовая локальная операция",
+        "purpose": "Собирает данные Excel в один результат для текущей задачи.",
+        "recurring": False,
+    },
+    "xlsx_read_to_text": {
+        "running": "Читается файл Excel",
+        "completed": "Прочитан файл Excel",
+        "interrupted": "Прервано чтение файла Excel",
+        "detail": "Extella извлекла текст и значения из файла Excel.",
+        "category": "action",
+        "origin": "Excel · разовая локальная операция",
+        "purpose": "Преобразует содержимое книги Excel в данные для текущей задачи.",
+        "recurring": False,
+    },
 }
 
 
@@ -127,7 +157,11 @@ def _to_public(task: dict[str, Any]) -> dict[str, Any]:
         ).replace("Обновляется", "Прервано обновление").replace(
             "Обновляются", "Прервано обновление"
         )
-        detail = "Listener был перезапущен до подтверждения результата."
+        detail = (
+            "Listener не прислал подтверждение завершения, поэтому старая запись закрыта."
+            if task.get("interruptionReason") == "stale"
+            else "Listener был перезапущен до подтверждения результата."
+        )
         category = semantic.get("category", "action")
     elif function_name:
         title = semantic.get(status) or semantic.get("completed") or f"Задача: {_humanize_function(function_name)}"
@@ -227,7 +261,9 @@ def _attach_scheduler_sources(tasks: list[dict[str, Any]]) -> None:
 
 
 def build_activity(
-    events: Iterable[dict[str, Any]], listener_info: dict[str, Any] | None = None
+    events: Iterable[dict[str, Any]],
+    listener_info: dict[str, Any] | None = None,
+    dismissed_ids: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     tasks: dict[str, dict[str, Any]] = {}
     pending: dict[int, list[str]] = defaultdict(list)
@@ -262,7 +298,10 @@ def build_activity(
         if event_type == "identified" and event.get("function"):
             source_pid = ppid if pending.get(ppid) else pid
             candidates = pending.get(source_pid, [])
-            for candidate_id in candidates:
+            # Several tasks can overlap on the listener. The worker belongs to
+            # the most recently received unidentified task, not an old stale
+            # row left in the queue by a missing lifecycle event.
+            for candidate_id in reversed(candidates):
                 candidate = tasks.get(candidate_id)
                 if candidate and not candidate.get("function"):
                     candidate["function"] = event["function"]
@@ -281,6 +320,15 @@ def build_activity(
                 },
             )
             task["summary"] = event.get("summary") or {}
+            result_status = str(task["summary"].get("status") or "").lower()
+            if result_status in {"success", "completed", "ok"}:
+                # Some listener versions emit the final result but omit the
+                # separate `completed` event. A successful result is terminal.
+                task["status"] = "completed"
+                task["completedAt"] = event.get("ts")
+                source_pid = int(task.get("sourcePid") or pid)
+                if task_id in pending.get(source_pid, []):
+                    pending[source_pid].remove(task_id)
             continue
 
         if event_type in {"completed", "failed"} and task_id:
@@ -310,12 +358,53 @@ def build_activity(
             if task.get("status") == "running" and source_pid not in current_pids:
                 task["status"] = "interrupted"
                 task["completedAt"] = now
+                task["interruptionReason"] = "listener_restart"
+
+    stale_before = datetime.now(timezone.utc) - timedelta(hours=2)
+    for task in tasks.values():
+        started_at = _parse_ts(task.get("startedAt"))
+        if (
+            task.get("status") == "running"
+            and started_at
+            and started_at < stale_before
+        ):
+            task["status"] = "interrupted"
+            task["completedAt"] = datetime.now(timezone.utc).isoformat()
+            task["interruptionReason"] = "stale"
 
     public_tasks = [_to_public(task) for task in tasks.values()]
+    dismissed = set(dismissed_ids or [])
+    if dismissed:
+        public_tasks = [task for task in public_tasks if task["id"] not in dismissed]
     _attach_scheduler_sources(public_tasks)
     public_tasks.sort(key=lambda task: task.get("startedAt") or "", reverse=True)
     active = [task for task in public_tasks if task["status"] == "running"]
-    history = [task for task in public_tasks if task["status"] != "running"][:40]
+    # Схлопывание ПОВТОРОВ: каждая проверка расписания / перечитывание реестра / повторный вызов
+    # одной и той же задачи шли отдельной строкой и забивали ленту сотнями одинаковых записей
+    # (расписание — 814 строк подряд). Держим самую свежую, число повторов дописываем в detail
+    # (фронт менять не нужно). Схлопываются только БУКВАЛЬНО одинаковые (та же функция + статус) —
+    # разные задачи остаются отдельными строками.
+    _hist_raw = [task for task in public_tasks if task["status"] != "running"]
+    _keep: dict[tuple[Any, ...], dict[str, Any]] = {}
+    _order: list[tuple[Any, ...]] = []
+    _history: list[dict[str, Any]] = []
+    for task in _hist_raw:   # public_tasks уже отсортированы по времени убыв. → первый = самый свежий
+        key = (task.get("function") or task.get("title"), task.get("status"))
+        if key in _keep:
+            _keep[key]["_repeat"] = _keep[key].get("_repeat", 1) + 1
+            continue
+        task["_repeat"] = 1
+        _keep[key] = task
+        _order.append(key)
+        _history.append(task)
+    for key in _order:
+        task = _keep[key]
+        repeats = task.pop("_repeat", 1)
+        if repeats > 1:
+            task["repeatCount"] = repeats
+            task["detail"] = ((task.get("detail") or "").rstrip() + " Повторов: %d." % repeats).strip()
+    _history.sort(key=lambda task: task.get("startedAt") or "", reverse=True)
+    history = _history[:40]
     if listener_info.get("orphaned", 0):
         headline = "Найдены лишние процессы Extella"
         health = "warning"
