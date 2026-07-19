@@ -19,6 +19,14 @@ Registry launch commands and full project paths are likewise never returned to
 the toolbar. A process can be stopped only when its cwd or LaunchAgent proves
 that it belongs to the selected service.
 
+Successful result events are terminal even when an older listener omits the
+separate `completed` event. This prevents finished Excel and other one-off
+operations from remaining in **Сейчас** forever. Expanded completed rows have
+**Убрать запись из ленты**, and the panel header has **Очистить выполненные**.
+These actions hide lifecycle records; they do not delete user files or Excel
+workbooks. A genuinely active listener task is cancelled with the native red
+**Cancel** button in Extella's bottom status bar.
+
 In **Plugins → Расписания**, the **Локальные сервисы Extella** block shows each
 registered localhost, port, PID, process name, source, and current state. A
 service switched off there is recorded in

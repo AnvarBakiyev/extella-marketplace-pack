@@ -22,6 +22,7 @@ from urllib.parse import urlparse
 
 from activity_model import build_activity, read_events
 from service_manager import ServiceError, control_service, list_services
+from task_state import dismiss_tasks, read_dismissed
 
 
 HOST = os.environ.get("EXTELLA_ACTIVITY_HOST", "127.0.0.1")
@@ -50,6 +51,16 @@ def control_authorized(origin: str, token: str) -> bool:
     if origin and origin not in ALLOWED_ORIGINS:
         return False
     return secrets.compare_digest(token, CONTROL_TOKEN)
+
+
+def activity_payload(include_dismissed: bool = False) -> dict[str, Any]:
+    payload = build_activity(
+        read_events(EVENT_FILE),
+        listener_processes(),
+        dismissed_ids=[] if include_dismissed else read_dismissed(),
+    )
+    payload["controlToken"] = CONTROL_TOKEN
+    return payload
 
 
 def listener_processes() -> dict[str, Any]:
@@ -155,10 +166,7 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         if path == "/api/activity":
-            self._send_json(
-                200,
-                build_activity(read_events(EVENT_FILE), listener_processes()),
-            )
+            self._send_json(200, activity_payload())
             return
         if path == "/api/services":
             self._send_json(
@@ -183,6 +191,29 @@ class Handler(BaseHTTPRequestHandler):
             )
             return
         path = urlparse(self.path).path
+        task_match = re.fullmatch(
+            r"/api/tasks/([A-Za-z0-9_.-]{1,160})/dismiss", path
+        )
+        if task_match:
+            dismissed = dismiss_tasks([task_match.group(1)])
+            self._send_json(
+                200,
+                {"status": "ok", "dismissed": len(dismissed)},
+            )
+            return
+        if path == "/api/tasks/clear-completed":
+            visible = activity_payload(include_dismissed=True)
+            task_ids = [task["id"] for task in visible.get("history", [])]
+            dismissed = dismiss_tasks(task_ids)
+            self._send_json(
+                200,
+                {
+                    "status": "ok",
+                    "cleared": len(task_ids),
+                    "dismissed": len(dismissed),
+                },
+            )
+            return
         match = re.fullmatch(r"/api/services/([A-Za-z0-9_.-]{1,128})/(start|stop)", path)
         if not match:
             self._send_json(404, {"status": "not_found"})

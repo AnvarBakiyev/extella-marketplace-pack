@@ -92,6 +92,7 @@ def main() -> None:
         root / "bridge" / "server.py",
         root / "bridge" / "activity_model.py",
         root / "bridge" / "service_manager.py",
+        root / "bridge" / "task_state.py",
         root / "instrumentation" / "extella_activity_hook.py",
     )
     for source in sources:

@@ -17,6 +17,9 @@ class ToolbarIntegrationTests(unittest.TestCase):
         self.assertIn("Регулярные задачи", source)
         self.assertIn("Локальные сервисы Extella", source)
         self.assertIn("X-Extella-Control", source)
+        self.assertIn("Очистить выполненные", source)
+        self.assertIn("Убрать запись из ленты", source)
+        self.assertIn("Cancel в нижней панели Extella", source)
         self.assertIn("PID ", source)
         self.assertIn("right:12px;bottom:12px", source)
 

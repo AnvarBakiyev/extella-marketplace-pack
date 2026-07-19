@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -62,6 +63,49 @@ class ActivityModelTests(unittest.TestCase):
         self.assertFalse(activity["active"])
         self.assertEqual(activity["history"][0]["status"], "interrupted")
         self.assertEqual(activity["history"][0]["title"], "Прервана проверка расписания")
+
+    def test_success_result_is_terminal_without_completed_event(self) -> None:
+        task_id = "ae9a1c7c-ddb3-4224-aabb-dfcaddfe36dc"
+        events = [
+            {"ts": "2026-07-16T06:09:42+00:00", "pid": 100, "ppid": 1, "type": "received", "taskId": task_id},
+            {"ts": "2026-07-16T06:09:43+00:00", "pid": 101, "ppid": 100, "type": "identified", "function": "excel_query"},
+            {"ts": "2026-07-16T06:09:44+00:00", "pid": 100, "ppid": 1, "type": "result", "taskId": task_id, "summary": {"status": "success"}},
+        ]
+        activity = build_activity(
+            events,
+            {"count": 1, "orphaned": 0, "processes": [{"pid": 100, "ppid": 1}]},
+        )
+        self.assertFalse(activity["active"])
+        self.assertEqual(activity["history"][0]["status"], "completed")
+        self.assertEqual(activity["history"][0]["title"], "Выполнен запрос к Excel")
+        self.assertIn("разовый запрос", activity["history"][0]["detail"])
+
+    def test_worker_is_attached_to_newest_pending_task(self) -> None:
+        now = datetime.now(timezone.utc)
+        old_id = "old-pending"
+        new_id = "new-pending"
+        events = [
+            {"ts": (now - timedelta(minutes=5)).isoformat(), "pid": 100, "ppid": 1, "type": "received", "taskId": old_id},
+            {"ts": (now - timedelta(minutes=1)).isoformat(), "pid": 100, "ppid": 1, "type": "received", "taskId": new_id},
+            {"ts": now.isoformat(), "pid": 101, "ppid": 100, "type": "identified", "function": "xlsx_read_to_text"},
+        ]
+        activity = build_activity(
+            events,
+            {"count": 1, "orphaned": 0, "processes": [{"pid": 100, "ppid": 1}]},
+        )
+        by_id = {task["id"]: task for task in activity["active"]}
+        self.assertIsNone(by_id[old_id]["function"])
+        self.assertEqual(by_id[new_id]["function"], "xlsx_read_to_text")
+
+    def test_dismissed_task_is_removed_from_feed_and_counts(self) -> None:
+        task_id = "dismiss-me"
+        events = [
+            {"ts": "2026-07-16T06:09:42+00:00", "pid": 100, "ppid": 1, "type": "received", "taskId": task_id},
+            {"ts": "2026-07-16T06:09:43+00:00", "pid": 100, "ppid": 1, "type": "completed", "taskId": task_id},
+        ]
+        activity = build_activity(events, dismissed_ids=[task_id])
+        self.assertFalse(activity["history"])
+        self.assertEqual(activity["counts"]["completed"], 0)
 
 
 if __name__ == "__main__":
