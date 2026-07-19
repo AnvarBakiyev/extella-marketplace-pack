@@ -74,6 +74,32 @@ for i, f in enumerate(files, 1):
         print("  ❌", name, "—", str(e)[:70]); fail += 1
 print("  сохранено %d / %d, ошибок %d" % (ok, len(files), fail))
 
+# ---- 1b. Платформенные эксперты (platform_experts/): СТАВИМ, НО НЕ ЗАТИРАЕМ ----
+# mcp_call/mcp_connect/mcp_list живут на платформе и правятся там же; слепая
+# перезапись убила бы чужие правки — поэтому они лежат вне experts/. Но тогда
+# они не создавались НИ У КОГО, и весь MCP-контур у нового клиента упирался в
+# «Expert not found» (находка Wizard-чата). Семантика: создать, если нет;
+# если уже есть — не трогать. ВАЖНО: платформа на отсутствующий эксперт отдаёт
+# HTTP 500, а не 404 — «нет» определяем по любой неудаче чтения, не по коду.
+print("== Платформенные эксперты (создать, если нет) ==")
+pfiles = sorted(glob.glob(os.path.join(HERE, "platform_experts", "*.py")))
+for f in pfiles:
+    name = os.path.basename(f)[:-3]
+    try:
+        cur = api("/api/expert/get", {"name": name, "global": True}, timeout=30)
+    except Exception:
+        cur = {}
+    if isinstance(cur, dict) and cur.get("status") == "success" and (cur.get("expert_code") or "").strip():
+        print("  ⏭  %s — уже есть, не трогаю" % name)
+        continue
+    src = open(f, encoding="utf-8").read()
+    try:
+        r = api("/api/expert/save", {"name": name, "description": desc_of(src) or name,
+                                     "code": src, "kwargs": {}, "cspl": "fython", "global": True}, timeout=45)
+        print(("  ✅ " if r.get("status") == "success" else "  ❌ ") + name)
+    except Exception as e:
+        print("  ❌", name, "—", str(e)[:70])
+
 # ---- 2. Концепты (best-effort; для семантического поиска) ----
 print("== Концепты ==")
 for f in sorted(glob.glob(os.path.join(HERE, "concepts", "*.md"))):
