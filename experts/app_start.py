@@ -81,7 +81,11 @@ def app_start(app_id="", root="", entry="start.js"):
             with socket.create_connection(("127.0.0.1", port), timeout=1.5): up = True; break
         except Exception: pass
     # записать порт в реестр
-    reg = os.path.expanduser("~/extella-plugins/_registry/"+app_id+".json")
+    reg = os.path.expanduser("~/extella-plugins/_registry/"+re.sub(r"[^a-zA-Z0-9]","_",app_id)+".json")  # плоское имя, зеркало _safeIdOf тулбара
+    _legacy = os.path.expanduser("~/extella-plugins/_registry/"+app_id+".json")
+    if _legacy!=reg and os.path.isfile(_legacy) and not os.path.isfile(reg):
+        try: os.replace(_legacy, reg)   # миграция старой вложенной записи
+        except Exception: pass
     if os.path.exists(reg):
         try:
             man = json.load(open(reg)); man.setdefault("ui",{})["port"] = port; man["ui"]["type"]="local_server"

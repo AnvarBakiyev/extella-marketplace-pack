@@ -32,6 +32,7 @@ def app_uninstall(app_id="", root=""):
     reg_candidates = [
         os.path.expanduser("~/extella-plugins/_registry/" + app_id + ".json"),
         os.path.expanduser("~/extella-plugins/_registry/" + app_id.replace("/", "_") + ".json"),
+        os.path.expanduser("~/extella-plugins/_registry/" + re.sub(r"[^a-zA-Z0-9]", "_", app_id) + ".json"),  # плоское имя (зеркало _safeIdOf)
         os.path.expanduser("~/extella-plugins/_registry/" + app_id.split("/")[-1] + ".json"),
     ]
     for reg in reg_candidates:
