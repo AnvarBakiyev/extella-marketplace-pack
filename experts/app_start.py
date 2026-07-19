@@ -86,14 +86,19 @@ def app_start(app_id="", root="", entry="start.js"):
     if _legacy!=reg and os.path.isfile(_legacy) and not os.path.isfile(reg):
         try: os.replace(_legacy, reg)   # миграция старой вложенной записи
         except Exception: pass
-    if os.path.exists(reg):
+    # В реестр пишем ТОЛЬКО РЕАЛЬНО подтверждённый порт (из лога приложения или
+    # ответивший на подключение). Догадка 7860 раньше уезжала в манифест как факт —
+    # тулбар потом открывал бы чужой/мёртвый порт, а карточка врала бы «запущено»
+    # (класс «правдоподобный ложный результат», находка Wizard-чата на MCP).
+    if os.path.exists(reg) and (up or found_url):
         try:
             man = json.load(open(reg)); man.setdefault("ui",{})["port"] = port; man["ui"]["type"]="local_server"
             man["ui"]["url"] = "http://localhost:%d" % port; man["running"]=up
             open(reg,"w",encoding="utf-8").write(json.dumps(man,ensure_ascii=False,indent=2))
         except Exception: pass
     # found_url=True → знаем реальный порт (можно встраивать); иначе порт неизвестен → UI попросит нажать ещё раз
-    out = {"status":"success" if up else "starting", "app_id":app_id, "port":port,
+    out = {"status":"success" if up else "starting", "app_id":app_id,
+           "port": (port if (up or found_url) else None),   # порт не подтверждён → не выдаём догадку за факт
            "ready":up, "found_url":found_url}
     if up or found_url:
         out["url"] = "http://localhost:%d" % port
