@@ -4,6 +4,7 @@ set -euo pipefail
 PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
 WIZARD_REF="${EXTELLA_WIZARD_REF:-codex/prod-hardening}"
 WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/${WIZARD_REF}.tar.gz"
+WIZ_API="https://api.github.com/repos/AnvarBakiyev/extella-adoption-wizard/commits/$(printf '%s' "$WIZARD_REF" | sed 's|/|%2F|g')"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
 WA="$HOME/extella_wizard/app"; AGENT="${EXTELLA_AGENT_ID:-agent_extella_alibaba_default}"
@@ -81,6 +82,8 @@ curl -fsSL "$WIZ" -o "$TMP/w.tgz"; tar -xzf "$TMP/w.tgz" -C "$TMP"
 WD=$(find "$TMP" -maxdepth 1 -type d -name "extella-adoption-wizard*"|head -1)
 cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
 ( cd "$WD" && "$PY" install.py ) || echo "  ⚠️ wizard install.py частично"
+QA_SHA=$(curl -fsSL "$WIZ_API" 2>/dev/null | "$PY" -c 'import json,sys; print((json.load(sys.stdin) or {}).get("sha", ""))' 2>/dev/null || true)
+[ -n "$QA_SHA" ] && printf '%s\n' "$QA_SHA" > "$WA/.qa_revision"
 rm -rf "$TMP"
 
 say "5/5 Запуск"
