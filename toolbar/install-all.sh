@@ -2,11 +2,14 @@
 # Полный установщик Extella для коллег: ТУЛБАР + ЭКСПЕРТЫ тулбара + ВИЗАРД.
 set -euo pipefail
 PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
-WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/main.tar.gz"
+WIZARD_REF="${EXTELLA_WIZARD_REF:-codex/prod-hardening}"
+WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/${WIZARD_REF}.tar.gz"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
 WA="$HOME/extella_wizard/app"; AGENT="${EXTELLA_AGENT_ID:-agent_extella_alibaba_default}"
 say(){ printf "\n\033[1m%s\033[0m\n" "$*"; }
+
+say "QA-сборка Extella · визард: ${WIZARD_REF}"
 
 say "1/5 Тулбар"
 mkdir -p "$APP"; [ -f "$APP/toolbar.js" ] && cp "$APP/toolbar.js" "$APP/toolbar.js.bak.$(date +%s)"
@@ -83,6 +86,8 @@ rm -rf "$TMP"
 say "5/5 Запуск"
 pkill -f "extella_wizard/app/server.py" 2>/dev/null || true
 ( cd "$WA" && nohup "$PY" server.py >/tmp/extella_wizard.log 2>&1 & ); sleep 2
-curl -fsS http://127.0.0.1:8765/x/health >/dev/null 2>&1 && echo "  ✓ мост :8765" || echo "  ~ мост поднимется при открытии"
+HEALTH=$(curl -fsS http://127.0.0.1:8765/x/health 2>/dev/null || true)
+VER=$(printf '%s' "$HEALTH" | "$PY" -c 'import json,sys; print((json.load(sys.stdin) or {}).get("version", ""))' 2>/dev/null || true)
+[ -n "$VER" ] && echo "  ✓ мост :8765 · версия $VER · QA $WIZARD_REF" || echo "  ~ мост поднимется при открытии"
 pkill -f "Extella.app" 2>/dev/null || true; sleep 1; open -a Extella 2>/dev/null || true
 say "Готово ✓ — открой Extella → Plugins"
