@@ -1,5 +1,5 @@
 def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
-    import json, os, re, subprocess, threading, queue, time
+    import json, os, re, subprocess, threading, queue, time, sys, shutil
     server_id = "" if (not server_id or str(server_id).startswith("{{")) else str(server_id).strip()
     pkg_type = "" if (not pkg_type or str(pkg_type).startswith("{{")) else str(pkg_type).strip().lower()
     pkg = "" if (not pkg or str(pkg).startswith("{{")) else str(pkg).strip()
@@ -9,11 +9,24 @@ def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
     if not pkg: return err("нужен идентификатор пакета (pkg)")
 
     def _abs(cmd0):
-        ABS = {"uvx": ["/opt/homebrew/bin/uvx", "/usr/local/bin/uvx"],
+        ABS = {"uvx": ["/opt/homebrew/bin/uvx", "/usr/local/bin/uvx", os.path.expanduser("~/.local/bin/uvx")],
                "npx": ["/opt/homebrew/bin/npx", "/usr/local/bin/npx", "/opt/homebrew/opt/node@24/bin/npx"]}
         for p_ in ABS.get(cmd0, []):
             if os.path.exists(p_): return p_
+        w = shutil.which(cmd0)
+        if w: return w
+        # uvx нет — ставим uv в user-space (без админа), как делает установщик приложений.
+        if cmd0 == "uvx":
+            try: subprocess.run([sys.executable,"-m","pip","install","-q","--user","uv"], capture_output=True, text=True, timeout=180)
+            except Exception: pass
+            for c in ABS["uvx"] + [shutil.which("uvx")]:
+                if c and os.path.exists(c): return c
         return cmd0
+    def _runtime_missing(exe):
+        # Честное человеческое сообщение вместо сырого «Errno 2 No such file: uvx».
+        if exe == "npx":
+            return "Для этого сервера нужен Node.js — его нет на устройстве. Установите Node (например, brew install node) и нажмите «Подключить» ещё раз."
+        return "Не удалось подготовить окружение для MCP-сервера (uv/uvx). Проверьте, что установлен Python с pip, и попробуйте ещё раз."
     def _session(cmd, timeout):
         env = dict(os.environ); env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + env.get("PATH", "")
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env, text=True, bufsize=1)
@@ -50,9 +63,14 @@ def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
     key = re.sub(r"[^a-z0-9_]+","_", tail.lower()).strip("_")[:40]
     if not key: return err("не удалось построить ключ сервера")
     cmd = ["uvx", pkg] if pkg_type == "pypi" else ["npx", "-y", pkg]
-    run_cmd = [_abs(cmd[0])] + cmd[1:]
+    exe = _abs(cmd[0])
+    if exe == cmd[0] and not (os.path.isabs(exe) and os.path.exists(exe)):
+        return err(_runtime_missing(cmd[0]))   # uvx/npx не нашли и не поставили — не падаем сырым Errno 2
+    run_cmd = [exe] + cmd[1:]
     try:
         p, rpc, notify = _session(run_cmd, 150)
+    except FileNotFoundError:
+        return err(_runtime_missing(cmd[0]))
     except Exception as e:
         return err("не запустился: "+str(e)[:110])
     try:
