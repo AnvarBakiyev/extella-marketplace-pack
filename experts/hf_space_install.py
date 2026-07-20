@@ -36,8 +36,27 @@ def hf_space_install(space="", plugin_id="", display_name="", port="", root_path
     def _install_embed(space_host):
         def esc2(x): return str(x).replace("&","&amp;").replace('"',"&quot;")
         idx2 = ("<!doctype html><meta charset=utf-8><title>" + esc2(display_name) + "</title>"
-                "<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100vh;display:block}</style>"
-                "<iframe src=\"" + esc2(space_host) + "\" allow=\"clipboard-write; camera; microphone\"></iframe>")
+                "<style>html,body{margin:0;height:100%;font-family:-apple-system,system-ui,sans-serif;"
+                "background:#f4f1ea;color:#0a0a0a}"
+                "@media(prefers-color-scheme:dark){html,body{background:#241f1a;color:#f4f1ea}}"
+                ".w{display:flex;align-items:center;justify-content:center;height:100%;padding:32px;box-sizing:border-box}"
+                ".c{max-width:420px;text-align:center}"
+                ".i{width:64px;height:64px;border-radius:16px;background:rgba(198,126,52,.14);"
+                "border:1px solid rgba(198,126,52,.35);display:flex;align-items:center;justify-content:center;"
+                "margin:0 auto 18px;font-size:30px}"
+                ".t{font-size:19px;font-weight:750;margin-bottom:8px}"
+                ".s{font-size:13.5px;line-height:1.55;opacity:.7;margin-bottom:22px}"
+                ".b{display:inline-block;background:#C67E34;color:#fff;text-decoration:none;font-weight:650;"
+                "font-size:13.5px;border-radius:10px;padding:12px 26px}"
+                ".b:hover{background:#b06f2b}</style>"
+                "<div class=w><div class=c>"
+                "<div class=i>&#127760;</div>"
+                "<div class=t>" + esc2(display_name) + "</div>"
+                "<div class=s>Это приложение HuggingFace &mdash; оно открывается в браузере, там работает полноценно.<br>"
+                "This HuggingFace app opens in your browser, where it runs fully.</div>"
+                "<a class=b href=\"" + esc2(space_host) + "\" target=_blank rel=noopener>"
+                "&#1054;&#1090;&#1082;&#1088;&#1099;&#1090;&#1100; &#183; Open &#8599;</a>"
+                "</div></div>")
         try:
             os.makedirs(root_path, exist_ok=True)
             os.makedirs(os.path.dirname(registry_path), exist_ok=True)
