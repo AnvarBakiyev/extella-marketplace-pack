@@ -43,6 +43,8 @@ MARKETPLACE_PATTERNS = (
     "release/plugins/*.json",
     "release/schemas/*.json",
     "release/release-manifest.json",
+    "toolbar/install-all.sh",
+    "toolbar/install-all.ps1",
     "toolbar/toolbar.js",
     "composer_catalog.json",
     "models_catalog.json",

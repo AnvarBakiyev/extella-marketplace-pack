@@ -1,88 +1,138 @@
-#!/usr/bin/env bash
-# Полный установщик Extella для коллег: ТУЛБАР + ЭКСПЕРТЫ тулбара + ВИЗАРД.
-set -euo pipefail
-PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
-WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/main.tar.gz"
-RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
-APP="$HOME/Library/Application Support/extella-desktop"
-WA="$HOME/extella_wizard/app"; AGENT="${EXTELLA_AGENT_ID:-agent_extella_alibaba_default}"
-say(){ printf "\n\033[1m%s\033[0m\n" "$*"; }
+#!/bin/sh
+# Native fail-closed bootstrap for Extella Client on macOS Intel and Apple Silicon.
+set -eu
 
-say "1/5 Тулбар"
-mkdir -p "$APP"; [ -f "$APP/toolbar.js" ] && cp "$APP/toolbar.js" "$APP/toolbar.js.bak.$(date +%s)"
-curl -fsSL "$RAW/toolbar.js" -o "$APP/tb.tmp"
-grep -q "Extella Plugins" "$APP/tb.tmp" || { echo "✗ toolbar check"; rm -f "$APP/tb.tmp"; exit 1; }
-mv "$APP/tb.tmp" "$APP/toolbar.js"; echo "  ✓"
+PYTHON_VERSION="3.12.13"
+UV_VERSION="0.11.30"
+BUNDLE_PATH="${EXTELLA_BUNDLE_PATH:-}"
+BUNDLE_URL="${EXTELLA_BUNDLE_URL:-}"
+BUNDLE_SHA256="${EXTELLA_BUNDLE_SHA256:-}"
+BUNDLE_BYTES="${EXTELLA_BUNDLE_BYTES:-}"
+NO_START=0
+VERIFY_ONLY=0
 
-say "2/5 Токен"
-TOKEN="${EXTELLA_TOKEN:-}"
-if [ -z "$TOKEN" ]; then printf "  Вставь Extella-токен и нажми Enter: "; read -r TOKEN </dev/tty || true; fi
-if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | LC_ALL=C grep -q '[^ -~]\|[<> ]' || [ ${#TOKEN} -lt 20 ]; then
-  echo "  ! Тулбар установлен. Эксперты/Визард пропущены: нужен НАСТОЯЩИЙ токен."; exit 0; fi
-mkdir -p "$WA"
-python3 - "$WA/config.json" "$TOKEN" "$AGENT" <<'PY'
-import json,sys;json.dump({"auth_token":sys.argv[2],"api_base":"https://api.extella.ai","port":8765,"agent_id":sys.argv[3]},open(sys.argv[1],"w"),ensure_ascii=False,indent=2)
+usage() {
+  printf '%s\n' "Usage: $0 (--bundle PATH | --url HTTPS_URL) --sha256 HEX --bytes N [--no-start] [--verify-only]"
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --bundle) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; BUNDLE_PATH=$2; shift 2 ;;
+    --url) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; BUNDLE_URL=$2; shift 2 ;;
+    --sha256) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; BUNDLE_SHA256=$2; shift 2 ;;
+    --bytes) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; BUNDLE_BYTES=$2; shift 2 ;;
+    --no-start) NO_START=1; shift ;;
+    --verify-only) VERIFY_ONLY=1; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) printf 'Unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+# This check must stay before mktemp, downloads, directory creation, or any
+# other mutation. Unsupported systems are a hard stop, never partial success.
+if [ "$(uname -s 2>/dev/null || true)" != "Darwin" ]; then
+  printf '%s\n' "Extella Client supports only macOS x86_64/arm64 and Windows 11 x64. This bootstrap is for macOS. No changes were made." >&2
+  exit 3
+fi
+
+ARCH=$(uname -m 2>/dev/null || true)
+case "$ARCH" in
+  arm64)
+    PLATFORM="macos-arm64"
+    UV_ARCHIVE="uv-aarch64-apple-darwin.tar.gz"
+    UV_BYTES="22543508"
+    UV_SHA256="9bed3567d496d8dab84ecf7a1247551ac94ef1baaebb7b65df008dd93e9dc357"
+    ;;
+  x86_64)
+    PLATFORM="macos-x86_64"
+    UV_ARCHIVE="uv-x86_64-apple-darwin.tar.gz"
+    UV_BYTES="24248677"
+    UV_SHA256="ce285fbbfbe294b1e1bc6c87c8b59d9622b85383b88b2b132a2df5c73e83d7c1"
+    ;;
+  *)
+    printf 'Unsupported macOS architecture: %s. Required: x86_64 or arm64. No changes were made.\n' "$ARCH" >&2
+    exit 3
+    ;;
+esac
+
+printf '%s' "$BUNDLE_SHA256" | grep -Eq '^[0-9a-fA-F]{64}$' || { printf '%s\n' "A 64-character bundle SHA-256 is required." >&2; exit 2; }
+case "$BUNDLE_BYTES" in
+  ''|*[!0-9]*|0) printf '%s\n' "A positive bundle byte size is required." >&2; exit 2 ;;
+esac
+if [ -n "$BUNDLE_PATH" ] && [ -n "$BUNDLE_URL" ]; then
+  printf '%s\n' "Choose either --bundle or --url, not both." >&2
+  exit 2
+fi
+if [ -z "$BUNDLE_PATH" ] && [ -z "$BUNDLE_URL" ]; then
+  printf '%s\n' "No release bundle was specified. Raw main branches are intentionally unsupported." >&2
+  usage >&2
+  exit 2
+fi
+if [ -n "$BUNDLE_URL" ]; then
+  case "$BUNDLE_URL" in https://*) ;; *) printf '%s\n' "Bundle URL must use HTTPS." >&2; exit 2 ;; esac
+fi
+command -v curl >/dev/null 2>&1 || { printf '%s\n' "curl is required by the native bootstrap." >&2; exit 2; }
+command -v shasum >/dev/null 2>&1 || { printf '%s\n' "shasum is required by the native bootstrap." >&2; exit 2; }
+
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/extella-client.XXXXXX")
+cleanup() { rm -rf "$WORK"; }
+trap cleanup EXIT HUP INT TERM
+BUNDLE="$WORK/extella-client.zip"
+
+if [ -n "$BUNDLE_PATH" ]; then
+  [ -f "$BUNDLE_PATH" ] || { printf 'Bundle not found: %s\n' "$BUNDLE_PATH" >&2; exit 2; }
+  cp "$BUNDLE_PATH" "$BUNDLE"
+else
+  curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 "$BUNDLE_URL" -o "$BUNDLE"
+fi
+
+actual_bytes=$(wc -c < "$BUNDLE" | tr -d '[:space:]')
+[ "$actual_bytes" = "$BUNDLE_BYTES" ] || { printf 'Bundle size mismatch: expected %s, got %s.\n' "$BUNDLE_BYTES" "$actual_bytes" >&2; exit 2; }
+actual_sha=$(shasum -a 256 "$BUNDLE" | awk '{print $1}')
+[ "$actual_sha" = "$(printf '%s' "$BUNDLE_SHA256" | tr 'A-F' 'a-f')" ] || { printf '%s\n' "Bundle SHA-256 mismatch. No Extella files were changed." >&2; exit 2; }
+
+UV_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/${UV_ARCHIVE}"
+UV_PACKAGE="$WORK/$UV_ARCHIVE"
+curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 "$UV_URL" -o "$UV_PACKAGE"
+uv_actual_bytes=$(wc -c < "$UV_PACKAGE" | tr -d '[:space:]')
+[ "$uv_actual_bytes" = "$UV_BYTES" ] || { printf 'uv size mismatch: expected %s, got %s.\n' "$UV_BYTES" "$uv_actual_bytes" >&2; exit 2; }
+uv_actual_sha=$(shasum -a 256 "$UV_PACKAGE" | awk '{print $1}')
+[ "$uv_actual_sha" = "$UV_SHA256" ] || { printf '%s\n' "uv SHA-256 mismatch." >&2; exit 2; }
+
+mkdir "$WORK/uv"
+tar -xzf "$UV_PACKAGE" -C "$WORK/uv"
+UV_BIN=$(find "$WORK/uv" -type f -name uv -perm -u+x | head -n 1)
+[ -n "$UV_BIN" ] || { printf '%s\n' "Verified uv archive did not contain an executable." >&2; exit 2; }
+
+PYROOT="$WORK/python"
+"$UV_BIN" python install "$PYTHON_VERSION" --install-dir "$PYROOT" --no-bin --no-registry
+PYTHON=$(find "$PYROOT" -type f -name python3.12 -perm -u+x | head -n 1)
+[ -n "$PYTHON" ] || { printf '%s\n' "Managed Python 3.12 was not installed." >&2; exit 2; }
+"$PYTHON" -c 'import sys; raise SystemExit(0 if sys.version_info[:3] == (3, 12, 13) else 2)'
+
+EXTRACTED="$WORK/bundle"
+mkdir "$EXTRACTED"
+"$PYTHON" - "$BUNDLE" "$EXTRACTED" <<'PY'
+import pathlib, stat, sys, zipfile
+archive, target = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+with zipfile.ZipFile(archive) as source:
+    for item in source.infolist():
+        name = item.filename
+        parts = pathlib.PurePosixPath(name).parts
+        mode = (item.external_attr >> 16) & 0o170000
+        if not name or name.startswith(("/", "\\")) or "\\" in name or ".." in parts or mode == stat.S_IFLNK:
+            raise SystemExit("unsafe path or symlink in Extella bundle")
+    source.extractall(target)
 PY
 
-say "3/5 Python"
-PY=""; for c in python3 python; do $c -c 'import sys;exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1 && { PY=$c; break; }; done
-[ -z "$PY" ] && command -v brew >/dev/null && { brew install python@3.12 >/dev/null 2>&1 || true; command -v python3 >/dev/null && PY=python3; }
-[ -n "$PY" ] || { echo "✗ Нужен Python 3 (python.org/downloads). Тулбар уже стоит."; exit 0; }
-echo "  ✓ $($PY -V 2>&1)"
-# macOS python.org Python часто без CA-сертификатов. Ставим certifi И привязываем его к дефолтному
-# пути Python (аналог "Install Certificates.command") — тогда SSL работает для ВСЕХ python-процессов,
-# включая мост server.py, который приложение запускает само. Проверка SSL остаётся включённой.
-"$PY" -m pip install --quiet --disable-pip-version-check certifi >/dev/null 2>&1 || true
-"$PY" - <<'PYCERT' 2>/dev/null || true
-import os, ssl, certifi
-cf = ssl.get_default_verify_paths().openssl_cafile
-d = os.path.dirname(cf)
-try:
-    if d and not os.path.isdir(d): os.makedirs(d, exist_ok=True)
-    try: os.remove(cf)
-    except FileNotFoundError: pass
-    except IsADirectoryError: pass
-    os.symlink(certifi.where(), cf)
-    print("  linked CA ->", cf)
-except PermissionError:
-    print("  no perm to link CA (fallback env)")
-except Exception as e:
-    print("  CA:", e)
-PYCERT
-CB=$("$PY" -c "import certifi;print(certifi.where())" 2>/dev/null || true)
-[ -n "$CB" ] && export SSL_CERT_FILE="$CB"
-echo "  ✓ SSL-сертификаты (certifi)"
-
-# Движки инструментов: Homebrew (CLI: PDF/OCR/конвертеры) + Node (MCP-серверы). Тяжёлое + просит пароль — по согласию.
-if [ "$(uname)" = "Darwin" ] && ! command -v brew >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
-  printf "  Поставить движки инструментов (Homebrew — для CLI; Node — для MCP-серверов)? Спросит пароль один раз [y/N]: "
-  read -r _hb </dev/tty || _hb=""
-  case "$_hb" in y|Y|д|Д|yes|да)
-    NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty >/dev/null 2>&1 && echo "  ✓ Homebrew" || echo "  ~ Homebrew не поставился (CLI/MCP можно поставить позже)"
-    _BREW=$(command -v brew || echo /opt/homebrew/bin/brew)
-    [ -x "$_BREW" ] && { command -v node >/dev/null 2>&1 || "$_BREW" install node >/dev/null 2>&1 && echo "  ✓ Node (для MCP)" || true; };;
-    *) echo "  пропущено (CLI/MCP потребуют Homebrew+Node позже)";;
-  esac
+INSTALLER="$EXTRACTED/payload/marketplace/installer/client_install.py"
+[ -f "$INSTALLER" ] || { printf '%s\n' "Verified bundle has no client installer." >&2; exit 2; }
+if [ "$VERIFY_ONLY" -eq 1 ]; then
+  PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" -c 'from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))' "$EXTRACTED"
+  printf 'Verified Extella bootstrap, managed Python, and bundle for %s. No client files were changed.\n' "$PLATFORM"
+  exit 0
 fi
-
-say "4/5 Эксперты тулбара + Визард"
-TMP=$(mktemp -d)
-curl -fsSL "$PACK" -o "$TMP/p.tgz"; tar -xzf "$TMP/p.tgz" -C "$TMP"
-PD=$(find "$TMP" -maxdepth 1 -type d -name "extella-marketplace-pack*"|head -1)
-( cd "$PD" && "$PY" install.py ) || echo "  ⚠️ pack install.py частично"
-# Activity Center: панель уже в toolbar.js; ставим мост+наблюдатель (LaunchAgent) на macOS
-if [ "$(uname)" = "Darwin" ] && [ -f "$PD/device/activity-center/install.py" ]; then
-  "$PY" "$PD/device/activity-center/install.py" >/dev/null 2>&1 && echo "  \u2713 Activity Center (\u043c\u043e\u0441\u0442 :8799)" || echo "  ~ Activity Center \u043f\u0440\u043e\u043f\u0443\u0449\u0435\u043d"
-fi
-curl -fsSL "$WIZ" -o "$TMP/w.tgz"; tar -xzf "$TMP/w.tgz" -C "$TMP"
-WD=$(find "$TMP" -maxdepth 1 -type d -name "extella-adoption-wizard*"|head -1)
-cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
-( cd "$WD" && "$PY" install.py ) || echo "  ⚠️ wizard install.py частично"
-rm -rf "$TMP"
-
-say "5/5 Запуск"
-pkill -f "extella_wizard/app/server.py" 2>/dev/null || true
-( cd "$WA" && nohup "$PY" server.py >/tmp/extella_wizard.log 2>&1 & ); sleep 2
-curl -fsS http://127.0.0.1:8765/x/health >/dev/null 2>&1 && echo "  ✓ мост :8765" || echo "  ~ мост поднимется при открытии"
-pkill -f "Extella.app" 2>/dev/null || true; sleep 1; open -a Extella 2>/dev/null || true
-say "Готово ✓ — открой Extella → Plugins"
+set -- "$INSTALLER" --bundle-root "$EXTRACTED" --bootstrap-python-root "$PYROOT"
+[ "$NO_START" -eq 0 ] || set -- "$@" --no-start
+printf 'Installing Extella Client %s on %s…\n' "$BUNDLE_SHA256" "$PLATFORM"
+"$PYTHON" "$@"
