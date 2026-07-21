@@ -69,7 +69,7 @@ class BundleVerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "example.txt"
             source.write_text(
-                "Откройте /Users/имя/Downloads, API /users/{id}, placeholder agent_XXXXXXXX",
+                "Откройте /Users/имя/Downloads, marker /Users/, API /users/{id}, placeholder agent_XXXXXXXX",
                 encoding="utf-8",
             )
             _scan(source, "example.txt")
