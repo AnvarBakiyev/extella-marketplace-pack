@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
   "releaseVersion": "2.0.0-rc.1",
-  "generatedAt": "2026-07-22T02:24:03+05:00",
+  "generatedAt": "2026-07-22T02:33:13+05:00",
   "automatedChecks": {
-    "marketplaceUnit": {"status": "passed", "tests": 68},
+    "marketplaceUnit": {"status": "passed", "tests": 70},
     "activityCenter": {"status": "passed", "tests": 22, "skipped": 2},
     "toolbarBuild": {"status": "passed"},
+    "toolbarReproducibility": {"status": "passed"},
     "wizardPackaging": {"status": "passed"},
     "bundleReproducibility": {"status": "passed"},
     "unsupportedPlatformPreMutation": {"status": "passed"}

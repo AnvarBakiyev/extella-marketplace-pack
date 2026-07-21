@@ -1,9 +1,11 @@
 import importlib.util
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "tools" / "release_gate.py"
@@ -94,6 +96,41 @@ class PluginManifestTests(unittest.TestCase):
         plugin["source"]["revision"] = "agent_AbCd0123456789"
         issues = release_gate.validate_plugin(self.write(plugin))
         self.assertIn("security.agent_id", {issue.code for issue in issues})
+
+
+class ToolbarSourceGateTests(unittest.TestCase):
+    def _fixture(self, root: Path, *, canonical: bytes, distributed: bytes):
+        marketplace = root / "marketplace"
+        toolbar = root / "toolbar"
+        (marketplace / "toolbar").mkdir(parents=True)
+        (marketplace / "toolbar/toolbar.js").write_bytes(distributed)
+        (toolbar / "toolbar/build").mkdir(parents=True)
+        (toolbar / "toolbar/build/toolbar.js").write_bytes(canonical)
+        (toolbar / "scripts").mkdir()
+        (toolbar / "scripts/check-reproducible-build.js").write_text("// fixture")
+        release = {
+            "sourceRepositories": [{"id": "toolbar", "revision": "1" * 40}]
+        }
+        return marketplace, toolbar, release
+
+    def _run(self, marketplace, toolbar, release):
+        completed = [
+            subprocess.CompletedProcess([], 0, "passed", ""),
+            subprocess.CompletedProcess([], 0, "1" * 40 + "\n", ""),
+        ]
+        with patch.object(release_gate.subprocess, "run", side_effect=completed):
+            return release_gate.validate_toolbar_source(marketplace, toolbar, release)
+
+    def test_exact_reproducible_toolbar_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self._fixture(Path(directory), canonical=b"same", distributed=b"same")
+            self.assertEqual(self._run(*fixture), [])
+
+    def test_distribution_drift_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = self._fixture(Path(directory), canonical=b"canonical", distributed=b"stale")
+            issues = self._run(*fixture)
+        self.assertIn("toolbar.distribution_drift", {issue.code for issue in issues})
 
 
 if __name__ == "__main__":

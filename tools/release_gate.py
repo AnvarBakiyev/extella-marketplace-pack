@@ -18,7 +18,7 @@ import sys
 import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 
 SUPPORTED_PLATFORMS = {
@@ -386,11 +386,78 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_toolbar_source(
+    root: Path,
+    toolbar_root: Path | None,
+    release: Mapping[str, Any],
+) -> list[Issue]:
+    issues: list[Issue] = []
+    if toolbar_root is None or not toolbar_root.is_dir():
+        return [
+            Issue(
+                "toolbar.source_required",
+                str(toolbar_root or ""),
+                "candidate gate requires the canonical toolbar source clone",
+            )
+        ]
+    checker = toolbar_root / "scripts/check-reproducible-build.js"
+    canonical = toolbar_root / "toolbar/build/toolbar.js"
+    distributed = root / "toolbar/toolbar.js"
+    if not checker.is_file():
+        issues.append(Issue("toolbar.reproducibility_tool", str(checker), "toolbar reproducibility checker is missing"))
+        return issues
+    try:
+        result = subprocess.run(
+            ("npm", "run", "test:reproducible"),
+            cwd=toolbar_root,
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+            shell=False,
+        )
+    except (OSError, subprocess.SubprocessError) as error:
+        issues.append(Issue("toolbar.reproducibility", str(toolbar_root), type(error).__name__))
+        return issues
+    if result.returncode != 0:
+        issues.append(Issue("toolbar.reproducibility", str(toolbar_root), "canonical toolbar did not rebuild reproducibly"))
+        return issues
+    if not canonical.is_file() or not distributed.is_file() or _sha256(canonical) != _sha256(distributed):
+        issues.append(
+            Issue(
+                "toolbar.distribution_drift",
+                str(distributed),
+                "distributed toolbar bytes differ from the canonical reproducible build",
+            )
+        )
+    try:
+        head = subprocess.run(
+            ("git", "rev-parse", "HEAD"),
+            cwd=toolbar_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+            shell=False,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        head = ""
+    expected = {
+        item.get("id"): item.get("revision")
+        for item in release.get("sourceRepositories") or []
+        if isinstance(item, dict)
+    }.get("toolbar")
+    if head != expected:
+        issues.append(Issue("toolbar.source_revision", str(toolbar_root), "toolbar HEAD differs from the release revision"))
+    return issues
+
+
 def validate_release(
     root: Path,
     manifest_path: Path,
     *,
     wizard_root: Path | None = None,
+    toolbar_root: Path | None = None,
     bundle_path: Path | None = None,
 ) -> list[Issue]:
     issues: list[Issue] = []
@@ -514,9 +581,12 @@ def validate_release(
     if telemetry.get("transport") != "disabled" or telemetry.get("schema") != "release/schemas/stability-telemetry.schema.json":
         issues.append(Issue("telemetry.contract", str(manifest_path), "telemetry must remain local until an approved transport exists"))
 
+    source_revisions: dict[str, str] = {}
     for source in data.get("sourceRepositories") or []:
         if not isinstance(source, dict) or not SHA40.fullmatch(str(source.get("revision", ""))):
             issues.append(Issue("release.source_revision", str(manifest_path), "every source revision must be a full Git SHA"))
+        elif isinstance(source.get("id"), str):
+            source_revisions[source["id"]] = source["revision"]
 
     artifact_ids: set[str] = set()
     for artifact in data.get("artifacts") or []:
@@ -562,6 +632,19 @@ def validate_release(
                 issues.append(Issue("capability.id", str(plugin_path), "capability id differs from plugin manifest"))
             if plugin.get("classification") != capability.get("classification"):
                 issues.append(Issue("capability.classification", str(plugin_path), "classification differs from release manifest"))
+            component_source = {
+                "extella_toolbar": "toolbar",
+                "extella_adoption_wizard": "wizard",
+            }.get(capability_id)
+            plugin_source = plugin.get("source") if isinstance(plugin.get("source"), dict) else {}
+            if component_source and plugin_source.get("revision") != source_revisions.get(component_source):
+                issues.append(
+                    Issue(
+                        "capability.source_revision",
+                        str(plugin_path),
+                        f"{capability_id} revision differs from the release source contract",
+                    )
+                )
             runtime = plugin.get("runtime") if isinstance(plugin.get("runtime"), dict) else {}
             if runtime.get("kind") == "local_service":
                 port_data = runtime.get("port") if isinstance(runtime.get("port"), dict) else {}
@@ -615,6 +698,8 @@ def validate_release(
         issues.extend(validate_expert_contract(root, wizard))
     issues.extend(validate_evidence(root, data))
     issues.extend(validate_catalog_policy(root))
+    if distribution.get("status") in {"candidate", "released"}:
+        issues.extend(validate_toolbar_source(root, toolbar_root, data))
 
     verification = data.get("verification") or {}
     matrix = verification.get("matrix") if isinstance(verification, dict) else {}
@@ -631,14 +716,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--manifest", type=Path, default=Path("release/release-manifest.json"))
     parser.add_argument("--wizard-root", type=Path)
+    parser.add_argument("--toolbar-root", type=Path)
     parser.add_argument("--bundle", type=Path)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     manifest = args.manifest if args.manifest.is_absolute() else root / args.manifest
     wizard_root = args.wizard_root.resolve() if args.wizard_root else None
+    toolbar_root = args.toolbar_root.resolve() if args.toolbar_root else None
     bundle_path = args.bundle.resolve() if args.bundle else None
-    issues = validate_release(root, manifest, wizard_root=wizard_root, bundle_path=bundle_path)
+    issues = validate_release(
+        root,
+        manifest,
+        wizard_root=wizard_root,
+        toolbar_root=toolbar_root,
+        bundle_path=bundle_path,
+    )
     if args.as_json:
         print(json.dumps({"status": "failed" if issues else "passed", "issues": [asdict(i) for i in issues]}, indent=2))
     else:
