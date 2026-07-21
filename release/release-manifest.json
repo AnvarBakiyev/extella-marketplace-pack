@@ -11,8 +11,8 @@
   "distribution": {
     "status": "candidate",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "749c317e6b91d69aa5a528cc33706a6e022318708b3bc0e8e30d848e9c3144ec",
-    "bytes": 3284313,
+    "sha256": "c68703bc8790d25eadcb372c5ec1d6b9514a40c6405f38ac6a9e7d7bc77a5373",
+    "bytes": 3296036,
     "fileCount": 264
   },
   "dependencies": [
@@ -171,12 +171,12 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "68cd278b80ba83f0639c8da7bc95c7a16621f9dc"
+      "revision": "fd6e40761f58e7244c50e1520be3bee3435e80e7"
     },
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "e407980223cf632ae1fc7e4651a6b0c0240eb363"
+      "revision": "4f95fc0343282ccb7a42cc2c1d591cf1c59e2ed0"
     }
   ],
   "artifacts": [
