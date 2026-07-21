@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_system_experts",
+  "name": "Extella System Experts",
+  "description": "Bundled account-scoped expert runtime used by the toolbar, knowledge packs, application framework, services, and MCP bridge.",
+  "version": "2.0.0-rc.1",
+  "classification": "bundled",
+  "source": {
+    "type": "bundled",
+    "locator": "experts",
+    "revision": "release"
+  },
+  "supportedPlatforms": [
+    "macos-x86_64",
+    "macos-arm64",
+    "windows11-x86_64"
+  ],
+  "install": {
+    "strategy": "bundled",
+    "entrypoints": {
+      "macos": "installer/client_install.py",
+      "windows11": "installer/client_install.py"
+    },
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": []
+  },
+  "runtime": {
+    "kind": "cloud",
+    "owner": "extella_system_experts",
+    "command": [],
+    "port": {
+      "mode": "none",
+      "preferred": null,
+      "bind": "none"
+    },
+    "health": {
+      "type": "process",
+      "path": null,
+      "timeoutSeconds": 120
+    },
+    "pid": {
+      "strategy": "none",
+      "path": null
+    },
+    "autostart": {
+      "macos": "none",
+      "windows11": "none"
+    }
+  },
+  "ui": {
+    "type": "none",
+    "entrypoint": null,
+    "runtimeId": null,
+    "smokePath": null
+  },
+  "artifacts": {
+    "installRoot": null,
+    "registryFile": null,
+    "files": [
+      "experts",
+      "platform_experts"
+    ]
+  },
+  "experts": {
+    "required": [
+      "agent_flash_role",
+      "app_install",
+      "app_list",
+      "app_start",
+      "app_uninstall",
+      "extella_system_install_smoke",
+      "hf_space_install",
+      "kp_ask",
+      "kp_ingest",
+      "kp_install_pack",
+      "kp_resolver",
+      "mcp_call",
+      "mcp_connect",
+      "mcp_list",
+      "recipe_x",
+      "svc_books",
+      "svc_crypto",
+      "svc_currency",
+      "svc_github",
+      "svc_hackernews",
+      "svc_holidays",
+      "svc_ipgeo",
+      "svc_postal",
+      "svc_qr",
+      "svc_translate",
+      "svc_weather",
+      "svc_wiki",
+      "svc_worldbank",
+      "wz_extract_doc",
+      "wz_extract_doc_b64",
+      "wz_pick_path",
+      "wz_self_update",
+      "wz_ws_autopilot_run",
+      "xml2json_convert"
+    ],
+    "smoke": [
+      "extella_system_install_smoke"
+    ]
+  },
+  "secrets": [
+    {
+      "key": "extella_session",
+      "source": "extella_session",
+      "required": true
+    }
+  ],
+  "uninstall": {
+    "entrypoint": "installer/client_uninstall.py",
+    "preserves": [
+      "user-created experts",
+      "user-edited experts",
+      "account data"
+    ]
+  },
+  "migration": {
+    "strategy": "replace_preserve_data",
+    "fromVersions": [
+      "1.x"
+    ]
+  },
+  "releaseState": {
+    "advertised": false,
+    "verification": "pending"
+  }
+}

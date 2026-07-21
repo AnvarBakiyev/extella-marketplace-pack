@@ -41,8 +41,8 @@ MARKETPLACE_PATTERNS = (
     "experts/*.py",
     "platform_experts/*.py",
     "release/plugins/*.json",
+    "release/expert-classification.json",
     "release/schemas/*.json",
-    "release/release-manifest.json",
     "toolbar/install-all.sh",
     "toolbar/install-all.ps1",
     "toolbar/toolbar.js",
@@ -98,6 +98,57 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _validate_expert_classification(marketplace_root: Path, wizard_root: Path) -> dict[str, int]:
+    inventory_path = marketplace_root / "release/expert-classification.json"
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    if inventory.get("schemaVersion") != 1:
+        raise SystemExit("expert classification schemaVersion must be 1")
+    keys = ("bundled", "supportedOnDemand", "thirdPartyUnverified")
+    classified: dict[str, str] = {}
+    for key in keys:
+        values = inventory.get(key)
+        if not isinstance(values, list) or any(not isinstance(value, str) for value in values):
+            raise SystemExit(f"expert classification {key} must be a string list")
+        if values != sorted(values) or len(values) != len(set(values)):
+            raise SystemExit(f"expert classification {key} must be sorted and unique")
+        for value in values:
+            if value in classified:
+                raise SystemExit(f"expert is classified more than once: {value}")
+            classified[value] = key
+    source_paths = [
+        *marketplace_root.glob("experts/*.py"),
+        *marketplace_root.glob("platform_experts/*.py"),
+        *marketplace_root.glob("automations/experts/*.py"),
+        *wizard_root.glob("experts/*.py"),
+    ]
+    source_hashes: dict[str, str] = {}
+    for path in sorted(source_paths, key=lambda item: item.as_posix()):
+        name = path.stem
+        digest = _sha256(path)
+        if name in source_hashes and source_hashes[name] != digest:
+            raise SystemExit(f"conflicting expert sources: {name}")
+        source_hashes[name] = digest
+    if set(classified) != set(source_hashes):
+        missing = sorted(set(source_hashes) - set(classified))
+        stale = sorted(set(classified) - set(source_hashes))
+        raise SystemExit(f"expert classification is not exact: missing={missing} stale={stale}")
+    manifest_bundled: set[str] = set()
+    manifest_on_demand: set[str] = set()
+    for path in sorted((marketplace_root / "release/plugins").glob("*.json")):
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        experts = manifest.get("experts") or {}
+        owned = {str(value) for value in [*(experts.get("required") or []), *(experts.get("smoke") or [])]}
+        if manifest.get("classification") == "bundled":
+            manifest_bundled.update(owned)
+        elif manifest.get("classification") == "supported_on_demand":
+            manifest_on_demand.update(owned)
+    if manifest_bundled != set(inventory["bundled"]):
+        raise SystemExit("bundled expert classification differs from bundled plugin contracts")
+    if manifest_on_demand != set(inventory["supportedOnDemand"]):
+        raise SystemExit("on-demand expert classification differs from plugin contracts")
+    return {key: len(inventory[key]) for key in keys}
 
 
 def _scan(path: Path, relative: str) -> None:
@@ -193,6 +244,7 @@ def build(
         {"id": "toolbar", "revision": _require_clean(toolbar_root)},
         {"id": "wizard", "revision": _require_clean(wizard_root)},
     ]
+    expert_classification = _validate_expert_classification(marketplace_root, wizard_root)
     release = json.loads((marketplace_root / "release/release-manifest.json").read_text(encoding="utf-8"))
     with tempfile.TemporaryDirectory(prefix="extella-bundle-") as directory:
         stage = Path(directory)
@@ -207,6 +259,7 @@ def build(
             "releaseVersion": release["version"],
             "supportedPlatforms": release["supportedPlatforms"],
             "sourceRepositories": source_repositories,
+            "expertClassification": expert_classification,
             "files": records,
         }
         (stage / "bundle-manifest.json").write_text(

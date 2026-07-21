@@ -194,6 +194,12 @@
   ],
   "capabilities": [
     {
+      "id": "extella_system_experts",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_system_experts.json",
+      "required": true
+    },
+    {
       "id": "extella_toolbar",
       "classification": "bundled",
       "manifest": "release/plugins/extella_toolbar.json",

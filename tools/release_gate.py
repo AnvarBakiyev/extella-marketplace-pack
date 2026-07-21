@@ -38,7 +38,16 @@ DEVICE_ID = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
     re.IGNORECASE,
 )
-ALLOWED_AGENT_IDS = {"agent_extella_alibaba_default", "agent_extella_default"}
+ALLOWED_AGENT_IDS = {
+    "agent_extella_alibaba_default",
+    "agent_extella_default",
+    "agent_XXXXXXXX",
+}
+
+
+def _looks_account_specific_agent(value: str) -> bool:
+    suffix = value.removeprefix("agent_")
+    return any(character.isupper() or character.isdigit() or character == "-" for character in suffix)
 
 
 @dataclass(frozen=True)
@@ -136,7 +145,7 @@ def validate_plugin(path: Path) -> list[Issue]:
         if DEVICE_ID.search(text):
             issues.append(Issue("security.device_id", str(path), f"device id at {location}"))
         for match in AGENT_ID.findall(text):
-            if match not in ALLOWED_AGENT_IDS:
+            if match not in ALLOWED_AGENT_IDS and _looks_account_specific_agent(match):
                 issues.append(Issue("security.agent_id", str(path), f"account-specific agent id at {location}"))
 
     return issues
@@ -242,4 +251,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

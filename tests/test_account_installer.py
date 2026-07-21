@@ -9,6 +9,7 @@ from installer.account import (
     AccountInstaller,
     ExpertSource,
     KVArtifact,
+    required_experts,
     uninstall_account_resources,
 )
 
@@ -87,6 +88,30 @@ def expert(name, code=None):
 
 
 class AccountInstallerTests(unittest.TestCase):
+    def test_base_contract_excludes_on_demand_and_unverified_experts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            manifests = root / "payload/marketplace/release/plugins"
+            manifests.mkdir(parents=True)
+            for index, classification in enumerate(
+                ("bundled", "supported_on_demand", "third_party_unverified")
+            ):
+                (manifests / f"p{index}.json").write_text(
+                    json.dumps(
+                        {
+                            "classification": classification,
+                            "experts": {
+                                "required": [f"required_{index}"],
+                                "smoke": [f"smoke_{index}"],
+                            },
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+            required, smokes = required_experts(root)
+            self.assertEqual(required, {"required_0"})
+            self.assertEqual(smokes, {"smoke_0"})
+
     def test_creates_two_explicit_qwen_agents_for_clean_account(self):
         api = FakeAPI()
         with tempfile.TemporaryDirectory() as directory:

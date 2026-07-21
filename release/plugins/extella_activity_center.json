@@ -9,7 +9,7 @@
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
     "strategy": "bundled",
-    "entrypoints": {"macos": "device/activity-center/install.py", "windows11": "device/activity-center/install.py"},
+    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
     "idempotent": true,
     "transactional": true,
     "mutablePaths": ["${EXTELLA_DATA}/activity-center", "${EXTELLA_AUTOSTART}/extella-activity-center"]
@@ -31,8 +31,7 @@
   },
   "experts": {"required": [], "smoke": []},
   "secrets": [],
-  "uninstall": {"entrypoint": "device/activity-center/uninstall.py", "preserves": ["user task results", "plugin user data"]},
+  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["user task results", "plugin user data"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }
-

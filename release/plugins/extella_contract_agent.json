@@ -9,7 +9,7 @@
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
     "strategy": "bundled",
-    "entrypoints": {"macos": "install.py", "windows11": "install.py"},
+    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
     "idempotent": true,
     "transactional": true,
     "mutablePaths": ["${EXTELLA_DATA}/plugins/extella_contract_agent"]
@@ -36,7 +36,7 @@
   "secrets": [
     {"key": "notification_credentials", "source": "encrypted_vault", "required": false}
   ],
-  "uninstall": {"entrypoint": "automation_uninstall:extella_contract_agent", "preserves": ["contracts", "review outputs", "encrypted credentials"]},
+  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["contracts", "review outputs", "encrypted credentials"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.0.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }

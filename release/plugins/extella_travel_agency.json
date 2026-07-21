@@ -9,7 +9,7 @@
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
     "strategy": "bundled",
-    "entrypoints": {"macos": "install.py", "windows11": "install.py"},
+    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
     "idempotent": true,
     "transactional": true,
     "mutablePaths": ["${EXTELLA_DATA}/plugins/extella_travel_agency"]
@@ -37,7 +37,7 @@
     {"key": "tour_provider_token", "source": "encrypted_vault", "required": false},
     {"key": "messenger_credentials", "source": "encrypted_vault", "required": false}
   ],
-  "uninstall": {"entrypoint": "automation_uninstall:extella_travel_agency", "preserves": ["client records", "drafts", "encrypted credentials"]},
+  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["client records", "drafts", "encrypted credentials"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["0.1.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }

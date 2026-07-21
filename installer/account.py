@@ -304,7 +304,7 @@ def required_experts(bundle_root: Path) -> tuple[set[str], set[str]]:
     smoke: set[str] = set()
     for path in sorted((bundle_root / "payload/marketplace/release/plugins").glob("*.json")):
         manifest = json.loads(path.read_text(encoding="utf-8"))
-        if manifest.get("classification") == "third_party_unverified":
+        if manifest.get("classification") != "bundled":
             continue
         experts = manifest.get("experts") or {}
         required.update(str(name) for name in experts.get("required") or [])

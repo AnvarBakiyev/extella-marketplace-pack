@@ -78,6 +78,17 @@ class PluginManifestTests(unittest.TestCase):
         issues = release_gate.validate_plugin(self.write(plugin))
         self.assertIn("release.unverified_advertisement", {issue.code for issue in issues})
 
+    def test_expert_names_are_not_mistaken_for_account_agent_ids(self):
+        plugin = valid_plugin()
+        plugin["experts"]["required"] = ["agent_flash_role"]
+        self.assertEqual([], release_gate.validate_plugin(self.write(plugin)))
+
+    def test_account_agent_id_is_rejected(self):
+        plugin = valid_plugin()
+        plugin["source"]["revision"] = "agent_AbCd0123456789"
+        issues = release_gate.validate_plugin(self.write(plugin))
+        self.assertIn("security.agent_id", {issue.code for issue in issues})
+
 
 if __name__ == "__main__":
     unittest.main()
