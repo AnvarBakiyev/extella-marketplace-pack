@@ -10,6 +10,7 @@ BUILD = ROOT / "toolbar" / "build.js"
 
 
 class ToolbarIntegrationTests(unittest.TestCase):
+    @unittest.skipUnless(BUILD.is_file() and PANEL.is_file(), "toolbar source is tested in its canonical repository")
     def test_activity_panel_is_part_of_modular_build(self) -> None:
         self.assertIn("'activity-center.js'", BUILD.read_text(encoding="utf-8"))
         source = PANEL.read_text(encoding="utf-8")
@@ -23,6 +24,7 @@ class ToolbarIntegrationTests(unittest.TestCase):
         self.assertIn("PID ", source)
         self.assertIn("right:12px;bottom:12px", source)
 
+    @unittest.skipUnless(PANEL.is_file(), "toolbar source is tested in its canonical repository")
     def test_removed_subtitle_does_not_return(self) -> None:
         self.assertNotIn(
             "Понятная лента вместо технического лога",

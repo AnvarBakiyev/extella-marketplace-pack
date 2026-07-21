@@ -1,42 +1,41 @@
-"""Discover and narrowly control Extella-owned localhost services.
+"""Discover and safely control Extella-owned localhost services.
 
-Only local servers declared in the Extella plugin registry are visible here.
-Raw launch commands are never returned by the public API. A running process is
-stoppable only when its cwd or LaunchAgent identity proves that it belongs to
-the declared plugin, so a different app occupying the same port is left alone.
+The Activity Center exposes only registry metadata and verified process
+identities. Raw argv, absolute roots, and secrets never leave this module.
 """
 
 from __future__ import annotations
 
 import json
 import os
-import plistlib
+from pathlib import Path
 import re
-import signal
-import subprocess
 import sys
 import threading
-import time
-from pathlib import Path
 from typing import Any
 
+from extella_runtime.paths import client_paths
+from extella_runtime.processes import (
+    ProcessControlError,
+    ProcessSupervisor,
+    RuntimeSpec,
+)
+from extella_runtime.platforms import detect_platform
 
+
+_PATHS = client_paths(platform_info=detect_platform())
 REGISTRY_DIR = Path(
-    os.environ.get(
-        "EXTELLA_PLUGIN_REGISTRY",
-        str(Path.home() / "extella-plugins" / "_registry"),
-    )
+    os.environ.get("EXTELLA_PLUGIN_REGISTRY", str(_PATHS.plugins_root / "_registry"))
 )
 STATE_FILE = Path(
-    os.environ.get(
-        "EXTELLA_SERVICE_STATE",
-        str(Path.home() / ".extella" / "activity-center" / "services.json"),
-    )
+    os.environ.get("EXTELLA_SERVICE_STATE", str(_PATHS.state_root / "services.json"))
 )
-LAUNCH_AGENTS_DIR = Path.home() / "Library" / "LaunchAgents"
+PROCESS_STATE_FILE = Path(
+    os.environ.get("EXTELLA_PROCESS_STATE", str(_PATHS.state_root / "processes.json"))
+)
 _SERVICE_ID = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
-_CONTROL_LOCK = threading.Lock()
-_launch_cache: tuple[float, list[dict[str, Any]]] = (0.0, [])
+_CONTROL_LOCK = threading.RLock()
+_SUPERVISOR = ProcessSupervisor(state_file=PROCESS_STATE_FILE)
 
 
 class ServiceError(RuntimeError):
@@ -51,30 +50,27 @@ def _read_state(path: Path = STATE_FILE) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
-        return {"disabled": [], "launchAgents": {}}
+        return {"disabled": [], "lastErrors": {}}
     if not isinstance(payload, dict):
-        return {"disabled": [], "launchAgents": {}}
+        return {"disabled": [], "lastErrors": {}}
     disabled = [
         item
         for item in payload.get("disabled", [])
         if isinstance(item, str) and _SERVICE_ID.fullmatch(item)
     ]
-    mappings = {
-        key: value
-        for key, value in (payload.get("launchAgents") or {}).items()
-        if isinstance(key, str)
-        and _SERVICE_ID.fullmatch(key)
-        and isinstance(value, str)
-        and value.startswith("ai.extella.")
+    errors = {
+        key: str(value)[:240]
+        for key, value in (payload.get("lastErrors") or {}).items()
+        if isinstance(key, str) and _SERVICE_ID.fullmatch(key)
     }
-    return {"disabled": sorted(set(disabled)), "launchAgents": mappings}
+    return {"disabled": sorted(set(disabled)), "lastErrors": errors}
 
 
 def _write_state(payload: dict[str, Any], path: Path = STATE_FILE) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     temporary.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+        json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     os.replace(temporary, path)
@@ -83,22 +79,84 @@ def _write_state(payload: dict[str, Any], path: Path = STATE_FILE) -> None:
 def _expanded_root(value: Any) -> Path | None:
     if not isinstance(value, str) or not value.strip():
         return None
-    return Path(os.path.expanduser(value)).resolve()
+    expanded = os.path.expandvars(os.path.expanduser(value))
+    return Path(expanded).resolve()
 
 
-def _path_related(first: Path | None, second: Path | None) -> bool:
-    if first is None or second is None:
-        return False
-    try:
-        first.relative_to(second)
-        return True
-    except ValueError:
-        pass
-    try:
-        second.relative_to(first)
-        return True
-    except ValueError:
-        return False
+def _expand_argv(values: Any, root: Path | None) -> tuple[str, ...]:
+    if not isinstance(values, list) or not values:
+        return ()
+    replacements = {
+        "${PYTHON}": sys.executable,
+        "${EXTELLA_DATA}": str(_PATHS.data_root),
+        "${EXTELLA_PLUGIN_ROOT}": str(_PATHS.plugins_root),
+        "${ROOT}": str(root or ""),
+    }
+    argv: list[str] = []
+    for index, raw in enumerate(values):
+        if not isinstance(raw, str) or not raw:
+            return ()
+        value = raw
+        for marker, replacement in replacements.items():
+            value = value.replace(marker, replacement)
+        value = os.path.expandvars(os.path.expanduser(value))
+        if index == 0 and not Path(value).is_absolute():
+            return ()
+        if index > 0 and root and not Path(value).is_absolute():
+            candidate = root / value
+            if candidate.exists():
+                value = str(candidate)
+        argv.append(value)
+    return tuple(argv)
+
+
+def _runtime_spec(
+    manifest: dict[str, Any],
+    registry_file: Path,
+    root: Path | None,
+    port: int,
+) -> tuple[RuntimeSpec | None, str]:
+    service = manifest.get("service") if isinstance(manifest.get("service"), dict) else {}
+    argv = _expand_argv(service.get("argv") or service.get("launchArgv"), root)
+    static_fallback = not argv and root is not None and not service.get("launchCmd")
+    if static_fallback:
+        argv = (
+            sys.executable,
+            "-m",
+            "http.server",
+            str(port),
+            "--bind",
+            "127.0.0.1",
+        )
+    if not argv:
+        reason = (
+            "Legacy shell launch commands are visible but cannot be controlled safely."
+            if service.get("launchCmd")
+            else "The registry does not contain a safe argv launch contract."
+        )
+        return None, reason
+    if root is None:
+        return None, "The registry does not contain a runtime working directory."
+    health_path = str(service.get("healthPath") or "/").strip()
+    if not health_path.startswith("/"):
+        health_path = "/" + health_path
+    runtime_id = str(manifest.get("id") or registry_file.stem)
+    owner = str(service.get("owner") or runtime_id)
+    autostart = str(service.get("autostart") or "controller")
+    return (
+        RuntimeSpec(
+            runtime_id=runtime_id,
+            name=str(manifest.get("name") or manifest.get("title") or runtime_id),
+            argv=argv,
+            cwd=root,
+            port=port,
+            health_url=f"http://127.0.0.1:{port}{health_path}",
+            log_path=_PATHS.logs_root / f"{runtime_id}.log",
+            owner=owner,
+            autostart=autostart,
+        ),
+        "",
+    )
 
 
 def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]:
@@ -113,12 +171,10 @@ def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]
         if not isinstance(manifest, dict):
             continue
         ui = manifest.get("ui") if isinstance(manifest.get("ui"), dict) else {}
-        service = (
-            manifest.get("service")
-            if isinstance(manifest.get("service"), dict)
-            else {}
-        )
-        if ui.get("type") != "local_server" and not service.get("launchCmd"):
+        service = manifest.get("service") if isinstance(manifest.get("service"), dict) else {}
+        if ui.get("type") != "local_server" and not (
+            service.get("argv") or service.get("launchArgv") or service.get("launchCmd")
+        ):
             continue
         service_id = str(manifest.get("id") or path.stem)
         if not _SERVICE_ID.fullmatch(service_id):
@@ -130,206 +186,96 @@ def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]
         if not 0 < port < 65536:
             continue
         root = _expanded_root(ui.get("rootPath") or service.get("cwd"))
-        main_file = str(ui.get("mainFile") or "").lstrip("/")
-        description = str(manifest.get("tagline") or manifest.get("description") or "")
+        description = str(
+            manifest.get("purpose")
+            or manifest.get("tagline")
+            or manifest.get("description")
+            or ""
+        )
         if len(description) > 220:
             description = description[:217].rstrip() + "…"
+        spec, blocked = _runtime_spec(manifest, path, root, port)
         services.append(
             {
                 "id": service_id,
                 "name": str(manifest.get("name") or manifest.get("title") or service_id),
                 "description": description,
                 "port": port,
-                "mainFile": main_file,
+                "mainFile": str(ui.get("mainFile") or "").lstrip("/"),
                 "root": root,
-                "launchCommand": service.get("launchCmd"),
-                "staticFallback": not service.get("launchCmd") and root is not None,
                 "registryFile": path.name,
+                "runtimeSpec": spec,
+                "blockedReason": blocked,
             }
         )
     return services
 
 
-def listening_pids(port: int) -> list[int]:
-    try:
-        result = subprocess.run(
-            ["/usr/sbin/lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return []
-    pids: set[int] = set()
-    for value in result.stdout.splitlines():
-        try:
-            pids.add(int(value.strip()))
-        except ValueError:
-            continue
-    return sorted(pids)
-
-
-def _process_info(pid: int) -> dict[str, Any]:
-    ppid = 0
-    process_name = "process"
-    cwd: Path | None = None
-    try:
-        result = subprocess.run(
-            ["ps", "-p", str(pid), "-o", "ppid=,comm="],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        parts = result.stdout.strip().split(maxsplit=1)
-        if parts:
-            ppid = int(parts[0])
-        if len(parts) > 1:
-            process_name = Path(parts[1]).name or "process"
-    except (OSError, subprocess.SubprocessError, ValueError):
-        pass
-    try:
-        result = subprocess.run(
-            ["/usr/sbin/lsof", "-a", "-p", str(pid), "-d", "cwd", "-Fn"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        for line in result.stdout.splitlines():
-            if line.startswith("n") and len(line) > 1:
-                cwd = Path(line[1:]).resolve()
-                break
-    except (OSError, subprocess.SubprocessError):
-        pass
-    return {"pid": pid, "ppid": ppid, "process": process_name, "cwd": cwd}
-
-
-def _launch_agents() -> list[dict[str, Any]]:
-    global _launch_cache
-    now = time.monotonic()
-    if now - _launch_cache[0] < 3 and _launch_cache[1]:
-        return _launch_cache[1]
-    agents: list[dict[str, Any]] = []
-    domain = f"gui/{os.getuid()}"
-    for path in sorted(LAUNCH_AGENTS_DIR.glob("*.plist")):
-        try:
-            with path.open("rb") as handle:
-                payload = plistlib.load(handle)
-        except (OSError, plistlib.InvalidFileException):
-            continue
-        label = payload.get("Label")
-        if not isinstance(label, str) or not label.startswith("ai.extella."):
-            continue
-        pid = 0
-        try:
-            result = subprocess.run(
-                ["launchctl", "print", f"{domain}/{label}"],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-            match = re.search(r"(?m)^\s*pid = (\d+)\s*$", result.stdout)
-            if match:
-                pid = int(match.group(1))
-        except (OSError, subprocess.SubprocessError, ValueError):
-            pass
-        arguments = payload.get("ProgramArguments") or []
-        safe_arguments = [value for value in arguments if isinstance(value, str)]
-        working_dir = payload.get("WorkingDirectory")
-        agents.append(
-            {
-                "label": label,
-                "pid": pid,
-                "path": path,
-                "arguments": safe_arguments,
-                "workingDirectory": working_dir if isinstance(working_dir, str) else "",
-            }
-        )
-    _launch_cache = (now, agents)
-    return agents
-
-
-def _agent_for_service(
-    service: dict[str, Any], pids: list[int], state: dict[str, Any]
-) -> dict[str, Any] | None:
-    agents = _launch_agents()
-    remembered = state.get("launchAgents", {}).get(service["id"])
-    if remembered:
-        for agent in agents:
-            if agent["label"] == remembered:
-                return agent
-    for agent in agents:
-        if agent["pid"] and agent["pid"] in pids:
-            state.setdefault("launchAgents", {})[service["id"]] = agent["label"]
-            return agent
-    root = service.get("root")
-    for agent in agents:
-        candidates = [agent.get("workingDirectory") or ""] + agent.get("arguments", [])
-        for candidate in candidates:
-            candidate_path = _expanded_root(candidate)
-            if root and candidate_path and _path_related(root, candidate_path):
-                state.setdefault("launchAgents", {})[service["id"]] = agent["label"]
-                return agent
-    return None
-
-
 def _public_service(
-    service: dict[str, Any], state: dict[str, Any], persist_mapping: bool = True
+    service: dict[str, Any],
+    state: dict[str, Any],
+    persist_mapping: bool = True,
+    supervisor: ProcessSupervisor = _SUPERVISOR,
 ) -> dict[str, Any]:
-    pids = listening_pids(service["port"])
-    mapping_before = dict(state.get("launchAgents", {}))
-    agent = _agent_for_service(service, pids, state)
-    if persist_mapping and mapping_before != state.get("launchAgents", {}):
-        _write_state(state)
-    process_rows: list[dict[str, Any]] = []
-    for pid in pids:
-        info = _process_info(pid)
-        owned = bool(agent and agent.get("pid") == pid) or _path_related(
-            service.get("root"), info.get("cwd")
-        )
-        process_rows.append(
+    del persist_mapping
+    spec = service.get("runtimeSpec")
+    disabled = service["id"] in set(state.get("disabled", []))
+    if isinstance(spec, RuntimeSpec):
+        runtime = supervisor.status(spec)
+    else:
+        runtime = {
+            "status": "stopped",
+            "pid": None,
+            "ppid": None,
+            "process": None,
+            "owner": service["id"],
+            "startedAt": None,
+            "autostart": "none",
+            "errorClass": "unsafe_launch_contract",
+            "canStart": False,
+            "canStop": False,
+            "healthy": False,
+        }
+    processes = []
+    if runtime.get("pid"):
+        processes.append(
             {
-                "pid": pid,
-                "ppid": info["ppid"],
-                "process": info["process"],
-                "owned": owned,
+                "pid": runtime["pid"],
+                "ppid": runtime.get("ppid") or 0,
+                "process": runtime.get("process") or "process",
+                "owned": True,
             }
         )
-    running = bool(process_rows)
-    all_owned = running and all(row["owned"] for row in process_rows)
-    disabled = service["id"] in set(state.get("disabled", []))
-    launchable = bool(agent or service.get("launchCommand") or service.get("staticFallback"))
-    source = (
-        f"LaunchAgent · {agent['label']}"
-        if agent
-        else f"Реестр Extella · {service['registryFile']}"
-    )
+    blocked = service.get("blockedReason") or ""
+    if runtime.get("errorClass") == "port_occupied_by_unowned_process":
+        blocked = "The port is occupied by a process whose Extella ownership is not confirmed."
+    elif runtime.get("errorClass") == "health_check_failed":
+        blocked = "The owned process is running but its health check is failing."
+    project = service.get("root").name if service.get("root") else ""
     main_file = service.get("mainFile")
     url = f"http://localhost:{service['port']}"
     if main_file:
         url += "/" + main_file
-    blocked_reason = ""
-    if running and not all_owned:
-        blocked_reason = "Порт занят процессом, принадлежность которого Extella не подтверждена."
-    elif not running and not launchable:
-        blocked_reason = "В реестре нет команды запуска."
     return {
         "id": service["id"],
         "name": service["name"],
         "description": service["description"],
-        "status": "running" if running else "stopped",
+        "status": runtime["status"],
         "desired": "off" if disabled else "on",
+        "pid": runtime.get("pid"),
         "port": service["port"],
         "url": url,
-        "source": source,
-        "project": service["root"].name if service.get("root") else "",
-        "processes": process_rows,
-        "canStop": bool(running and all_owned),
-        "canStart": bool(not running and launchable),
-        "controlBlockedReason": blocked_reason,
+        "source": f"Extella registry · {service['registryFile']}",
+        "project": project,
+        "owner": runtime.get("owner") or service["id"],
+        "startedAt": runtime.get("startedAt"),
+        "autostart": runtime.get("autostart") or "none",
+        "lastError": state.get("lastErrors", {}).get(service["id"]) or blocked,
+        "processes": processes,
+        "canStop": bool(runtime.get("canStop")),
+        "canStart": bool(runtime.get("canStart") and isinstance(spec, RuntimeSpec)),
+        "canRestart": bool(runtime.get("canStop") and isinstance(spec, RuntimeSpec)),
+        "controlBlockedReason": blocked,
     }
 
 
@@ -340,135 +286,41 @@ def list_services() -> list[dict[str, Any]]:
 
 def _service_by_id(service_id: str) -> dict[str, Any]:
     if not _SERVICE_ID.fullmatch(service_id):
-        raise ServiceError("Некорректный идентификатор сервиса.", 400)
+        raise ServiceError("Invalid service identifier.", 400)
     for service in registry_services():
         if service["id"] == service_id:
             return service
-    raise ServiceError("Сервис не найден в реестре Extella.", 404)
-
-
-def _launchctl(*arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
-    try:
-        return subprocess.run(
-            ["launchctl", *arguments],
-            check=check,
-            capture_output=True,
-            text=True,
-            timeout=8,
-        )
-    except (OSError, subprocess.SubprocessError) as error:
-        raise ServiceError("Не удалось изменить состояние LaunchAgent.", 502) from error
-
-
-def _wait_for_port(port: int, running: bool, timeout: float = 6.0) -> bool:
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        if bool(listening_pids(port)) is running:
-            return True
-        time.sleep(0.15)
-    return bool(listening_pids(port)) is running
-
-
-def _start_service(service: dict[str, Any], state: dict[str, Any]) -> None:
-    current_pids = listening_pids(service["port"])
-    agent = _agent_for_service(service, current_pids, state)
-    domain = f"gui/{os.getuid()}"
-    if agent:
-        _launchctl("enable", f"{domain}/{agent['label']}", check=False)
-        loaded = _launchctl("print", f"{domain}/{agent['label']}", check=False)
-        if loaded.returncode == 0:
-            _launchctl("kickstart", "-k", f"{domain}/{agent['label']}")
-        else:
-            _launchctl("bootstrap", domain, str(agent["path"]))
-    elif service.get("launchCommand"):
-        env = dict(os.environ)
-        env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:" + env.get(
-            "PATH", ""
-        )
-        cwd = str(service.get("root") or Path.home())
-        try:
-            subprocess.Popen(
-                ["/bin/zsh", "-lc", str(service["launchCommand"])],
-                cwd=cwd,
-                env=env,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        except OSError as error:
-            raise ServiceError("Команда запуска не выполнилась.", 502) from error
-    elif service.get("staticFallback"):
-        try:
-            subprocess.Popen(
-                [sys.executable, "-m", "http.server", str(service["port"])],
-                cwd=str(service["root"]),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        except OSError as error:
-            raise ServiceError("Статический сервер не запустился.", 502) from error
-    else:
-        raise ServiceError("В реестре нет команды запуска.", 409)
-    if not _wait_for_port(service["port"], True):
-        raise ServiceError("Сервис запущен, но его порт пока не отвечает.", 504)
-
-
-def _stop_service(service: dict[str, Any], state: dict[str, Any]) -> None:
-    pids = listening_pids(service["port"])
-    public = _public_service(service, state, persist_mapping=False)
-    if pids and not public["canStop"]:
-        raise ServiceError(public["controlBlockedReason"], 409)
-    agent = _agent_for_service(service, pids, state)
-    domain = f"gui/{os.getuid()}"
-    if agent:
-        _launchctl("disable", f"{domain}/{agent['label']}", check=False)
-        _launchctl("bootout", f"{domain}/{agent['label']}", check=False)
-    for pid in pids:
-        try:
-            os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            continue
-        except PermissionError as error:
-            raise ServiceError("Недостаточно прав для остановки процесса.", 403) from error
-    if _wait_for_port(service["port"], False, timeout=3.0):
-        return
-    for pid in listening_pids(service["port"]):
-        try:
-            os.kill(pid, signal.SIGKILL)
-        except ProcessLookupError:
-            continue
-        except PermissionError as error:
-            raise ServiceError("Процесс не завершился после SIGTERM.", 409) from error
-    if not _wait_for_port(service["port"], False, timeout=2.0):
-        raise ServiceError("Процесс не освободил порт.", 409)
+    raise ServiceError("Service was not found in the Extella registry.", 404)
 
 
 def control_service(service_id: str, action: str) -> dict[str, Any]:
-    if action not in {"start", "stop"}:
-        raise ServiceError("Неизвестное действие.", 400)
+    if action not in {"start", "stop", "restart"}:
+        raise ServiceError("Unknown service action.", 400)
     with _CONTROL_LOCK:
         service = _service_by_id(service_id)
         state = _read_state()
+        spec = service.get("runtimeSpec")
+        if not isinstance(spec, RuntimeSpec):
+            raise ServiceError(service.get("blockedReason") or "Safe launch contract is missing.", 409)
         disabled = set(state.get("disabled", []))
-        if action == "stop":
-            preview = _public_service(service, state, persist_mapping=False)
-            if preview["status"] == "running" and not preview["canStop"]:
-                raise ServiceError(preview["controlBlockedReason"], 409)
-            disabled.add(service_id)
-            state["disabled"] = sorted(disabled)
-            _write_state(state)
-            _stop_service(service, state)
-        else:
-            current_pids = listening_pids(service["port"])
-            if not current_pids:
-                _start_service(service, state)
+        try:
+            if action == "stop":
+                preview = _public_service(service, state, persist_mapping=False)
+                if preview["status"] != "stopped" and not preview["canStop"]:
+                    raise ServiceError(preview["controlBlockedReason"], 409)
+                _SUPERVISOR.stop(spec)
+                disabled.add(service_id)
+            elif action == "restart":
+                _SUPERVISOR.restart(spec)
+                disabled.discard(service_id)
             else:
-                agent = _agent_for_service(service, current_pids, state)
-                if agent:
-                    domain = f"gui/{os.getuid()}"
-                    _launchctl("enable", f"{domain}/{agent['label']}", check=False)
-            disabled.discard(service_id)
-            state["disabled"] = sorted(disabled)
+                _SUPERVISOR.start(spec)
+                disabled.discard(service_id)
+        except ProcessControlError as error:
+            state.setdefault("lastErrors", {})[service_id] = str(error)[:240]
             _write_state(state)
+            raise ServiceError(str(error), 409) from error
+        state["disabled"] = sorted(disabled)
+        state.setdefault("lastErrors", {}).pop(service_id, None)
+        _write_state(state)
         return _public_service(service, state)

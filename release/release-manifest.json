@@ -29,8 +29,8 @@
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "f932e038eaaf6e53fdcc9ca6f6db5e39b2c0a9af6c582b746a583cf94369b40a",
-      "bytes": 5823576,
+      "sha256": "8b6cf3e12ad36600ff4e29096292e7bd33ae0c52428edb5cba1a926d381d4da7",
+      "bytes": 5856990,
       "required": true,
       "platforms": [
         "macos-x86_64",

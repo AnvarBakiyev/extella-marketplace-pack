@@ -214,7 +214,9 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
             return
-        match = re.fullmatch(r"/api/services/([A-Za-z0-9_.-]{1,128})/(start|stop)", path)
+        match = re.fullmatch(
+            r"/api/services/([A-Za-z0-9_.-]{1,128})/(start|stop|restart)", path
+        )
         if not match:
             self._send_json(404, {"status": "not_found"})
             return

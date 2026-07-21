@@ -14,107 +14,177 @@ sys.path.insert(0, str(ROOT / "bridge"))
 import service_manager  # noqa: E402
 
 
+class FakeSupervisor:
+    def __init__(self, status):
+        self.value = status
+
+    def status(self, spec):
+        del spec
+        return dict(self.value)
+
+
 class ServiceManagerTests(unittest.TestCase):
-    def test_discovers_only_registered_local_servers(self) -> None:
+    def test_discovers_safe_argv_contract_and_rejects_legacy_shell_control(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             registry = Path(tmp)
-            (registry / "local.json").write_text(
+            project = registry / "demo"
+            project.mkdir()
+            (registry / "safe.json").write_text(
                 json.dumps(
                     {
-                        "id": "demo_local",
+                        "id": "demo_safe",
                         "name": "Demo",
-                        "tagline": "A safe local service",
                         "ui": {
                             "type": "local_server",
                             "port": 9123,
-                            "rootPath": str(registry / "demo"),
+                            "rootPath": str(project),
                         },
-                        "service": {"launchCmd": "run-with-a-secret"},
+                        "service": {
+                            "argv": [sys.executable, "-m", "http.server", "9123"],
+                            "healthPath": "/",
+                            "owner": "demo_safe",
+                        },
                     }
                 ),
                 encoding="utf-8",
             )
-            (registry / "remote.json").write_text(
-                json.dumps({"id": "remote", "ui": {"type": "web"}}),
+            (registry / "legacy.json").write_text(
+                json.dumps(
+                    {
+                        "id": "demo_legacy",
+                        "ui": {
+                            "type": "local_server",
+                            "port": 9124,
+                            "rootPath": str(project),
+                        },
+                        "service": {"launchCmd": "TOKEN=secret python server.py"},
+                    }
+                ),
                 encoding="utf-8",
             )
             services = service_manager.registry_services(registry)
-            self.assertEqual([service["id"] for service in services], ["demo_local"])
-            self.assertEqual(services[0]["port"], 9123)
+            self.assertEqual(
+                [service["id"] for service in services], ["demo_legacy", "demo_safe"]
+            )
+            self.assertIsNone(services[0]["runtimeSpec"])
+            self.assertIsInstance(services[1]["runtimeSpec"], service_manager.RuntimeSpec)
 
-    def test_public_payload_never_exposes_launch_command_or_full_root(self) -> None:
+    def test_public_payload_never_exposes_argv_or_full_root(self) -> None:
+        spec = service_manager.RuntimeSpec(
+            runtime_id="demo_local",
+            name="Demo",
+            argv=(sys.executable, "server.py", "--secret", "hidden"),
+            cwd=Path("/Users/example/private/project"),
+            port=9123,
+            health_url="http://127.0.0.1:9123/",
+            log_path=Path("/tmp/service.log"),
+            owner="demo",
+            autostart="controller",
+        )
         service = {
             "id": "demo_local",
             "name": "Demo",
             "description": "Local demo",
             "port": 9123,
             "mainFile": "index.html",
-            "root": Path("/Users/example/private/project"),
-            "launchCommand": "TOKEN=secret python server.py",
-            "staticFallback": False,
+            "root": spec.cwd,
             "registryFile": "demo_local.json",
+            "runtimeSpec": spec,
+            "blockedReason": "",
         }
-        state = {"disabled": [], "launchAgents": {}}
-        with (
-            patch.object(service_manager, "listening_pids", return_value=[]),
-            patch.object(service_manager, "_launch_agents", return_value=[]),
-        ):
-            public = service_manager._public_service(
-                service, state, persist_mapping=False
-            )
+        supervisor = FakeSupervisor(
+            {
+                "status": "running",
+                "pid": 321,
+                "ppid": 1,
+                "process": "Python",
+                "owner": "demo",
+                "startedAt": "today",
+                "autostart": "controller",
+                "errorClass": None,
+                "canStart": False,
+                "canStop": True,
+                "healthy": True,
+            }
+        )
+        public = service_manager._public_service(
+            service, {"disabled": [], "lastErrors": {}}, supervisor=supervisor
+        )
         serialized = json.dumps(public)
-        self.assertNotIn("TOKEN=secret", serialized)
+        self.assertNotIn("hidden", serialized)
         self.assertNotIn("/Users/example/private", serialized)
-        self.assertEqual(public["project"], "project")
-        self.assertTrue(public["canStart"])
+        self.assertEqual(public["pid"], 321)
+        self.assertTrue(public["canStop"])
 
     def test_unknown_port_owner_cannot_be_stopped(self) -> None:
+        spec = service_manager.RuntimeSpec(
+            runtime_id="demo_local",
+            name="Demo",
+            argv=(sys.executable, "server.py"),
+            cwd=Path("/expected"),
+            port=9123,
+            health_url="http://127.0.0.1:9123/",
+            log_path=Path("/tmp/service.log"),
+            owner="demo",
+            autostart="controller",
+        )
         service = {
             "id": "demo_local",
             "name": "Demo",
             "description": "",
             "port": 9123,
             "mainFile": "",
-            "root": Path("/Users/example/expected"),
-            "launchCommand": "python server.py",
-            "staticFallback": False,
+            "root": spec.cwd,
             "registryFile": "demo_local.json",
+            "runtimeSpec": spec,
+            "blockedReason": "",
         }
-        state = {"disabled": [], "launchAgents": {}}
-        with (
-            patch.object(service_manager, "listening_pids", return_value=[4321]),
-            patch.object(service_manager, "_launch_agents", return_value=[]),
-            patch.object(
-                service_manager,
-                "_process_info",
-                return_value={
-                    "pid": 4321,
-                    "ppid": 1,
-                    "process": "Python",
-                    "cwd": Path("/Users/example/someone-else"),
-                },
-            ),
-        ):
-            public = service_manager._public_service(
-                service, state, persist_mapping=False
-            )
+        supervisor = FakeSupervisor(
+            {
+                "status": "degraded",
+                "pid": None,
+                "ppid": None,
+                "process": None,
+                "owner": "demo",
+                "startedAt": None,
+                "autostart": "controller",
+                "errorClass": "port_occupied_by_unowned_process",
+                "canStart": False,
+                "canStop": False,
+                "healthy": True,
+            }
+        )
+        public = service_manager._public_service(
+            service, {"disabled": [], "lastErrors": {}}, supervisor=supervisor
+        )
         self.assertFalse(public["canStop"])
-        self.assertIn("не подтверждена", public["controlBlockedReason"])
+        self.assertIn("not confirmed", public["controlBlockedReason"])
 
     def test_rejected_stop_does_not_persist_disabled_state(self) -> None:
-        service = {"id": "demo_local", "port": 9123}
+        spec = service_manager.RuntimeSpec(
+            runtime_id="demo_local",
+            name="Demo",
+            argv=(sys.executable, "server.py"),
+            cwd=Path("/expected"),
+            port=9123,
+            health_url="http://127.0.0.1:9123/",
+            log_path=Path("/tmp/service.log"),
+            owner="demo",
+            autostart="controller",
+        )
+        service = {"id": "demo_local", "port": 9123, "runtimeSpec": spec}
         with (
             patch.object(service_manager, "_service_by_id", return_value=service),
             patch.object(
                 service_manager,
                 "_read_state",
-                return_value={"disabled": [], "launchAgents": {}},
+                return_value={"disabled": [], "lastErrors": {}},
             ),
             patch.object(
                 service_manager,
                 "_public_service",
                 return_value={
-                    "status": "running",
+                    "status": "degraded",
                     "canStop": False,
                     "controlBlockedReason": "not owned",
                 },
