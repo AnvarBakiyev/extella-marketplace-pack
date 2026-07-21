@@ -1,4 +1,5 @@
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -136,6 +137,72 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertIn(f"{INSTALL_SMOKE_PARAM}=False", instrumented)
             if "$extens(" not in "\n".join(instrumented.splitlines()[:20]):
                 compile(instrumented, str(sources[name].path), "exec")
+
+    def test_full_clean_account_contract_installs_and_smokes_every_bundled_expert(self):
+        root = Path(__file__).resolve().parents[1]
+        wizard = root.parent / "wizard"
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "bundle"
+            marketplace_target = bundle / "payload/marketplace"
+            wizard_target = bundle / "payload/wizard"
+            for relative in (
+                "experts",
+                "platform_experts",
+                "automations/experts",
+                "release/plugins",
+            ):
+                shutil.copytree(root / relative, marketplace_target / relative)
+            for relative in (
+                "release/catalog-policy.json",
+                "apps_catalog.json",
+                "composer_catalog.json",
+                "loc_catalog.json",
+                "mcp_catalog.json",
+                "models_catalog.json",
+            ):
+                target = marketplace_target / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(root / relative, target)
+            shutil.copytree(wizard / "experts", wizard_target / "experts")
+            shutil.copytree(wizard / "agents", wizard_target / "agents")
+
+            sources = __import__(
+                "installer.account", fromlist=["discover_bundle_experts"]
+            ).discover_bundle_experts(bundle)
+            required, functional_smokes = required_experts(bundle)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0-rc.1",
+                state_root=Path(directory) / "state",
+            )
+            report = installer.install(
+                sources,
+                required=required,
+                smokes=functional_smokes,
+                kv_artifacts=__import__(
+                    "installer.account", fromlist=["catalog_kv_artifacts"]
+                ).catalog_kv_artifacts(bundle),
+                agent_instructions={
+                    "wizard": (wizard / "agents/wizard_agent.instructions.md").read_text(),
+                    "builder": (wizard / "agents/builder_agent.instructions.md").read_text(),
+                },
+            )
+            self.assertEqual(report["status"], "installed")
+            self.assertEqual(set(api.experts), required | functional_smokes)
+            install_smokes = [
+                payload["expert_name"]
+                for endpoint, payload in api.calls
+                if endpoint == "/api/expert/run" and payload["params"].get(INSTALL_SMOKE_PARAM)
+            ]
+            self.assertEqual(set(install_smokes), required | functional_smokes)
+            self.assertEqual(len(install_smokes), len(required | functional_smokes))
+            functional = [
+                payload["expert_name"]
+                for endpoint, payload in api.calls
+                if endpoint == "/api/expert/run" and not payload["params"].get(INSTALL_SMOKE_PARAM)
+            ]
+            self.assertEqual(set(functional), functional_smokes)
 
     def test_base_contract_excludes_on_demand_and_unverified_experts(self):
         with tempfile.TemporaryDirectory() as directory:
