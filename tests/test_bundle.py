@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from installer.bundle import BundleVerificationError, verify_bundle
+from tools.build_client_bundle import _scan
 
 
 class BundleVerificationTests(unittest.TestCase):
@@ -63,6 +64,15 @@ class BundleVerificationTests(unittest.TestCase):
             manifest_path.write_text(json.dumps(manifest))
             with self.assertRaises(BundleVerificationError):
                 verify_bundle(root)
+
+    def test_source_scan_rejects_personal_home_but_allows_documented_placeholder(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "example.txt"
+            source.write_text("Откройте /Users/имя/Downloads", encoding="utf-8")
+            _scan(source, "example.txt")
+            source.write_text("/Users/anvarbakiyev/Downloads/private", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                _scan(source, "example.txt")
 
 
 if __name__ == "__main__":
