@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://extella.ai/schemas/plugin-manifest-v1.json",
+  "title": "Extella supported plugin manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "classification",
+    "source",
+    "supportedPlatforms",
+    "install",
+    "runtime",
+    "ui",
+    "artifacts",
+    "experts",
+    "secrets",
+    "uninstall",
+    "migration",
+    "releaseState"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{1,79}$"},
+    "name": {"type": "string", "minLength": 1, "maxLength": 120},
+    "description": {"type": "string", "maxLength": 2000},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$"},
+    "classification": {
+      "enum": ["bundled", "supported_on_demand", "third_party_unverified"]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "locator", "revision"],
+      "properties": {
+        "type": {"enum": ["repository", "release_asset", "bundled"]},
+        "locator": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "minLength": 1}
+      }
+    },
+    "supportedPlatforms": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["macos-x86_64", "macos-arm64", "windows11-x86_64"]
+      }
+    },
+    "install": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "entrypoints", "idempotent", "transactional", "mutablePaths"],
+      "properties": {
+        "strategy": {"enum": ["bundled", "script", "on_demand"]},
+        "entrypoints": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "macos": {"type": ["string", "null"]},
+            "windows11": {"type": ["string", "null"]}
+          }
+        },
+        "idempotent": {"const": true},
+        "transactional": {"const": true},
+        "mutablePaths": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "owner", "command", "port", "health", "pid", "autostart"],
+      "properties": {
+        "kind": {"enum": ["none", "local_service", "cloud"]},
+        "owner": {"type": "string", "minLength": 1},
+        "command": {"type": "array", "items": {"type": "string"}},
+        "port": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode"],
+          "properties": {
+            "mode": {"enum": ["none", "fixed", "dynamic"]},
+            "preferred": {"type": ["integer", "null"], "minimum": 1024, "maximum": 65535},
+            "bind": {"enum": ["none", "127.0.0.1"]}
+          }
+        },
+        "health": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path", "timeoutSeconds"],
+          "properties": {
+            "type": {"enum": ["none", "http", "process"]},
+            "path": {"type": ["string", "null"]},
+            "timeoutSeconds": {"type": "integer", "minimum": 1, "maximum": 300}
+          }
+        },
+        "pid": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy", "path"],
+          "properties": {
+            "strategy": {"enum": ["none", "pidfile", "service_manager"]},
+            "path": {"type": ["string", "null"]}
+          }
+        },
+        "autostart": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["macos", "windows11"],
+          "properties": {
+            "macos": {"enum": ["none", "launchagent"]},
+            "windows11": {"enum": ["none", "scheduled_task"]}
+          }
+        }
+      }
+    },
+    "ui": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "entrypoint", "runtimeId", "smokePath"],
+      "properties": {
+        "type": {"enum": ["embedded", "local_server", "external_browser", "none"]},
+        "entrypoint": {"type": ["string", "null"]},
+        "runtimeId": {"type": ["string", "null"]},
+        "smokePath": {"type": ["string", "null"]}
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["installRoot", "registryFile", "files"],
+      "properties": {
+        "installRoot": {"type": ["string", "null"]},
+        "registryFile": {"type": ["string", "null"]},
+        "files": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "experts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "smoke"],
+      "properties": {
+        "required": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "smoke": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "source", "required"],
+        "properties": {
+          "key": {"type": "string"},
+          "source": {"enum": ["user_prompt", "encrypted_vault", "extella_session"]},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "uninstall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entrypoint", "preserves"],
+      "properties": {
+        "entrypoint": {"type": ["string", "null"]},
+        "preserves": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["strategy", "fromVersions"],
+      "properties": {
+        "strategy": {"enum": ["none", "in_place", "replace_preserve_data"]},
+        "fromVersions": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "releaseState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["advertised", "verification"],
+      "properties": {
+        "advertised": {"type": "boolean"},
+        "verification": {"enum": ["pending", "verified", "failed"]}
+      }
+    }
+  }
+}
+

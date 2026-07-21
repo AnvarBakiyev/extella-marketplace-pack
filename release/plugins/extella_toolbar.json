@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_toolbar",
+  "name": "Extella Toolbar",
+  "description": "Versioned embedded marketplace and desktop surface for Extella Desktop.",
+  "version": "2.0.0-rc.1",
+  "classification": "bundled",
+  "source": {
+    "type": "repository",
+    "locator": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
+    "revision": "7deecff09a1dad790711ee1ca5a5b939387f6345"
+  },
+  "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+  "install": {
+    "strategy": "bundled",
+    "entrypoints": {"macos": "toolbar/install-all.sh", "windows11": "toolbar/install-all.ps1"},
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": ["${EXTELLA_USER_DATA}/toolbar.js"]
+  },
+  "runtime": {
+    "kind": "none",
+    "owner": "extella-desktop",
+    "command": [],
+    "port": {"mode": "none", "preferred": null, "bind": "none"},
+    "health": {"type": "none", "path": null, "timeoutSeconds": 1},
+    "pid": {"strategy": "none", "path": null},
+    "autostart": {"macos": "none", "windows11": "none"}
+  },
+  "ui": {"type": "embedded", "entrypoint": "toolbar/toolbar.js", "runtimeId": null, "smokePath": "plugins"},
+  "artifacts": {"installRoot": "${EXTELLA_USER_DATA}", "registryFile": null, "files": ["toolbar/toolbar.js"]},
+  "experts": {"required": [], "smoke": []},
+  "secrets": [{"key": "extella_session", "source": "extella_session", "required": true}],
+  "uninstall": {"entrypoint": "toolbar/uninstall", "preserves": ["Extella account data", "plugin user data"]},
+  "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.x"]},
+  "releaseState": {"advertised": false, "verification": "pending"}
+}
+

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_travel_agency",
+  "name": "Travel Agency",
+  "description": "Travel lead qualification and human-approved offer workflow.",
+  "version": "0.2.0-rc.1",
+  "classification": "bundled",
+  "source": {"type": "bundled", "locator": "automations/ui/extella_travel_agency", "revision": "release"},
+  "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+  "install": {
+    "strategy": "bundled",
+    "entrypoints": {"macos": "install.py", "windows11": "install.py"},
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": ["${EXTELLA_DATA}/plugins/extella_travel_agency"]
+  },
+  "runtime": {
+    "kind": "local_service",
+    "owner": "extella_travel_agency",
+    "command": ["${PYTHON}", "${EXTELLA_DATA}/plugins/extella_travel_agency/server.py"],
+    "port": {"mode": "fixed", "preferred": 8766, "bind": "127.0.0.1"},
+    "health": {"type": "http", "path": "/x/health", "timeoutSeconds": 30},
+    "pid": {"strategy": "service_manager", "path": null},
+    "autostart": {"macos": "launchagent", "windows11": "scheduled_task"}
+  },
+  "ui": {"type": "local_server", "entrypoint": "/onboarding.html", "runtimeId": "extella_travel_agency", "smokePath": "/x/health"},
+  "artifacts": {
+    "installRoot": "${EXTELLA_DATA}/plugins/extella_travel_agency",
+    "registryFile": "${EXTELLA_DATA}/plugins/_registry/extella_travel_agency.json",
+    "files": ["server.py", "index.html", "onboarding.html"]
+  },
+  "experts": {
+    "required": ["ta_tv_get", "ta_tv_search", "ta_pick_226", "ta_offer_message", "ta_lead_upsert", "ta_run_lead_pipeline", "ta_birthday_scan", "ta_season_campaign", "ta_wa_state", "ta_wa_send", "ta_tg_send", "ta_passport_extract", "ta_contract_generate", "ta_wa_inbound_tick"],
+    "smoke": ["ta_wa_state"]
+  },
+  "secrets": [
+    {"key": "tour_provider_token", "source": "encrypted_vault", "required": false},
+    {"key": "messenger_credentials", "source": "encrypted_vault", "required": false}
+  ],
+  "uninstall": {"entrypoint": "automation_uninstall:extella_travel_agency", "preserves": ["client records", "drafts", "encrypted credentials"]},
+  "migration": {"strategy": "replace_preserve_data", "fromVersions": ["0.1.x"]},
+  "releaseState": {"advertised": false, "verification": "pending"}
+}
+

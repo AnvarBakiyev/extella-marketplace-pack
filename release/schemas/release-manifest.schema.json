@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://extella.ai/schemas/client-release-manifest-v1.json",
+  "title": "Extella client release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "releaseId",
+    "version",
+    "status",
+    "supportedPlatforms",
+    "sourceRepositories",
+    "artifacts",
+    "capabilities",
+    "installers",
+    "verification"
+  ],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "releaseId": {"const": "extella-client"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"},
+    "status": {"enum": ["candidate", "released", "withdrawn"]},
+    "supportedPlatforms": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"enum": ["macos-x86_64", "macos-arm64", "windows11-x86_64"]}
+    },
+    "sourceRepositories": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "url", "revision"],
+        "properties": {
+          "id": {"type": "string"},
+          "url": {"type": "string"},
+          "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "sha256", "bytes", "required", "platforms"],
+        "properties": {
+          "id": {"type": "string"},
+          "path": {"type": "string"},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 1},
+          "required": {"type": "boolean"},
+          "platforms": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"enum": ["macos-x86_64", "macos-arm64", "windows11-x86_64"]}
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "classification", "manifest", "required"],
+        "properties": {
+          "id": {"type": "string"},
+          "classification": {"enum": ["bundled", "supported_on_demand", "third_party_unverified"]},
+          "manifest": {"type": "string"},
+          "required": {"type": "boolean"}
+        }
+      }
+    },
+    "installers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["macos", "windows11"],
+      "properties": {
+        "macos": {"type": "string"},
+        "windows11": {"type": "string"}
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["gateVersion", "matrix"],
+      "properties": {
+        "gateVersion": {"type": "integer", "minimum": 1},
+        "matrix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+          "properties": {
+            "macos-x86_64": {"enum": ["pending", "passed", "failed"]},
+            "macos-arm64": {"enum": ["pending", "passed", "failed"]},
+            "windows11-x86_64": {"enum": ["pending", "passed", "failed"]}
+          }
+        }
+      }
+    }
+  }
+}
+

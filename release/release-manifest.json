@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "extella-client",
+  "version": "2.0.0-rc.1",
+  "status": "candidate",
+  "supportedPlatforms": [
+    "macos-x86_64",
+    "macos-arm64",
+    "windows11-x86_64"
+  ],
+  "sourceRepositories": [
+    {
+      "id": "toolbar",
+      "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
+      "revision": "7deecff09a1dad790711ee1ca5a5b939387f6345"
+    },
+    {
+      "id": "marketplace",
+      "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
+      "revision": "483f1a9a03b6cc3823e4226638c283c9d58c9b84"
+    },
+    {
+      "id": "wizard",
+      "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
+      "revision": "5f5c2aa5f52e584a2dfa96ef367b34e996779dd5"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "toolbar",
+      "path": "toolbar/toolbar.js",
+      "sha256": "f932e038eaaf6e53fdcc9ca6f6db5e39b2c0a9af6c582b746a583cf94369b40a",
+      "bytes": 5823576,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "installer-macos",
+      "path": "toolbar/install-all.sh",
+      "sha256": "b36dd5f9b1476da1b165f870bc2124cdd8ffc10e2a62f49de5578e5f59bd2a59",
+      "bytes": 5959,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64"
+      ]
+    },
+    {
+      "id": "installer-windows11",
+      "path": "toolbar/install-all.ps1",
+      "sha256": "e1c37d6d136f54e17c4a1b90c9eb95c9ff04afac1aa855c63932dd0fdc8ee816",
+      "bytes": 3982,
+      "required": true,
+      "platforms": [
+        "windows11-x86_64"
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "extella_toolbar",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_toolbar.json",
+      "required": true
+    },
+    {
+      "id": "extella_activity_center",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_activity_center.json",
+      "required": true
+    },
+    {
+      "id": "extella_adoption_wizard",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_adoption_wizard.json",
+      "required": true
+    },
+    {
+      "id": "extella_travel_agency",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_travel_agency.json",
+      "required": true
+    },
+    {
+      "id": "extella_contract_agent",
+      "classification": "bundled",
+      "manifest": "release/plugins/extella_contract_agent.json",
+      "required": true
+    },
+    {
+      "id": "extella_competitor_intel",
+      "classification": "third_party_unverified",
+      "manifest": "release/plugins/extella_competitor_intel.json",
+      "required": false
+    }
+  ],
+  "installers": {
+    "macos": "toolbar/install-all.sh",
+    "windows11": "toolbar/install-all.ps1"
+  },
+  "verification": {
+    "gateVersion": 1,
+    "matrix": {
+      "macos-x86_64": "pending",
+      "macos-arm64": "pending",
+      "windows11-x86_64": "pending"
+    }
+  }
+}

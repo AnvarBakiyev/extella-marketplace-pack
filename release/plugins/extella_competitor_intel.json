@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_competitor_intel",
+  "name": "Competitor Intelligence",
+  "description": "Optional third-party signal workflow awaiting clean-machine verification.",
+  "version": "0.2.0-rc.1",
+  "classification": "third_party_unverified",
+  "source": {"type": "bundled", "locator": "automations/experts", "revision": "release"},
+  "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+  "install": {
+    "strategy": "on_demand",
+    "entrypoints": {"macos": "install.py", "windows11": "install.py"},
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": []
+  },
+  "runtime": {
+    "kind": "cloud",
+    "owner": "extella_competitor_intel",
+    "command": [],
+    "port": {"mode": "none", "preferred": null, "bind": "none"},
+    "health": {"type": "process", "path": null, "timeoutSeconds": 60},
+    "pid": {"strategy": "none", "path": null},
+    "autostart": {"macos": "none", "windows11": "none"}
+  },
+  "ui": {"type": "none", "entrypoint": null, "runtimeId": null, "smokePath": null},
+  "artifacts": {"installRoot": null, "registryFile": null, "files": []},
+  "experts": {
+    "required": ["svc_github_releases", "svc_rss", "svc_reddit", "svc_hackernews", "kp_ask", "ci_run_pipeline", "wz_connector_slack", "wz_connector_email"],
+    "smoke": ["ci_run_pipeline"]
+  },
+  "secrets": [],
+  "uninstall": {"entrypoint": "automation_uninstall:extella_competitor_intel", "preserves": ["digests", "knowledge gaps"]},
+  "migration": {"strategy": "none", "fromVersions": []},
+  "releaseState": {"advertised": false, "verification": "pending"}
+}
+

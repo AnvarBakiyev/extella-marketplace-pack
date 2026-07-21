@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_activity_center",
+  "name": "Extella Activity Center",
+  "description": "Human-readable task feed and owned-local-service controls.",
+  "version": "2.0.0-rc.1",
+  "classification": "bundled",
+  "source": {"type": "bundled", "locator": "device/activity-center", "revision": "release"},
+  "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+  "install": {
+    "strategy": "bundled",
+    "entrypoints": {"macos": "device/activity-center/install.py", "windows11": "device/activity-center/install.py"},
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": ["${EXTELLA_DATA}/activity-center", "${EXTELLA_AUTOSTART}/extella-activity-center"]
+  },
+  "runtime": {
+    "kind": "local_service",
+    "owner": "extella_activity_center",
+    "command": ["${PYTHON}", "${EXTELLA_DATA}/activity-center/server.py"],
+    "port": {"mode": "fixed", "preferred": 8799, "bind": "127.0.0.1"},
+    "health": {"type": "http", "path": "/api/health", "timeoutSeconds": 30},
+    "pid": {"strategy": "service_manager", "path": null},
+    "autostart": {"macos": "launchagent", "windows11": "scheduled_task"}
+  },
+  "ui": {"type": "embedded", "entrypoint": "activity-center", "runtimeId": "extella_activity_center", "smokePath": "/api/services"},
+  "artifacts": {
+    "installRoot": "${EXTELLA_DATA}/activity-center",
+    "registryFile": null,
+    "files": ["server.py", "activity_model.py", "service_manager.py", "task_state.py"]
+  },
+  "experts": {"required": [], "smoke": []},
+  "secrets": [],
+  "uninstall": {"entrypoint": "device/activity-center/uninstall.py", "preserves": ["user task results", "plugin user data"]},
+  "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.x"]},
+  "releaseState": {"advertised": false, "verification": "pending"}
+}
+

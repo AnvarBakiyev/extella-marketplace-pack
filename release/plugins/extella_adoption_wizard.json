@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "extella_adoption_wizard",
+  "name": "Extella Adoption Wizard",
+  "description": "Local Wizard/Composer runtime backed by per-account Extella experts.",
+  "version": "5.0.0-rc.1",
+  "classification": "bundled",
+  "source": {
+    "type": "repository",
+    "locator": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
+    "revision": "5f5c2aa5f52e584a2dfa96ef367b34e996779dd5"
+  },
+  "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
+  "install": {
+    "strategy": "bundled",
+    "entrypoints": {"macos": "toolbar/install-all.sh", "windows11": "toolbar/install-all.ps1"},
+    "idempotent": true,
+    "transactional": true,
+    "mutablePaths": ["${EXTELLA_DATA}/wizard/app", "${EXTELLA_DATA}/wizard/sessions"]
+  },
+  "runtime": {
+    "kind": "local_service",
+    "owner": "extella_adoption_wizard",
+    "command": ["${PYTHON}", "${EXTELLA_DATA}/wizard/app/server.py"],
+    "port": {"mode": "fixed", "preferred": 8765, "bind": "127.0.0.1"},
+    "health": {"type": "http", "path": "/x/health", "timeoutSeconds": 60},
+    "pid": {"strategy": "service_manager", "path": null},
+    "autostart": {"macos": "launchagent", "windows11": "scheduled_task"}
+  },
+  "ui": {"type": "local_server", "entrypoint": "/wizard.html", "runtimeId": "extella_adoption_wizard", "smokePath": "/x/health"},
+  "artifacts": {
+    "installRoot": "${EXTELLA_DATA}/wizard/app",
+    "registryFile": "${EXTELLA_DATA}/plugins/_registry/extella_adoption_wizard.json",
+    "files": ["server.py", "wz_platform.py", "wz_llm.py", "wz_build.py", "wizard.html"]
+  },
+  "experts": {
+    "required": ["wz_session", "wz_generate_blueprint", "wz_build_plan", "wz_build_runner", "wz_scheduler_tick"],
+    "smoke": ["wz_ping"]
+  },
+  "secrets": [
+    {"key": "extella_session", "source": "extella_session", "required": true},
+    {"key": "vault_pin", "source": "user_prompt", "required": true}
+  ],
+  "uninstall": {"entrypoint": "wizard/uninstall", "preserves": ["sessions", "reports", "encrypted vault"]},
+  "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.x", "4.x"]},
+  "releaseState": {"advertised": false, "verification": "pending"}
+}
+
