@@ -10,6 +10,13 @@
     "bundleReproducibility": {"status": "passed"},
     "unsupportedPlatformPreMutation": {"status": "passed"}
   },
+  "candidateBundle": {
+    "fileName": "extella-client-2.0.0-rc.1.zip",
+    "sha256": "34ef36b070bd089eeaf33da18652ba5843076f7e33efb1ff5af080288db08036",
+    "bytes": 3271441,
+    "fileCount": 261,
+    "reproducedCopies": 2
+  },
   "platformMatrix": {
     "macos-x86_64": {
       "native_bootstrap": "blocked_external",

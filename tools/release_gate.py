@@ -15,6 +15,7 @@ import json
 import re
 import subprocess
 import sys
+import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -328,7 +329,13 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def validate_release(root: Path, manifest_path: Path, *, wizard_root: Path | None = None) -> list[Issue]:
+def validate_release(
+    root: Path,
+    manifest_path: Path,
+    *,
+    wizard_root: Path | None = None,
+    bundle_path: Path | None = None,
+) -> list[Issue]:
     issues: list[Issue] = []
     try:
         data = _read_json(manifest_path)
@@ -360,6 +367,37 @@ def validate_release(root: Path, manifest_path: Path, *, wizard_root: Path | Non
         or not isinstance(distribution.get("fileCount"), int)
     ):
         issues.append(Issue("distribution.release", str(manifest_path), "released distribution requires exact hash, size, and file count"))
+    if distribution.get("status") in {"candidate", "released"}:
+        if bundle_path is None or not bundle_path.is_file():
+            issues.append(Issue("distribution.bundle_required", str(manifest_path), "candidate gate requires the exact bundle file"))
+        else:
+            if bundle_path.name != distribution.get("fileName"):
+                issues.append(Issue("distribution.filename", str(bundle_path), "bundle filename differs from manifest"))
+            if bundle_path.stat().st_size != distribution.get("bytes"):
+                issues.append(Issue("distribution.bytes", str(bundle_path), "bundle size differs from manifest"))
+            if _sha256(bundle_path) != distribution.get("sha256"):
+                issues.append(Issue("distribution.sha256", str(bundle_path), "bundle hash differs from manifest"))
+            try:
+                with zipfile.ZipFile(bundle_path) as archive:
+                    bundled = json.loads(archive.read("bundle-manifest.json"))
+                if len(bundled.get("files") or []) != distribution.get("fileCount"):
+                    issues.append(Issue("distribution.files", str(bundle_path), "bundle file count differs from manifest"))
+                release_sources = {
+                    item.get("id"): item.get("revision")
+                    for item in data.get("sourceRepositories") or []
+                    if isinstance(item, dict)
+                }
+                bundle_sources = {
+                    item.get("id"): item.get("revision")
+                    for item in bundled.get("sourceRepositories") or []
+                    if isinstance(item, dict)
+                }
+                if release_sources != bundle_sources:
+                    issues.append(Issue("distribution.sources", str(bundle_path), "bundle source SHAs differ from release manifest"))
+                if bundled.get("releaseVersion") != data.get("version"):
+                    issues.append(Issue("distribution.version", str(bundle_path), "bundle version differs from release manifest"))
+            except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
+                issues.append(Issue("distribution.invalid", str(bundle_path), type(exc).__name__))
 
     dependencies = data.get("dependencies") or []
     dependency_names = [item.get("name") for item in dependencies if isinstance(item, dict)]
@@ -503,12 +541,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--manifest", type=Path, default=Path("release/release-manifest.json"))
     parser.add_argument("--wizard-root", type=Path)
+    parser.add_argument("--bundle", type=Path)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     manifest = args.manifest if args.manifest.is_absolute() else root / args.manifest
     wizard_root = args.wizard_root.resolve() if args.wizard_root else None
-    issues = validate_release(root, manifest, wizard_root=wizard_root)
+    bundle_path = args.bundle.resolve() if args.bundle else None
+    issues = validate_release(root, manifest, wizard_root=wizard_root, bundle_path=bundle_path)
     if args.as_json:
         print(json.dumps({"status": "failed" if issues else "passed", "issues": [asdict(i) for i in issues]}, indent=2))
     else:
