@@ -22,6 +22,8 @@ SAFE_AGENT_ID = re.compile(r"^agent_[A-Za-z0-9_-]{6,128}$")
 QWEN_PROVIDER = "alibaba"
 QWEN_MODEL = "qwen3.7-max-2026-06-08"
 AGENTS_KV_KEY = "extella:client:agents:v1"
+INSTALL_SMOKE_PARAM = "__extella_install_smoke"
+INSTALL_SMOKE_MARKER = "extella-install-smoke-v1"
 
 
 class AccountInstallError(RuntimeError):
@@ -359,6 +361,61 @@ def _normalise_expert(response: Mapping[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def instrument_expert_code(source: ExpertSource, agent_id: str) -> str:
+    """Add one reserved, side-effect-free cloud execution probe.
+
+    The wrapper is deterministic and delegates every normal invocation to the
+    canonical expert unchanged. The reserved parameter is intentionally absent
+    from the published expert kwargs so it is not exposed as a user feature.
+    """
+
+    code = source.code.replace("__EXTELLA_AGENT__", agent_id).rstrip() + "\n"
+    if INSTALL_SMOKE_MARKER in code or INSTALL_SMOKE_PARAM in code:
+        raise AccountInstallError(f"reserved install-smoke symbol exists in expert: {source.name}")
+    match = re.search(rf"(?m)^(?P<indent>[ \t]*)def[ \t]+{re.escape(source.name)}[ \t]*\(", code)
+    if match is None:
+        raise AccountInstallError(f"expert entrypoint was not found: {source.name}")
+    index = match.end()
+    depth = 1
+    quote = ""
+    escaped = False
+    while index < len(code) and depth:
+        character = code[index]
+        if quote:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == quote:
+                quote = ""
+        elif character in {"'", '"'}:
+            quote = character
+        elif character == "(":
+            depth += 1
+        elif character == ")":
+            depth -= 1
+        index += 1
+    if depth or index <= match.end():
+        raise AccountInstallError(f"expert signature is incomplete: {source.name}")
+    close = index - 1
+    parameters = code[match.end():close]
+    if "*" in parameters:
+        raise AccountInstallError(f"expert signature uses unsupported variadic parameters: {source.name}")
+    separator = ", " if parameters.strip() else ""
+    code = code[:close] + separator + f"{INSTALL_SMOKE_PARAM}=False" + code[close:]
+    colon = code.find(":", close + len(separator) + len(INSTALL_SMOKE_PARAM))
+    newline = code.find("\n", colon)
+    if colon < 0 or newline < 0:
+        raise AccountInstallError(f"expert function body is incomplete: {source.name}")
+    body_indent = match.group("indent") + "    "
+    guard = (
+        f"{body_indent}if {INSTALL_SMOKE_PARAM}:\n"
+        + f"{body_indent}    return {{'status': 'success', 'ok': True, "
+        + f"'installSmoke': {source.name!r}, 'contract': {INSTALL_SMOKE_MARKER!r}}}\n"
+    )
+    return code[: newline + 1] + guard + code[newline + 1 :]
+
+
 class AccountInstaller:
     def __init__(self, api: AccountAPI, *, release_version: str, state_root: Path, agent_id: str | None = None) -> None:
         if agent_id is not None and (
@@ -515,7 +572,7 @@ class AccountInstaller:
 
     def install_expert(self, source: ExpertSource) -> tuple[str, Callable[[], None] | None]:
         previous = self._get_expert(source.name)
-        code = source.code.replace("__EXTELLA_AGENT__", self.agent_id)
+        code = instrument_expert_code(source, self.agent_id)
         payload = {
             "name": source.name,
             "description": source.description,
@@ -595,10 +652,11 @@ class AccountInstaller:
         )
         return f"KV verified: {artifact.key}", None
 
-    def smoke_expert(self, name: str) -> tuple[str, None]:
+    def smoke_expert(self, name: str, *, install_contract: bool = False) -> tuple[str, None]:
+        params = {INSTALL_SMOKE_PARAM: True} if install_contract else {}
         response = self.api.post(
             "/api/expert/run",
-            {"expert_name": name, "params": {}, "global": True},
+            {"expert_name": name, "params": params, "global": True},
             timeout=180,
         )
         if not _response_success(response):
@@ -612,7 +670,14 @@ class AccountInstaller:
         if isinstance(result, dict):
             if result.get("ok") is False or str(result.get("status") or "").lower() in {"error", "failed"}:
                 raise AccountInstallError(f"expert smoke failed: {name}")
-        return f"smoke passed: {name}", None
+        if install_contract and (
+            not isinstance(result, dict)
+            or result.get("installSmoke") != name
+            or result.get("contract") != INSTALL_SMOKE_MARKER
+        ):
+            raise AccountInstallError(f"expert install smoke identity mismatch: {name}")
+        kind = "install smoke" if install_contract else "functional smoke"
+        return f"{kind} passed: {name}", None
 
     def install(
         self,
@@ -640,10 +705,17 @@ class AccountInstaller:
         for name in sorted(required | smokes):
             source = experts[name]
             self.transaction.run(f"expert:{name}", lambda source=source: self.install_expert(source))
+            self.transaction.run(
+                f"install-smoke:{name}",
+                lambda name=name: self.smoke_expert(name, install_contract=True),
+            )
         for artifact in [*kv_artifacts, *owned_agent_kv]:
             self.transaction.run(f"kv:{artifact.key}", lambda artifact=artifact: self.install_kv(artifact))
         for name in sorted(smokes):
-            self.transaction.run(f"smoke:{name}", lambda name=name: self.smoke_expert(name))
+            self.transaction.run(
+                f"functional-smoke:{name}",
+                lambda name=name: self.smoke_expert(name),
+            )
         return self.transaction.commit() if commit else self.transaction.prepared_report()
 
 

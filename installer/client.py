@@ -30,6 +30,7 @@ from runtime.extella_runtime.paths import ClientPaths, client_paths
 from runtime.extella_runtime.platforms import PlatformInfo, detect_platform
 from runtime.extella_runtime.processes import ProcessSupervisor, RuntimeSpec
 from runtime.extella_runtime.transaction import InstallTransaction, InstallationError, uninstall_from_state
+from runtime.extella_runtime.telemetry import StabilityEvent, record_local_aggregate
 
 
 ACTIVITY_ID = "extella_activity_center"
@@ -70,7 +71,13 @@ def _verify_python(path: Path) -> None:
     if not path.is_absolute() or not path.is_file():
         raise InstallationError("managed Python executable is missing")
     result = subprocess.run(
-        (str(path), "-c", "import sys; raise SystemExit(0 if sys.version_info[:2] == (3, 12) else 4)"),
+        (
+            str(path),
+            "-c",
+            "import ctypes, ssl, sqlite3, sys, urllib.request; "
+            "ssl.create_default_context(); ctypes.CDLL(None); "
+            "raise SystemExit(0 if sys.version_info[:2] == (3, 12) else 4)",
+        ),
         capture_output=True,
         text=True,
         timeout=20,
@@ -78,7 +85,9 @@ def _verify_python(path: Path) -> None:
         shell=False,
     )
     if result.returncode != 0:
-        raise InstallationError("Extella requires a working Python 3.12 runtime")
+        raise InstallationError(
+            "Extella requires a working Python 3.12 runtime with TLS, SQLite, HTTP, and native-library support"
+        )
 
 
 def _tree_same(transaction: InstallTransaction, source: Path, target: Path) -> bool:
@@ -96,6 +105,36 @@ def _runtime_environment(paths: ClientPaths) -> dict[str, str]:
         "EXTELLA_PROCESS_STATE": str(paths.state_root / "processes.json"),
         "PYTHONPATH": str(paths.runtime_root),
     }
+
+
+def _record_stability(
+    *,
+    platform_info: PlatformInfo,
+    environment: Mapping[str, str],
+    release_version: str,
+    stage: str,
+    success: bool,
+    error: Exception | None = None,
+) -> None:
+    if not platform_info.supported or platform_info.key is None:
+        return
+    try:
+        paths = client_paths(platform_info=platform_info, env=environment)
+        record_local_aggregate(
+            paths.state_root / "telemetry" / "stability.json",
+            StabilityEvent(
+                platform=platform_info.key,
+                architecture=platform_info.architecture,
+                component="client-installer",
+                release_version=release_version,
+                error_class=type(error).__name__ if error is not None else "none",
+                install_stage=stage,
+                success=success,
+            ),
+        )
+    except (OSError, ValueError):
+        # Telemetry is deliberately optional and can never make installation fail.
+        return
 
 
 def _listener_import_roots(env: Mapping[str, str]) -> list[Path]:
@@ -368,6 +407,7 @@ def _write_config(
     api_base: str,
     wizard_agent: str,
     builder_agent: str,
+    platform_info: PlatformInfo,
 ) -> str:
     payload = {
         "schemaVersion": 1,
@@ -377,12 +417,36 @@ def _write_config(
         "agent_id": wizard_agent,
         "llm_agent_id": builder_agent,
     }
+    target = prepared.paths.wizard_root / "config.json"
     prepared.transaction.atomic_write(
         (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
-        prepared.paths.wizard_root / "config.json",
+        target,
         mode=0o600,
     )
+    _restrict_secret_file(target, platform_info=platform_info)
     return "local account configuration installed"
+
+
+def _restrict_secret_file(path: Path, *, platform_info: PlatformInfo) -> None:
+    if platform_info.system != "Windows":
+        os.chmod(path, 0o600)
+        if path.stat().st_mode & 0o077:
+            raise InstallationError("secret file permissions could not be restricted")
+        return
+    powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+    if not powershell:
+        raise InstallationError("PowerShell is required to protect the Extella credential file")
+    script = (
+        "$p=$args[0];$acl=Get-Acl -LiteralPath $p;"
+        "$acl.SetAccessRuleProtection($true,$false);"
+        "$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User;"
+        "$rule=[Security.AccessControl.FileSystemAccessRule]::new"
+        "($sid,'FullControl','Allow');$acl.SetAccessRule($rule);"
+        "Set-Acl -LiteralPath $p -AclObject $acl"
+    )
+    result = _run((powershell, "-NoProfile", "-NonInteractive", "-Command", script, str(path)))
+    if result.returncode != 0:
+        raise InstallationError("Windows credential ACL could not be restricted to the current user")
 
 
 def _health(url: str, *, timeout: float = 3.0) -> bool:
@@ -459,16 +523,30 @@ def install_client(
     account_api: Any | None = None,
 ) -> dict[str, Any]:
     platform_info = platform_info or detect_platform()
-    prepared, _bundle = prepare_local_client(
-        bundle_root,
-        platform_info=platform_info,
-        env=env,
-        bootstrap_python_root=bootstrap_python_root,
-        python_executable=python_executable,
-    )
+    environment = dict(os.environ if env is None else env)
+    stage = "local-prepare"
+    try:
+        prepared, _bundle = prepare_local_client(
+            bundle_root,
+            platform_info=platform_info,
+            env=environment,
+            bootstrap_python_root=bootstrap_python_root,
+            python_executable=python_executable,
+        )
+    except Exception as error:
+        _record_stability(
+            platform_info=platform_info,
+            environment=environment,
+            release_version="unknown",
+            stage=stage,
+            success=False,
+            error=error,
+        )
+        raise
     account: AccountInstaller | None = None
     account_prepared = False
     try:
+        stage = "account-prepare"
         api = account_api or ExtellaAPI(token, api_base=api_base)
         account = AccountInstaller(
             api,
@@ -500,6 +578,7 @@ def install_client(
             for step in account.transaction.steps:
                 if step.name == "agent:builder":
                     builder_agent = step.message.rsplit(":", 1)[-1]
+        stage = "local-config"
         prepared.transaction.run(
             "client.config",
             lambda: _write_config(
@@ -508,20 +587,38 @@ def install_client(
                 api_base=api_base,
                 wizard_agent=wizard_agent,
                 builder_agent=builder_agent,
+                platform_info=platform_info,
             ),
         )
         if activate_services:
+            stage = "service-activation"
             prepared.transaction.run(
                 "services.activate",
                 lambda: _activate_services(prepared, platform_info=platform_info),
             )
+        stage = "commit"
         local_report = prepared.transaction.commit()
         account_report = account.transaction.commit()
-    except Exception:
+    except Exception as error:
         if account is not None and account_prepared:
             account.transaction.rollback(failed_step="client.finalize")
         prepared.transaction.rollback(failed_step="client.finalize")
+        _record_stability(
+            platform_info=platform_info,
+            environment=environment,
+            release_version=prepared.release_version,
+            stage=stage,
+            success=False,
+            error=error,
+        )
         raise
+    _record_stability(
+        platform_info=platform_info,
+        environment=environment,
+        release_version=prepared.release_version,
+        stage="complete",
+        success=True,
+    )
     return {
         "schemaVersion": 1,
         "status": "installed",
@@ -578,7 +675,7 @@ def _installed_runtime_spec(
 
 def uninstall_client(
     *,
-    token: str,
+    token: str = "",
     api_base: str = "https://api.extella.ai",
     platform_info: PlatformInfo | None = None,
     env: Mapping[str, str] | None = None,
@@ -602,6 +699,8 @@ def uninstall_client(
 
     account_report: dict[str, Any] = {"status": "not_installed", "steps": []}
     if account_state.exists():
+        if not token.strip() and account_api is None:
+            raise InstallationError("Extella token is required to uninstall account-owned resources")
         api = account_api or ExtellaAPI(token, api_base=api_base)
         account_report = uninstall_account_resources(api, account_state)
         if account_report["status"] != "uninstalled":

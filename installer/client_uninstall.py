@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 
 from installer.account import prompt_token  # noqa: E402
 from installer.client import uninstall_client  # noqa: E402
+from runtime.extella_runtime.paths import client_paths  # noqa: E402
 from runtime.extella_runtime.platforms import detect_platform  # noqa: E402
 
 
@@ -32,7 +33,9 @@ def main() -> int:
             )
         )
         return 3
-    token = prompt_token()
+    paths = client_paths(platform_info=platform_info)
+    account_state = paths.state_root / "account" / "account-state.json"
+    token = prompt_token() if account_state.exists() else ""
     try:
         report = uninstall_client(token=token, platform_info=platform_info)
     except Exception as error:

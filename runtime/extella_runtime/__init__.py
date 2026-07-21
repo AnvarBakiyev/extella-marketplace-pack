@@ -7,6 +7,7 @@ from .paths import ClientPaths, client_paths
 from .transaction import InstallTransaction, InstallationError, uninstall_from_state
 from .processes import ProcessSupervisor, RuntimeSpec
 from .autostart import AutostartSpec, install_autostart, remove_autostart
+from .telemetry import StabilityEvent, record_local_aggregate
 
 __all__ = [
     "DoctorReport",
@@ -17,6 +18,7 @@ __all__ = [
     "PlatformInfo",
     "ProcessSupervisor",
     "RuntimeSpec",
+    "StabilityEvent",
     "AutostartSpec",
     "detect_platform",
     "client_paths",
@@ -25,5 +27,6 @@ __all__ = [
     "run_doctor",
     "install_autostart",
     "remove_autostart",
+    "record_local_aggregate",
     "uninstall_from_state",
 ]

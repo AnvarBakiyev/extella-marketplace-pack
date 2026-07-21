@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import ctypes
 import os
 from pathlib import Path
 import shutil
 import socket
+import ssl
+import threading
 from typing import Any, Iterable, Mapping
 import urllib.error
 import urllib.parse
@@ -92,6 +95,107 @@ def _port_check(port: int) -> DoctorCheck:
     )
 
 
+def _path_check(environment: Mapping[str, str]) -> DoctorCheck:
+    raw = environment.get("PATH", "")
+    entries = [entry for entry in raw.split(os.pathsep) if entry]
+    existing = [entry for entry in entries if Path(entry).is_dir()]
+    status = "pass" if entries and existing else "warning"
+    return DoctorCheck(
+        "path",
+        status,
+        "PATH contains usable directories" if status == "pass" else "PATH is empty or contains no existing directories",
+        required=False,
+        details={
+            "entryCount": len(entries),
+            "existingEntryCount": len(existing),
+            "missingEntryCount": len(entries) - len(existing),
+        },
+    )
+
+
+def _ssl_check() -> DoctorCheck:
+    try:
+        context = ssl.create_default_context()
+        paths = ssl.get_default_verify_paths()
+        if context.verify_mode != ssl.CERT_REQUIRED or not context.check_hostname:
+            raise RuntimeError("default TLS verification is disabled")
+    except Exception as exc:
+        return DoctorCheck(
+            "ssl",
+            "failed",
+            "Python TLS verification is unavailable",
+            details={"errorClass": type(exc).__name__, "error": str(exc)},
+        )
+    return DoctorCheck(
+        "ssl",
+        "pass",
+        "Python TLS verification is available",
+        details={
+            "openssl": ssl.OPENSSL_VERSION,
+            "caFileConfigured": bool(paths.cafile or paths.openssl_cafile),
+            "caPathConfigured": bool(paths.capath or paths.openssl_capath),
+        },
+    )
+
+
+def _native_loader_check() -> DoctorCheck:
+    try:
+        ctypes.CDLL(None)
+    except (OSError, TypeError) as exc:
+        return DoctorCheck(
+            "native_loader",
+            "failed",
+            "Native library loader is unavailable",
+            details={"errorClass": type(exc).__name__, "error": str(exc)},
+        )
+    return DoctorCheck("native_loader", "pass", "Native library loader is available")
+
+
+def _loopback_http_check(timeout: float = 3.0) -> DoctorCheck:
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.settimeout(timeout)
+    try:
+        server.bind(("127.0.0.1", 0))
+        server.listen(1)
+        port = int(server.getsockname()[1])
+
+        def respond() -> None:
+            try:
+                connection, _ = server.accept()
+                with connection:
+                    connection.settimeout(timeout)
+                    connection.recv(4096)
+                    connection.sendall(
+                        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK"
+                    )
+            except OSError:
+                return
+
+        thread = threading.Thread(target=respond, daemon=True)
+        thread.start()
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as response:
+            body = response.read()
+            status = int(response.status)
+        thread.join(timeout)
+        if status != 200 or body != b"OK":
+            raise RuntimeError("loopback response was not healthy")
+    except (OSError, urllib.error.URLError, RuntimeError) as exc:
+        return DoctorCheck(
+            "localhost_http",
+            "failed",
+            "Localhost HTTP services cannot be started or reached",
+            details={"errorClass": type(exc).__name__, "error": str(exc)},
+        )
+    finally:
+        server.close()
+    return DoctorCheck(
+        "localhost_http",
+        "pass",
+        "Localhost HTTP bind and request succeeded",
+        details={"bind": "127.0.0.1", "probePort": port},
+    )
+
+
 def _network_check(url: str, timeout: int = 10) -> DoctorCheck:
     request = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "ExtellaDoctor/1"})
     try:
@@ -159,6 +263,10 @@ def run_doctor(
     )
 
     environment = dict(os.environ if env is None else env)
+    checks.append(_path_check(environment))
+    checks.append(_ssl_check())
+    checks.append(_native_loader_check())
+    checks.append(_loopback_http_check())
     home = Path(environment.get("USERPROFILE") or environment.get("HOME") or Path.home())
     root = data_root or home / ".extella"
     writable_parent = _nearest_existing(root)

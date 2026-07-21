@@ -41,6 +41,11 @@ class DoctorTests(unittest.TestCase):
             )
         self.assertEqual(report.status, "ready")
         self.assertFalse(report.changed)
+        checks = {check.name: check for check in report.checks}
+        self.assertEqual(checks["ssl"].status, "pass")
+        self.assertEqual(checks["native_loader"].status, "pass")
+        self.assertEqual(checks["localhost_http"].status, "pass")
+        self.assertIn(checks["path"].status, {"pass", "warning"})
 
 
 if __name__ == "__main__":

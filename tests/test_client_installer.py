@@ -5,8 +5,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
-from installer.client import prepare_local_client
+from installer.client import _restrict_secret_file, prepare_local_client
 from runtime.extella_runtime.platforms import detect_platform
 
 
@@ -14,6 +16,34 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClientInstallerTests(unittest.TestCase):
+    def test_secret_file_permissions_are_restricted_on_macos(self):
+        mac = detect_platform(system="Darwin", architecture="arm64", release="15.5")
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text("secret")
+            path.chmod(0o644)
+            _restrict_secret_file(path, platform_info=mac)
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
+    def test_windows_secret_acl_uses_current_sid_without_secret_arguments(self):
+        windows = detect_platform(
+            system="Windows", architecture="AMD64", release="11", version="10.0.22631"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "config.json"
+            path.write_text("TOP_SECRET")
+            with (
+                patch("installer.client.shutil.which", return_value="C:/PowerShell/pwsh.exe"),
+                patch(
+                    "installer.client._run",
+                    return_value=SimpleNamespace(returncode=0, stdout="", stderr=""),
+                ) as run,
+            ):
+                _restrict_secret_file(path, platform_info=windows)
+            argv = run.call_args.args[0]
+            self.assertNotIn("TOP_SECRET", " ".join(argv))
+            self.assertIn("WindowsIdentity", " ".join(argv))
+
     def _bundle(self, bundle: Path):
         files = []
 

@@ -9,6 +9,10 @@ from installer.account import (
     AccountInstaller,
     ExpertSource,
     KVArtifact,
+    INSTALL_SMOKE_MARKER,
+    INSTALL_SMOKE_PARAM,
+    instrument_expert_code,
+    load_expert_sources,
     required_experts,
     uninstall_account_resources,
 )
@@ -49,6 +53,16 @@ class FakeAPI:
             self.experts.pop(payload["name"], None)
             return {"status": "success"}
         if endpoint == "/api/expert/run":
+            if payload.get("params", {}).get(INSTALL_SMOKE_PARAM):
+                return {
+                    "status": "success",
+                    "result": {
+                        "status": "success",
+                        "ok": True,
+                        "installSmoke": payload["expert_name"],
+                        "contract": INSTALL_SMOKE_MARKER,
+                    },
+                }
             return {"status": "success", "result": json.dumps({"ok": True})}
         if endpoint == "/api/agent/create":
             agent_id = f"agent_user_Qwen{self.next_agent}"
@@ -88,6 +102,41 @@ def expert(name, code=None):
 
 
 class AccountInstallerTests(unittest.TestCase):
+    def test_instrumented_python_expert_delegates_and_has_safe_probe(self):
+        source = expert(
+            "greeting",
+            "# expert: greeting\ndef greeting(name='world'):\n    return 'hello ' + name\n",
+        )
+        namespace = {}
+        exec(instrument_expert_code(source, "agent_user_Qwen123"), namespace)
+        self.assertEqual(namespace["greeting"](name="Ada"), "hello Ada")
+        self.assertEqual(
+            namespace["greeting"](**{INSTALL_SMOKE_PARAM: True}),
+            {
+                "status": "success",
+                "ok": True,
+                "installSmoke": "greeting",
+                "contract": INSTALL_SMOKE_MARKER,
+            },
+        )
+
+    def test_every_bundled_source_accepts_deterministic_install_smoke(self):
+        root = Path(__file__).resolve().parents[1]
+        wizard = root.parent / "wizard"
+        inventory = json.loads((root / "release/expert-classification.json").read_text())
+        paths = [
+            *root.glob("experts/*.py"),
+            *root.glob("platform_experts/*.py"),
+            *root.glob("automations/experts/*.py"),
+            *wizard.glob("experts/*.py"),
+        ]
+        sources = load_expert_sources(paths)
+        for name in inventory["bundled"]:
+            instrumented = instrument_expert_code(sources[name], "agent_user_Qwen123")
+            self.assertIn(f"{INSTALL_SMOKE_PARAM}=False", instrumented)
+            if "$extens(" not in "\n".join(instrumented.splitlines()[:20]):
+                compile(instrumented, str(sources[name].path), "exec")
+
     def test_base_contract_excludes_on_demand_and_unverified_experts(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -208,6 +257,12 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertEqual(set(api.experts), {"built_in"})
             saved = [payload["name"] for endpoint, payload in api.calls if endpoint == "/api/expert/save"]
             self.assertEqual(saved, ["built_in"])
+            install_smokes = [
+                payload["expert_name"]
+                for endpoint, payload in api.calls
+                if endpoint == "/api/expert/run" and payload["params"].get(INSTALL_SMOKE_PARAM)
+            ]
+            self.assertEqual(install_smokes, ["built_in"])
 
     def test_durable_uninstall_restores_previous_and_removes_owned_resources(self):
         api = FakeAPI()

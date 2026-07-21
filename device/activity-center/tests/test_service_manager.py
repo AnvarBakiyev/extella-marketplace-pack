@@ -28,6 +28,33 @@ class FakeSupervisor:
 
 
 class ServiceManagerTests(unittest.TestCase):
+    def test_system_controller_is_visible_with_pid_but_cannot_disable_itself(self) -> None:
+        service = service_manager._controller_service()
+        public = service_manager._public_service(
+            service,
+            {"disabled": [], "lastErrors": {}},
+            supervisor=FakeSupervisor(
+                {
+                    "status": "running",
+                    "pid": 8799,
+                    "ppid": 1,
+                    "process": "Python",
+                    "owner": "extella_activity_center",
+                    "startedAt": "today",
+                    "autostart": "native",
+                    "errorClass": None,
+                    "canStart": False,
+                    "canStop": True,
+                    "healthy": True,
+                }
+            ),
+        )
+        self.assertEqual(public["pid"], 8799)
+        self.assertEqual(public["port"], 8799)
+        self.assertFalse(public["canStop"])
+        self.assertFalse(public["canRestart"])
+        self.assertIn("system controller", public["source"])
+
     def test_boot_starts_enabled_services_and_preserves_disabled_choice(self) -> None:
         enabled = service_manager.RuntimeSpec(
             runtime_id="enabled",

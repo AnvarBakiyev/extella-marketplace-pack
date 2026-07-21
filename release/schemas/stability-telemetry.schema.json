@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://extella.ai/schemas/stability-telemetry-v1.json",
+  "title": "Extella privacy-minimal stability aggregate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "transport", "aggregates", "updatedAt"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "transport": {"const": "disabled"},
+    "updatedAt": {"type": "integer", "minimum": 0},
+    "aggregates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["platform", "architecture", "component", "releaseVersion", "errorClass", "installStage", "success", "count", "lastAt"],
+        "properties": {
+          "platform": {"enum": ["macos-x86_64", "macos-arm64", "windows11-x86_64"]},
+          "architecture": {"enum": ["x86_64", "arm64"]},
+          "component": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,96}$"},
+          "releaseVersion": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,96}$"},
+          "errorClass": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,96}$"},
+          "installStage": {"type": "string", "pattern": "^[A-Za-z0-9_.-]{1,96}$"},
+          "success": {"type": "boolean"},
+          "count": {"type": "integer", "minimum": 1},
+          "lastAt": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

@@ -256,7 +256,7 @@ def _public_service(
     url = f"http://localhost:{service['port']}"
     if main_file:
         url += "/" + main_file
-    return {
+    payload = {
         "id": service["id"],
         "name": service["name"],
         "description": service["description"],
@@ -265,7 +265,7 @@ def _public_service(
         "pid": runtime.get("pid"),
         "port": service["port"],
         "url": url,
-        "source": f"Extella registry · {service['registryFile']}",
+        "source": service.get("sourceLabel") or f"Extella registry · {service['registryFile']}",
         "project": project,
         "owner": runtime.get("owner") or service["id"],
         "startedAt": runtime.get("startedAt"),
@@ -277,11 +277,53 @@ def _public_service(
         "canRestart": bool(runtime.get("canStop") and isinstance(spec, RuntimeSpec)),
         "controlBlockedReason": blocked,
     }
+    if service.get("systemController"):
+        payload.update(
+            {
+                "canStop": False,
+                "canStart": False,
+                "canRestart": False,
+                "controlBlockedReason": (
+                    "Activity Center is the system process controller; stopping it here "
+                    "would remove the controls needed to start it again."
+                ),
+            }
+        )
+    return payload
+
+
+def _controller_service() -> dict[str, Any]:
+    root = Path(__file__).resolve().parent
+    spec = RuntimeSpec(
+        runtime_id="extella_activity_center",
+        name="Extella Activity Center",
+        argv=(sys.executable, str(root / "server.py")),
+        cwd=root,
+        port=8799,
+        health_url="http://127.0.0.1:8799/api/health",
+        log_path=_PATHS.logs_root / "activity-center.log",
+        owner="extella_activity_center",
+        autostart="native",
+    )
+    return {
+        "id": "extella_activity_center",
+        "name": "Extella Activity Center",
+        "description": "System controller for Extella-owned localhost services and process visibility.",
+        "port": 8799,
+        "mainFile": "",
+        "root": root,
+        "registryFile": "system-controller",
+        "sourceLabel": "Extella Client · system controller",
+        "runtimeSpec": spec,
+        "blockedReason": "",
+        "systemController": True,
+    }
 
 
 def list_services() -> list[dict[str, Any]]:
     state = _read_state()
-    return [_public_service(service, state) for service in registry_services()]
+    services = [_controller_service(), *registry_services()]
+    return [_public_service(service, state) for service in services]
 
 
 def start_desired_services() -> dict[str, Any]:
