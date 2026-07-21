@@ -119,12 +119,15 @@ with zipfile.ZipFile(archive) as source:
     }
     if ($VerifyOnly) {
         $PreviousPythonPath = $env:PYTHONPATH
+        $PreviousNoBytecode = $env:PYTHONDONTWRITEBYTECODE
         try {
             $env:PYTHONPATH = Join-Path $Extracted "payload\marketplace"
+            $env:PYTHONDONTWRITEBYTECODE = "1"
             & $Python.FullName -c "from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))" $Extracted
             if ($LASTEXITCODE -ne 0) { throw "Strict bundle verification failed." }
         } finally {
             $env:PYTHONPATH = $PreviousPythonPath
+            $env:PYTHONDONTWRITEBYTECODE = $PreviousNoBytecode
         }
         Write-Host "Verified Extella bootstrap, managed Python, and bundle for windows11-x86_64. No client files were changed."
         exit 0
@@ -132,8 +135,14 @@ with zipfile.ZipFile(archive) as source:
     $Arguments = @($Installer, "--bundle-root", $Extracted, "--bootstrap-python-root", $PythonRoot)
     if ($NoStart) { $Arguments += "--no-start" }
     Write-Host "Installing verified Extella Client bundle on windows11-x86_64..."
-    & $Python.FullName @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "Extella Client installer failed with exit code $LASTEXITCODE." }
+    $PreviousNoBytecode = $env:PYTHONDONTWRITEBYTECODE
+    try {
+        $env:PYTHONDONTWRITEBYTECODE = "1"
+        & $Python.FullName @Arguments
+        if ($LASTEXITCODE -ne 0) { throw "Extella Client installer failed with exit code $LASTEXITCODE." }
+    } finally {
+        $env:PYTHONDONTWRITEBYTECODE = $PreviousNoBytecode
+    }
 } finally {
     if (Test-Path -LiteralPath $Work) {
         Remove-Item -LiteralPath $Work -Recurse -Force -ErrorAction SilentlyContinue

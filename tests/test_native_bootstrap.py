@@ -43,6 +43,8 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertIn('$PythonVersion = "3.12.13"', windows)
         self.assertIn("--verify-only", mac)
         self.assertIn("[switch]$VerifyOnly", windows)
+        self.assertIn("PYTHONDONTWRITEBYTECODE=1", mac)
+        self.assertIn('$env:PYTHONDONTWRITEBYTECODE = "1"', windows)
         self.assertLess(mac.index('if [ "$(uname -s'), mac.index("WORK=$(mktemp"))
         self.assertLess(windows.index("Keep platform rejection"), windows.index("New-Item -ItemType Directory -Path $Work"))
 

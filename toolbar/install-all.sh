@@ -128,11 +128,11 @@ PY
 INSTALLER="$EXTRACTED/payload/marketplace/installer/client_install.py"
 [ -f "$INSTALLER" ] || { printf '%s\n' "Verified bundle has no client installer." >&2; exit 2; }
 if [ "$VERIFY_ONLY" -eq 1 ]; then
-  PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" -c 'from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))' "$EXTRACTED"
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" -c 'from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))' "$EXTRACTED"
   printf 'Verified Extella bootstrap, managed Python, and bundle for %s. No client files were changed.\n' "$PLATFORM"
   exit 0
 fi
 set -- "$INSTALLER" --bundle-root "$EXTRACTED" --bootstrap-python-root "$PYROOT"
 [ "$NO_START" -eq 0 ] || set -- "$@" --no-start
 printf 'Installing Extella Client %s on %s…\n' "$BUNDLE_SHA256" "$PLATFORM"
-"$PYTHON" "$@"
+PYTHONDONTWRITEBYTECODE=1 "$PYTHON" "$@"

@@ -8,6 +8,9 @@ import json
 from pathlib import Path
 import sys
 
+# The extracted bundle has an exact signed inventory. Imports must not add
+# __pycache__ files before verify_bundle() has validated that inventory.
+sys.dont_write_bytecode = True
 
 MARKETPLACE_ROOT = Path(__file__).resolve().parents[1]
 BUNDLE_ROOT = MARKETPLACE_ROOT.parents[1]
