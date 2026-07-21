@@ -86,7 +86,10 @@ def install(
         unique = list(dict.fromkeys(targets))
         if not unique:
             raise InstallationError("no Python import-hook target could be discovered")
-        content = (str(paths.runtime_root) + "\n").encode("utf-8")
+        content = (
+            str(paths.runtime_root)
+            + "\nimport extella_runtime.bootstrap; extella_runtime.bootstrap.activate()\n"
+        ).encode("utf-8")
         for target in unique:
             transaction.atomic_write(content, target / "extella_client_runtime.pth", mode=0o644)
         return f"runtime import hook installed in {len(unique)} environment(s)"

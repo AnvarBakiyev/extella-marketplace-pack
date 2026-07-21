@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bridge"))
 
+import server  # noqa: E402
 from server import (  # noqa: E402
     CONTROL_TOKEN,
     _LISTENER_COMMAND,
@@ -16,6 +19,23 @@ from server import (  # noqa: E402
 
 
 class ServerTests(unittest.TestCase):
+    def test_windows_listener_inventory_returns_only_pid_metadata(self) -> None:
+        response = subprocess.CompletedProcess(
+            [],
+            0,
+            '[{"ProcessId":321,"ParentProcessId":7}]',
+            "",
+        )
+        server._process_cache = (0.0, {})
+        with (
+            patch.object(server.platform, "system", return_value="Windows"),
+            patch.object(server.shutil, "which", return_value="powershell.exe"),
+            patch.object(server.subprocess, "run", return_value=response),
+        ):
+            result = server.listener_processes()
+        self.assertEqual(result["processes"], [{"pid": 321, "ppid": 7}])
+        self.assertNotIn("command", result["processes"][0])
+
     def test_matches_listener_and_rejects_shell_probe(self) -> None:
         listener = (
             "/Users/me/.cache/uv/archive-v0/env/bin/python "

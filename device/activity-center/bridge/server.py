@@ -8,10 +8,13 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import secrets
+import shutil
 import subprocess
 import sys
+import threading
 import time
 from glob import glob
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,7 +24,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from activity_model import build_activity, read_events
-from service_manager import ServiceError, control_service, list_services
+from service_manager import ServiceError, control_service, list_services, start_desired_services
 from task_state import dismiss_tasks, read_dismissed
 
 
@@ -71,21 +74,44 @@ def listener_processes() -> dict[str, Any]:
 
     processes: list[dict[str, int]] = []
     try:
-        result = subprocess.run(
-            ["ps", "-axo", "pid=,ppid=,command="],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        for line in result.stdout.splitlines():
-            parts = line.strip().split(maxsplit=2)
-            if len(parts) != 3:
-                continue
-            pid_text, ppid_text, command = parts
-            if not _LISTENER_COMMAND.search(command):
-                continue
-            processes.append({"pid": int(pid_text), "ppid": int(ppid_text)})
+        if platform.system() == "Windows":
+            powershell = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+            if not powershell:
+                raise OSError("PowerShell is unavailable")
+            script = (
+                "Get-CimInstance Win32_Process|Where-Object {$_.CommandLine -like '*extella-listener*' "
+                "-and $_.CommandLine -like '*--url*'}|Select-Object ProcessId,ParentProcessId|ConvertTo-Json -Compress"
+            )
+            result = subprocess.run(
+                [powershell, "-NoProfile", "-NonInteractive", "-Command", script],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=4,
+            )
+            rows = json.loads(result.stdout or "[]")
+            if isinstance(rows, dict):
+                rows = [rows]
+            for row in rows if isinstance(rows, list) else []:
+                processes.append(
+                    {"pid": int(row["ProcessId"]), "ppid": int(row.get("ParentProcessId") or 0)}
+                )
+        else:
+            result = subprocess.run(
+                ["ps", "-axo", "pid=,ppid=,command="],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+            for line in result.stdout.splitlines():
+                parts = line.strip().split(maxsplit=2)
+                if len(parts) != 3:
+                    continue
+                pid_text, ppid_text, command = parts
+                if not _LISTENER_COMMAND.search(command):
+                    continue
+                processes.append({"pid": int(pid_text), "ppid": int(ppid_text)})
     except (OSError, subprocess.SubprocessError, ValueError):
         pass
 
@@ -103,10 +129,25 @@ def ensure_hooks_installed() -> int:
     source = Path(__file__).with_name("extella_activity_hook.py")
     if not source.exists():
         return 0
-    pattern = str(Path.home() / ".cache" / "uv" / "archive-v0" / "*" / "lib" / "python3.*" / "site-packages" / "extella_listener")
+    archives = [Path.home() / ".cache" / "uv" / "archive-v0"]
+    if os.environ.get("LOCALAPPDATA"):
+        archives.append(Path(os.environ["LOCALAPPDATA"]) / "uv" / "cache" / "archive-v0")
+    if os.environ.get("UV_CACHE_DIR"):
+        archives.append(Path(os.environ["UV_CACHE_DIR"]) / "archive-v0")
+    patterns = (
+        "*/lib/python*/site-packages/extella_listener",
+        "*/*.data/purelib/extella_listener",
+        "*/Lib/site-packages/extella_listener",
+    )
     installed = 0
-    for listener_dir in glob(pattern):
-        site_packages = Path(listener_dir).parent
+    listener_dirs = {
+        Path(listener_dir)
+        for archive in archives
+        for pattern in patterns
+        for listener_dir in glob(str(archive / pattern))
+    }
+    for listener_dir in sorted(listener_dirs, key=lambda path: path.as_posix()):
+        site_packages = listener_dir.parent
         target = site_packages / source.name
         pth = site_packages / "extella_activity_center.pth"
         try:
@@ -234,6 +275,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     ensure_hooks_installed()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    threading.Thread(target=start_desired_services, name="extella-service-boot", daemon=True).start()
     print(f"Extella Activity Center listening on http://{HOST}:{PORT}", flush=True)
     try:
         server.serve_forever(poll_interval=0.5)

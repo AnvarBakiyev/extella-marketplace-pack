@@ -284,6 +284,31 @@ def list_services() -> list[dict[str, Any]]:
     return [_public_service(service, state) for service in registry_services()]
 
 
+def start_desired_services() -> dict[str, Any]:
+    """Start each enabled registry runtime once under verified ownership."""
+
+    with _CONTROL_LOCK:
+        state = _read_state()
+        disabled = set(state.get("disabled", []))
+        started: list[str] = []
+        failed: list[dict[str, str]] = []
+        for service in registry_services():
+            service_id = service["id"]
+            spec = service.get("runtimeSpec")
+            if service_id in disabled or not isinstance(spec, RuntimeSpec):
+                continue
+            try:
+                _SUPERVISOR.start(spec)
+                started.append(service_id)
+                state.setdefault("lastErrors", {}).pop(service_id, None)
+            except ProcessControlError as error:
+                error_class = type(error).__name__
+                state.setdefault("lastErrors", {})[service_id] = str(error)[:240]
+                failed.append({"id": service_id, "errorClass": error_class})
+        _write_state(state)
+        return {"started": started, "failed": failed}
+
+
 def _service_by_id(service_id: str) -> dict[str, Any]:
     if not _SERVICE_ID.fullmatch(service_id):
         raise ServiceError("Invalid service identifier.", 400)

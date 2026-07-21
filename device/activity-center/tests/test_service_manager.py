@@ -22,8 +22,55 @@ class FakeSupervisor:
         del spec
         return dict(self.value)
 
+    def start(self, spec):
+        self.value.setdefault("started", []).append(spec.runtime_id)
+        return {"status": "running"}
+
 
 class ServiceManagerTests(unittest.TestCase):
+    def test_boot_starts_enabled_services_and_preserves_disabled_choice(self) -> None:
+        enabled = service_manager.RuntimeSpec(
+            runtime_id="enabled",
+            name="Enabled",
+            argv=(sys.executable, "server.py"),
+            cwd=Path("/expected"),
+            port=9123,
+            health_url="http://127.0.0.1:9123/",
+            log_path=Path("/tmp/enabled.log"),
+            owner="enabled",
+            autostart="activity_center",
+        )
+        disabled = service_manager.RuntimeSpec(
+            runtime_id="disabled",
+            name="Disabled",
+            argv=(sys.executable, "server.py"),
+            cwd=Path("/expected"),
+            port=9124,
+            health_url="http://127.0.0.1:9124/",
+            log_path=Path("/tmp/disabled.log"),
+            owner="disabled",
+            autostart="activity_center",
+        )
+        supervisor = FakeSupervisor({"started": []})
+        state = {"disabled": ["disabled"], "lastErrors": {}}
+        with (
+            patch.object(
+                service_manager,
+                "registry_services",
+                return_value=[
+                    {"id": "enabled", "runtimeSpec": enabled},
+                    {"id": "disabled", "runtimeSpec": disabled},
+                ],
+            ),
+            patch.object(service_manager, "_read_state", return_value=state),
+            patch.object(service_manager, "_SUPERVISOR", supervisor),
+            patch.object(service_manager, "_write_state") as write_state,
+        ):
+            result = service_manager.start_desired_services()
+        self.assertEqual(result["started"], ["enabled"])
+        self.assertEqual(supervisor.value["started"], ["enabled"])
+        write_state.assert_called_once()
+
     def test_discovers_safe_argv_contract_and_rejects_legacy_shell_control(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             registry = Path(tmp)

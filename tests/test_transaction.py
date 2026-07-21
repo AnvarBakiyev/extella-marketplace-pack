@@ -70,6 +70,19 @@ class InstallTransactionTests(unittest.TestCase):
             self.assertEqual(report["steps"][0]["status"], "failed")
             self.assertFalse(report["steps"][0]["required"])
 
+    def test_identical_file_is_skipped_without_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            target = root / "target"
+            source.write_text("same", encoding="utf-8")
+            target.write_text("same", encoding="utf-8")
+            tx = InstallTransaction(release_version="2.0.0", state_root=root / "state")
+            tx.run("same", lambda: tx.atomic_copy(source, target))
+            report = tx.commit()
+            self.assertEqual(report["steps"][0]["status"], "skipped")
+            self.assertEqual(report["files"], [])
+
     def test_uninstall_restores_previous_file_and_removes_owned_file(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

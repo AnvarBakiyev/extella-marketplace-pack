@@ -109,6 +109,9 @@ class InstallTransaction:
     def atomic_copy(self, source: Path, target: Path) -> str:
         if not source.is_file():
             raise FileNotFoundError(source)
+        source_sha256 = _sha256(source)
+        if target.is_file() and _sha256(target) == source_sha256:
+            return source_sha256
         target.parent.mkdir(parents=True, exist_ok=True)
         existed = target.exists()
         backup: Path | None = None
@@ -133,7 +136,7 @@ class InstallTransaction:
             target=str(target),
             backup=str(backup) if backup else None,
             existed=existed,
-            sha256=_sha256(target),
+            sha256=source_sha256,
         )
         self.files.append(change)
         self.changes.append({"kind": "file", **change.to_dict()})

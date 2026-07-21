@@ -34,7 +34,8 @@ class RuntimeInstallTests(unittest.TestCase):
             self.assertTrue((root / "data" / "runtime" / "extella_runtime" / "ensure_tool.py").is_file())
             self.assertEqual(
                 (import_root / "extella_client_runtime.pth").read_text(encoding="utf-8"),
-                str(root / "data" / "runtime") + "\n",
+                str(root / "data" / "runtime")
+                + "\nimport extella_runtime.bootstrap; extella_runtime.bootstrap.activate()\n",
             )
             state = json.loads(
                 (root / "data" / "state" / "runtime" / "install-state.json").read_text()
