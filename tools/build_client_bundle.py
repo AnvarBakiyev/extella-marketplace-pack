@@ -17,8 +17,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PERSONAL_PATH = re.compile(
-    r"(?:/Users/(?!имя(?:/|$))[^/$\s]+|/home/(?:ubuntu|anvarbakiyev)(?:/|$)|[A-Za-z]:\\Users\\(?!имя(?:\\|$))[^\\$\s]+)",
-    re.IGNORECASE,
+    r"(?:/Users/(?!имя(?:/|$))[^/$\s]+|/home/(?:ubuntu|anvarbakiyev)(?:/|$)|[A-Za-z]:\\[Uu]sers\\(?!имя(?:\\|$))[^\\$\s]+)",
 )
 DEVICE_ID = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
