@@ -11,9 +11,9 @@
   "distribution": {
     "status": "candidate",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "34ef36b070bd089eeaf33da18652ba5843076f7e33efb1ff5af080288db08036",
-    "bytes": 3271441,
-    "fileCount": 261
+    "sha256": "25f9b3e416c7af02484847dfd25bb82eccefbcbebede2c920ddc33f321aaf84c",
+    "bytes": 3283733,
+    "fileCount": 264
   },
   "dependencies": [
     {
@@ -171,7 +171,7 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "cd1a0c4d7ae76632774d3d7e33e8f2b8ff2b4b92"
+      "revision": "db44451820ff438d295051c7bfe7a74adf2bbdc8"
     },
     {
       "id": "wizard",
@@ -195,8 +195,8 @@
     {
       "id": "installer-macos",
       "path": "toolbar/install-all.sh",
-      "sha256": "a9f0f5731920435a9eeb3929420c7e75a0a8e756fb576336fc400664359f3382",
-      "bytes": 6339,
+      "sha256": "ad034198e1a9f6423b2d3ced46a3c57ac3934b1c6fb106cf4b75da3e1a8b4edc",
+      "bytes": 8210,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -206,8 +206,8 @@
     {
       "id": "installer-windows11",
       "path": "toolbar/install-all.ps1",
-      "sha256": "c82a5aba45831323522ea1e5a13854e190de129686551b3c3d33d170d73656ff",
-      "bytes": 7003,
+      "sha256": "feebcab8e3f603b93fade2e116b5ff9ada29c205f4878576bafdba643355078f",
+      "bytes": 8794,
       "required": true,
       "platforms": [
         "windows11-x86_64"
@@ -300,8 +300,8 @@
     {
       "id": "runtime-process-supervisor",
       "path": "runtime/extella_runtime/processes.py",
-      "sha256": "a7622d29596c205398a7be427be269dbca672631850c3b2dfdebdaf64a2bb48d",
-      "bytes": 14886,
+      "sha256": "492e75bb0bb88284ae7f363071c21f922d35184203b1fc4357c4017319cd63be",
+      "bytes": 16135,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -338,6 +338,54 @@
       "path": "runtime/ensure_tool_cli.py",
       "sha256": "7f814844043e88197ebab5025c67cca1d1743f6d11d289b607f70858deb7f8a6",
       "bytes": 705,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "client-verifier",
+      "path": "installer/client_verify.py",
+      "sha256": "24a31ef5c6af663356cef8a17f383f908068f06d8a4d615e40fede8490264f2b",
+      "bytes": 1786,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "external-matrix-runner",
+      "path": "tools/external_matrix.py",
+      "sha256": "8b138bf5d4fc913cf5a387910a02a0d5c9e62a87b26adcbb7596c6e94005c35a",
+      "bytes": 18739,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "external-evidence-importer",
+      "path": "tools/import_external_evidence.py",
+      "sha256": "823fff2c90aeacd1d7a7d5a2315bb68867ee79ec8554853fbe483d6236a02b8d",
+      "bytes": 7482,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "external-matrix-protocol",
+      "path": "release/EXTERNAL_MATRIX.md",
+      "sha256": "1ad8b1fbaf3ba18233adf29c02495f872855d9fbe492f7a12e6efdb0820840e8",
+      "bytes": 7776,
       "required": true,
       "platforms": [
         "macos-x86_64",

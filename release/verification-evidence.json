@@ -12,9 +12,9 @@
   },
   "candidateBundle": {
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "34ef36b070bd089eeaf33da18652ba5843076f7e33efb1ff5af080288db08036",
-    "bytes": 3271441,
-    "fileCount": 261,
+    "sha256": "25f9b3e416c7af02484847dfd25bb82eccefbcbebede2c920ddc33f321aaf84c",
+    "bytes": 3283733,
+    "fileCount": 264,
     "reproducedCopies": 2
   },
   "platformMatrix": {
