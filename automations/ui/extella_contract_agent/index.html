@@ -459,7 +459,7 @@ async function notifyHead(extra){
 }
 async function openFolder(name){
  const r=await post('/x/reveal',{name:name||''});
- if(r.status!=='success')alert('Не удалось открыть папку. Документы лежат в: ~/extella-plugins/extella_contract_agent/out');
+ if(r.status!=='success')alert('Не удалось открыть папку документов Extella Contract Agent.');
 }
 async function loadKB(){
  const r=await _post('/x/kb_status',{});

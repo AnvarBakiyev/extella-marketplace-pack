@@ -20,7 +20,8 @@ def ci_run_pipeline(repos="", feeds="", subreddits="", agent_id="", positioning=
     if _blank(agent_id):
         agent_id = "__EXTELLA_AGENT__"
     if _blank(api_token):
-        _cfg = Path.home() / "extella_wizard" / "app" / "config.json"
+        _wizard_root = Path(__import__("os").environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+        _cfg = _wizard_root / "app" / "config.json"
         try:
             api_token = json.loads(_cfg.read_text(encoding="utf-8")).get("auth_token", "") if _cfg.exists() else ""
         except Exception:
@@ -28,7 +29,8 @@ def ci_run_pipeline(repos="", feeds="", subreddits="", agent_id="", positioning=
     if not api_token:
         return {"status": "error", "message": "no api_token and no device bridge config"}
 
-    wd = Path(work_dir) if not _blank(work_dir) else (Path.home() / "extella_wizard" / "ci_work")
+    _wizard_root = Path(__import__("os").environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+    wd = Path(work_dir) if not _blank(work_dir) else (_wizard_root / "ci_work")
     wd.mkdir(parents=True, exist_ok=True)
     headers = {"X-Auth-Token": api_token, "Content-Type": "application/json",
                "X-Profile-Id": "default", "X-Agent-Id": agent_id or "__EXTELLA_AGENT__"}

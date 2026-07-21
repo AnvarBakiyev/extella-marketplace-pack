@@ -18,7 +18,8 @@ def ci_configure(text="", agent_id="", config_key="ci:config",
     if _blank(config_key):
         config_key = "ci:config"
     if _blank(api_token):
-        _cfg = Path.home() / "extella_wizard" / "app" / "config.json"
+        _wizard_root = Path(__import__("os").environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+        _cfg = _wizard_root / "app" / "config.json"
         try:
             api_token = json.loads(_cfg.read_text(encoding="utf-8")).get("auth_token", "") if _cfg.exists() else ""
         except Exception:

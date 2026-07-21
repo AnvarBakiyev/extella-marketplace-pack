@@ -7,7 +7,7 @@ def lp_email_send(to="", subject="", body="", cc="") -> str:
     from email.utils import formataddr, make_msgid
 
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
 

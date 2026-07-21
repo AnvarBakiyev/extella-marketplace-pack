@@ -6,7 +6,7 @@ def ta_season_campaign(season="лето", do_search=0, max_clients=20, phones_js
 
     tok = api_token if api_token and not str(api_token).startswith("{{") else ""
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
     if not tok:

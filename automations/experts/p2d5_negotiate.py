@@ -10,12 +10,13 @@ def p2d5_negotiate(disputed_json: str = "", counterparty_reply: str = "", round_
     Зовёт платформенную Qwen (config.llm_agent_id/agent_id) + Гражданский кодекс из базы знаний (kp_ask).
     Отстаивает позицию нашей стороны (обычно малый бизнес/Заказчик) по каждому пункту со ссылками на статьи ГК.
     Возвращает {draft_email:{subject,body}, points:[...], is_draft:True}. Письмо ОТПРАВЛЯЕТ ЧЕЛОВЕК (контур согласования)."""
-    import json, re, urllib.request
+    import json, os, re, urllib.request
     from pathlib import Path
 
     # секреты — из config.json (не хардкод), честный fail при отсутствии
     cfg = {}
-    cf = Path("~/extella_wizard/app/config.json").expanduser()
+    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+    cf = wizard_root / "app" / "config.json"
     if cf.exists():
         try: cfg = json.loads(cf.read_text(encoding="utf-8"))
         except Exception: cfg = {}

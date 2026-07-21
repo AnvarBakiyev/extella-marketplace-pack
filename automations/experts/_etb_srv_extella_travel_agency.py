@@ -16,7 +16,8 @@ def _alive():
 if _alive():
     result = json.dumps({"status": "success", "note": "already running", "url": "http://127.0.0.1:8766/"})
 else:
-    path = os.path.expanduser("~/extella-plugins/extella_travel_agency/server.py")
+    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
+    path = os.path.join(plugin_root, "extella_travel_agency", "server.py")
     if not os.path.exists(path):
         result = json.dumps({"status": "error", "error": "server.py not found: " + path})
     else:

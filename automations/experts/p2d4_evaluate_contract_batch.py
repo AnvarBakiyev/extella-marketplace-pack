@@ -27,7 +27,8 @@ def p2d4_evaluate_contract_batch(input_path: str = "", output_path: str = "") ->
 
     # 2) токен + Qwen-агент из конфига (секреты не хардкодим; честный fail при отсутствии)
     cfg = {}
-    cf = Path("~/extella_wizard/app/config.json").expanduser()
+    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+    cf = wizard_root / "app" / "config.json"
     if cf.exists():
         try: cfg = json.loads(cf.read_text(encoding="utf-8"))
         except Exception: cfg = {}

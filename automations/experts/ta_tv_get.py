@@ -16,12 +16,12 @@ def ta_tv_get(path="/departures", query_json="{}", jwt="", timeout=25) -> str:
     token = jwt if jwt and not str(jwt).startswith("{{") else ""
     if not token:
         try:
-            cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+            cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
             token = cfg.get("tourvisor_jwt", "")
         except Exception:
             token = ""
     if not token:
-        return json.dumps({"status": "error", "error": "no_tourvisor_jwt: pass jwt or put tourvisor_jwt into ~/extella_wizard/app/config.json"}, ensure_ascii=False)
+        return json.dumps({"status": "error", "error": "no_tourvisor_jwt: pass jwt or configure Tourvisor in Extella"}, ensure_ascii=False)
     try:
         t = int(timeout)
     except Exception:

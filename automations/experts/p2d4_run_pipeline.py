@@ -7,11 +7,13 @@ def p2d4_run_pipeline(input_path: str = "", output_dir: str = "") -> dict:
     кодекс) → p2d4_generate_document_package (Реестр рисков xlsx + Протокол разногласий docx + Сводка руководителю).
     Вход: JSON-файл со списком договоров. Выход: пути к документам, счётчики риска и СПОРНЫЕ ПУНКТЫ (deviations)
     для передачи в согласование (p2d5_negotiate). Секреты — из ~/extella_wizard/app/config.json."""
-    import json, urllib.request
+    import json, os, urllib.request
     from pathlib import Path
 
     cfg = {}
-    cf = Path("~/extella_wizard/app/config.json").expanduser()
+    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
+    plugins_root = Path(os.environ.get("EXTELLA_PLUGIN_ROOT") or (Path.home() / "extella-plugins"))
+    cf = wizard_root / "app" / "config.json"
     if cf.exists():
         try: cfg = json.loads(cf.read_text(encoding="utf-8"))
         except Exception: cfg = {}
@@ -22,7 +24,7 @@ def p2d4_run_pipeline(input_path: str = "", output_dir: str = "") -> dict:
         return {"status": "error", "message": "нет auth_token в config.json"}
     if not input_path or not Path(str(input_path)).expanduser().exists():
         return {"status": "error", "message": "input_path не найден: " + str(input_path)}
-    outdir = str(Path(str(output_dir) or "~/extella-plugins/extella_contract_agent/out").expanduser())
+    outdir = str(Path(str(output_dir)) if str(output_dir) else (plugins_root / "extella_contract_agent" / "out"))
 
     def run(expert, params, timeout=600):
         body = json.dumps({"expert_name": expert, "params": params, "global": True}).encode()

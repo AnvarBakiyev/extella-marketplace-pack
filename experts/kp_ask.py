@@ -33,12 +33,12 @@ def kp_ask(name="", question="") -> str:
     ctx="\n\n".join("["+c["src"]+"] "+c["text"] for c in ranked)
     prompt="Ответь на вопрос ТОЛЬКО по этим фрагментам документов. Если ответа в них нет — честно скажи, что в документах этого нет. Кратко.\n\nФРАГМЕНТЫ:\n"+ctx+"\n\nВОПРОС: "+question
     tok=""
-    try: tok=json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"))).get("auth_token","")
+    try: tok=json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"))).get("auth_token","")
     except Exception: pass
     if not tok: return json.dumps({"status":"error","message":"нет токена для синтеза (config.json)"}, ensure_ascii=False)
     H={"Content-Type":"application/json","X-Auth-Token":tok,"X-Profile-Id":"default","X-Agent-Id":"agent_extella_default"}
     try:
-        req=urllib.request.Request("https://api.extella.ai/api/agent/run", data=json.dumps({"input":prompt,"agent_id":"agent_XwZBKvd8dD70jKvW4WrZm","run_timeout":120}).encode(), headers=H)
+        req=urllib.request.Request("https://api.extella.ai/api/agent/run", data=json.dumps({"input":prompt,"agent_id":"__EXTELLA_AGENT__","run_timeout":120}).encode(), headers=H)
         r=json.loads(urllib.request.urlopen(req, timeout=150).read())
         parts=[]
         for it in (r.get("output") or []):

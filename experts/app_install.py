@@ -128,20 +128,23 @@ def app_install(repo="", app_id="", branch="main"):
                            ". Что делать: нажмите «Установить» ещё раз — шаги продолжатся с места остановки; если повторится, пришлите нам это сообщение целиком.")
         done+=1
     # 4. реестр (старт делаем отдельно через app_start)
+    registry_root = os.environ.get("EXTELLA_PLUGIN_REGISTRY") or os.path.join(
+        os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins"), "_registry"
+    )
     def _reg_path(aid):
         # Имя файла реестра — ПЛОСКОЕ, зеркало тулбарного _safeIdOf (посимвольно,
         # без схлопывания): id со слэшем (cocktailpeanut/searxng.pinokio) писал
         # манифест во вложенную папку, где тулбар его не ищет.
-        return os.path.expanduser("~/extella-plugins/_registry/"+re.sub(r"[^a-zA-Z0-9]","_",aid)+".json")
+        return os.path.join(registry_root, re.sub(r"[^a-zA-Z0-9]", "_", aid) + ".json")
     reg=_reg_path(app_id)
     os.makedirs(os.path.dirname(reg),exist_ok=True)
     # миграция: убрать легаси-запись по дословному app_id (вложенную при слэше)
-    _legacy=os.path.expanduser("~/extella-plugins/_registry/"+app_id+".json")
+    _legacy=os.path.join(registry_root, app_id + ".json")
     if _legacy!=reg and os.path.isfile(_legacy):
         try:
             os.remove(_legacy)
             _ld=os.path.dirname(_legacy)
-            if _ld.startswith(os.path.expanduser("~/extella-plugins/_registry/")) and not os.listdir(_ld): os.rmdir(_ld)
+            if _ld.startswith(registry_root + os.sep) and not os.listdir(_ld): os.rmdir(_ld)
         except Exception: pass
     man={"id":app_id,"name":app_id,"type":"recipe","mode":"app",
          "app":{"root":root,"repo":repo},"experts":[],"installed":True,

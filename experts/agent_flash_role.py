@@ -12,7 +12,7 @@ def agent_flash_role(agent_id="", role_id="") -> str:
     r = ROLES.get(role_id)
     if not r: return err("\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u0430\u044f \u0440\u043e\u043b\u044c: "+role_id)
     tok = ""
-    try: tok = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"))).get("auth_token","")
+    try: tok = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"))).get("auth_token","")
     except Exception: pass
     if not tok: return err("\u043d\u0435\u0442 \u0442\u043e\u043a\u0435\u043d\u0430 (config.json)")
     ctx = ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE

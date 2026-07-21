@@ -29,11 +29,14 @@ def app_uninstall(app_id="", root=""):
             for p in re.findall(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt):
                 ports.add(int(p))
     except Exception: pass
+    registry_root = os.environ.get("EXTELLA_PLUGIN_REGISTRY") or os.path.join(
+        os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins"), "_registry"
+    )
     reg_candidates = [
-        os.path.expanduser("~/extella-plugins/_registry/" + app_id + ".json"),
-        os.path.expanduser("~/extella-plugins/_registry/" + app_id.replace("/", "_") + ".json"),
-        os.path.expanduser("~/extella-plugins/_registry/" + re.sub(r"[^a-zA-Z0-9]", "_", app_id) + ".json"),  # плоское имя (зеркало _safeIdOf)
-        os.path.expanduser("~/extella-plugins/_registry/" + app_id.split("/")[-1] + ".json"),
+        os.path.join(registry_root, app_id + ".json"),
+        os.path.join(registry_root, app_id.replace("/", "_") + ".json"),
+        os.path.join(registry_root, re.sub(r"[^a-zA-Z0-9]", "_", app_id) + ".json"),
+        os.path.join(registry_root, app_id.split("/")[-1] + ".json"),
     ]
     for reg in reg_candidates:
         try:

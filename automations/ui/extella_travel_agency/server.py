@@ -9,7 +9,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 8766
 HERE = os.path.dirname(os.path.abspath(__file__))
-CFG_PATH = os.path.expanduser("~/extella_wizard/app/config.json")
+WIZARD_ROOT = os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard")
+CFG_PATH = os.path.join(WIZARD_ROOT, "app", "config.json")
 CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
 
 

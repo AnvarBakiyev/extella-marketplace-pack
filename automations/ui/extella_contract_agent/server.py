@@ -12,8 +12,10 @@ PROGRESS = {}  # job_id -> {step, index, total, done, error, result}
 
 PORT = 8767
 HERE = os.path.dirname(os.path.abspath(__file__))
-CFG_PATH = os.path.expanduser("~/extella_wizard/app/config.json")
-OUT_DIR = os.path.expanduser("~/extella-plugins/extella_contract_agent/out")
+WIZARD_ROOT = os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard")
+PLUGIN_ROOT = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
+CFG_PATH = os.path.join(WIZARD_ROOT, "app", "config.json")
+OUT_DIR = os.path.join(PLUGIN_ROOT, "extella_contract_agent", "out")
 os.makedirs(OUT_DIR, exist_ok=True)
 CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
 
@@ -358,7 +360,7 @@ def h_send_wa(body):
 
 LEGAL_CATALOG = ["Гражданский кодекс РК", "Налоговый кодекс РК", "Трудовой кодекс РК",
                  "Кодекс об административных правонарушениях РК", "Предпринимательский кодекс РК"]
-KB_DIR = os.path.expanduser("~/extella-plugins/extella_contract_agent/kb")
+KB_DIR = os.path.join(PLUGIN_ROOT, "extella_contract_agent", "kb")
 
 
 def _kp_available(name):

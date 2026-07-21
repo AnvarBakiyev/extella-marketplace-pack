@@ -11,16 +11,17 @@ def hf_space_install(space="", plugin_id="", display_name="", port="", root_path
     plugin_id = plugin_id or ("hf_" + re.sub(r"[^a-z0-9]+", "_", space.lower()))
     display_name = display_name or name
     port = str(port or (8800 + (sum(ord(c) for c in plugin_id) % 300)))
-    home = os.path.expanduser("~")
-    root_path = os.path.expanduser(root_path or (home + "/extella-plugins/" + plugin_id))
-    registry_path = os.path.expanduser(registry_path or (home + "/extella-plugins/_registry/" + plugin_id + ".json"))
+    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
+    registry_root = os.environ.get("EXTELLA_PLUGIN_REGISTRY") or os.path.join(plugin_root, "_registry")
+    root_path = os.path.expanduser(root_path) if root_path else os.path.join(plugin_root, plugin_id)
+    registry_path = os.path.expanduser(registry_path) if registry_path else os.path.join(registry_root, plugin_id + ".json")
     proxy = plugin_id + "_run"
     start_expert = "_etb_srv_" + plugin_id
     host = "https://%s-%s.hf.space" % (owner.lower().replace("_", "-"), name.lower().replace("_", "-").replace(".", "-"))
 
     def _acct():
         # config.json Визарда — валидный токен+agent приоритетно; ~/.extella/api_token.txt — фолбэк
-        cfg = os.path.expanduser("~/extella_wizard/app/config.json")
+        cfg = os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json")
         if os.path.exists(cfg):
             try:
                 d = json.load(open(cfg)); t = d.get("auth_token", "")
@@ -165,7 +166,7 @@ def hf_space_install(space="", plugin_id="", display_name="", port="", root_path
         "            atp = os.path.expanduser(\"~/.extella/api_token.txt\")\n"
         "            at = open(atp).read().strip() if os.path.exists(atp) else \"\"\n"
         "            if not at:\n"
-        "                cfg = os.path.expanduser(\"~/extella_wizard/app/config.json\")\n"
+        "                cfg = os.path.join(os.environ.get(\"EXTELLA_WIZARD_ROOT\") or os.path.expanduser(\"~/extella_wizard\"), \"app\", \"config.json\")\n"
         "                at = json.load(open(cfg)).get(\"auth_token\", \"\") if os.path.exists(cfg) else \"\"\n"
         "            if at:\n"
         "                rq = urllib.request.Request(\"https://api.extella.ai/api/kv/get\", data=json.dumps({\"key\": \"huggingface_token\"}).encode(), headers={\"X-Auth-Token\": at, \"Content-Type\": \"application/json\"})\n"

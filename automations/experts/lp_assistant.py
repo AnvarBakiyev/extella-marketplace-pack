@@ -5,7 +5,7 @@ def lp_assistant(question: str = "", history: str = "") -> str:
     import json, os, urllib.request
 
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
     token = cfg.get("auth_token", "")
@@ -30,7 +30,7 @@ def lp_assistant(question: str = "", history: str = "") -> str:
         "«⬇ Реестр рисков (Excel)», «⬇ Протокол разногласий (Word)», «⬇ Сводка (txt)» + кнопка «📂 Открыть папку с документами».\n"
         "  • «Согласование»: по спорным пунктам агент готовит письмо контрагенту (кнопка «Подготовить письмо»); на возражения — раунд 2.\n"
         "ИЗВЕСТНЫЕ РЕШЕНИЯ (используй их, не выдумывай другие причины):\n"
-        "  • Документы не скачиваются: файлы формируются ЛОКАЛЬНО в папке ~/extella-plugins/extella_contract_agent/out. "
+        "  • Документы не скачиваются: файлы формируются ЛОКАЛЬНО в папке документов плагина Extella Contract Agent. "
         "Нажми кнопку «📂 Открыть папку с документами» под кнопками скачивания — откроется папка с готовыми Excel/Word/txt. "
         "Кнопки ⬇ активны только ПОСЛЕ того, как разбор завершился и показал результат.\n\n"
         "УСТРОЙСТВО АГЕНТА «Юрист по договорам» (Extella), чтобы ты мог точно подсказать пользователю, как его изменить:\n"

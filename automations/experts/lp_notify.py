@@ -5,7 +5,7 @@ def lp_notify(text="", chat_id="", bot_token="") -> str:
     import json, os, ssl, urllib.request
 
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
     tok = bot_token if bot_token and not str(bot_token).startswith("{{") else cfg.get("telegram_bot_token", "")

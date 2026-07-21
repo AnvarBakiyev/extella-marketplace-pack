@@ -15,7 +15,7 @@ def ta_tv_search(departure_id=0, country_id=0, date_from="", date_to="", nights_
     token = jwt if jwt and not str(jwt).startswith("{{") else ""
     if not token:
         try:
-            cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+            cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
             token = cfg.get("tourvisor_jwt", "")
         except Exception:
             token = ""

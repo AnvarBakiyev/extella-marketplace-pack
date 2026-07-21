@@ -1,11 +1,11 @@
 # expert: ta_contract_generate
 # description: Travel Agency pack: generate a tour service contract (HTML, print-ready) from passport data (KV ta:client_doc:<doc_no>) and tour details. DEMO template with SPECIMEN watermark until agency provides their legal template. Params: doc_no (passport), tour_json (hotel/dates/price) or draft_phone (takes best pick from ta:draft:<phone>), out_dir, api_token.
 
-def ta_contract_generate(doc_no="", tour_json="{}", draft_phone="", out_dir="~/extella-plugins/extella_travel_agency/contracts", api_token="") -> str:
+def ta_contract_generate(doc_no="", tour_json="{}", draft_phone="", out_dir="", api_token="") -> str:
     import json, os, ssl, time, urllib.request
 
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
     tok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")
@@ -92,7 +92,8 @@ table{width:100%%;border-collapse:collapse;margin:8px 0}td{border:1px solid #bbb
 </body></html>""" % (num, num, today, agency, fio, table(rows_client), table(rows_tour),
                      ta_conf.get("manager_name", agency), fio, today)
 
-    od = os.path.expanduser(out_dir if out_dir and not str(out_dir).startswith("{{") else "~/extella-plugins/extella_travel_agency/contracts")
+    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
+    od = os.path.expanduser(out_dir) if out_dir and not str(out_dir).startswith("{{") else os.path.join(plugin_root, "extella_travel_agency", "contracts")
     os.makedirs(od, exist_ok=True)
     fname = "contract_%s.html" % num
     fpath = os.path.join(od, fname)

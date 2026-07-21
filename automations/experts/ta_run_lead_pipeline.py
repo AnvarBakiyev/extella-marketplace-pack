@@ -9,7 +9,7 @@ def ta_run_lead_pipeline(phone="", fio="", channel="whatsapp", direction="", dat
     tok = api_token if api_token and not str(api_token).startswith("{{") else ""
     cfg = {}
     try:
-        cfg = json.load(open(os.path.expanduser("~/extella_wizard/app/config.json"), encoding="utf-8"))
+        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
     except Exception:
         cfg = {}
     if not tok:

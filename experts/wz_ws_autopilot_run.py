@@ -8,7 +8,7 @@ def wz_ws_autopilot_run(ws_id=""):
     # найти драйвер (engine-owned): типовые места + ограниченный поиск
     cands = [
         os.path.join(home, "Downloads/extella_core_portal_package_v1_1/copilot/workspace_autopilot.py"),
-        os.path.join(home, "extella_wizard/app/workspace_autopilot.py"),
+        os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.join(home, "extella_wizard"), "app", "workspace_autopilot.py"),
         os.path.join(home, "copilot/workspace_autopilot.py"),
     ]
     driver = next((p for p in cands if os.path.isfile(p)), None)
