@@ -5,6 +5,7 @@ from .ensure_tool import EnsureResult, ensure_many, ensure_tool
 from .platforms import PlatformInfo, detect_platform
 from .paths import ClientPaths, client_paths
 from .transaction import InstallTransaction, InstallationError, uninstall_from_state
+from .processes import ProcessSupervisor, RuntimeSpec
 
 __all__ = [
     "DoctorReport",
@@ -13,6 +14,8 @@ __all__ = [
     "InstallTransaction",
     "InstallationError",
     "PlatformInfo",
+    "ProcessSupervisor",
+    "RuntimeSpec",
     "detect_platform",
     "client_paths",
     "ensure_many",

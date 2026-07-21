@@ -62,8 +62,8 @@
     {
       "id": "runtime-init",
       "path": "runtime/extella_runtime/__init__.py",
-      "sha256": "8d2658aa7ea45aff40be1b96c33aa759d9dbf7c6df5be3fe465f89571dbc58e2",
-      "bytes": 627,
+      "sha256": "239e9e8f23fb61a4b2ae10d145375451b98c9b618d7edd1e089fe9ae333764f6",
+      "bytes": 725,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -136,6 +136,18 @@
       "path": "runtime/extella_runtime/transaction.py",
       "sha256": "7fdd6e59601b494670f47f739133b5e5b447efc07fc220a6547262cbbd9a597f",
       "bytes": 9380,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-process-supervisor",
+      "path": "runtime/extella_runtime/processes.py",
+      "sha256": "a7622d29596c205398a7be427be269dbca672631850c3b2dfdebdaf64a2bb48d",
+      "bytes": 14886,
       "required": true,
       "platforms": [
         "macos-x86_64",
