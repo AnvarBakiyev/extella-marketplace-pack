@@ -42,6 +42,7 @@ MARKETPLACE_PATTERNS = (
     "platform_experts/*.py",
     "release/plugins/*.json",
     "release/expert-classification.json",
+    "release/catalog-policy.json",
     "release/schemas/*.json",
     "toolbar/install-all.sh",
     "toolbar/install-all.ps1",

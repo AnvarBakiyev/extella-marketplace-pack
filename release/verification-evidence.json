@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "2.0.0-rc.1",
+  "generatedAt": "2026-07-22T01:30:00+06:00",
+  "automatedChecks": {
+    "marketplaceUnit": {"status": "passed", "tests": 57},
+    "activityCenter": {"status": "passed", "tests": 21, "skipped": 2},
+    "toolbarBuild": {"status": "passed"},
+    "wizardPackaging": {"status": "passed"},
+    "bundleReproducibility": {"status": "passed"},
+    "unsupportedPlatformPreMutation": {"status": "passed"}
+  },
+  "platformMatrix": {
+    "macos-x86_64": {
+      "native_bootstrap": "blocked_external",
+      "clean_os_install": "blocked_external",
+      "clean_account": "blocked_external",
+      "reinstall_repair_uninstall": "blocked_external",
+      "cold_restart": "blocked_external"
+    },
+    "macos-arm64": {
+      "native_bootstrap": "passed",
+      "clean_os_install": "pending",
+      "clean_account": "blocked_external",
+      "reinstall_repair_uninstall": "pending",
+      "cold_restart": "pending"
+    },
+    "windows11-x86_64": {
+      "native_bootstrap": "blocked_external",
+      "clean_os_install": "blocked_external",
+      "clean_account": "blocked_external",
+      "reinstall_repair_uninstall": "blocked_external",
+      "cold_restart": "blocked_external"
+    }
+  },
+  "externalRequirements": [
+    "A physical or virtual macOS Intel x86_64 runner",
+    "A physical or virtual Windows 11 x64 runner",
+    "A clean Extella account and token for each platform"
+  ]
+}

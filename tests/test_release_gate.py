@@ -25,7 +25,10 @@ def valid_plugin() -> dict:
         "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
         "install": {
             "strategy": "bundled",
-            "entrypoints": {"macos": "install.sh", "windows11": "install.ps1"},
+            "entrypoints": {
+                "macos": "installer/client_install.py",
+                "windows11": "installer/client_install.py",
+            },
             "idempotent": True,
             "transactional": True,
             "mutablePaths": ["${EXTELLA_DATA}/example"],
@@ -43,7 +46,10 @@ def valid_plugin() -> dict:
         "artifacts": {"installRoot": "${EXTELLA_DATA}/example", "registryFile": "${EXTELLA_DATA}/_registry/example.json", "files": ["server.py"]},
         "experts": {"required": [], "smoke": []},
         "secrets": [],
-        "uninstall": {"entrypoint": "uninstall", "preserves": ["user-data"]},
+        "uninstall": {
+            "entrypoint": "installer/client_uninstall.py",
+            "preserves": ["user-data"],
+        },
         "migration": {"strategy": "replace_preserve_data", "fromVersions": ["0.x"]},
         "releaseState": {"advertised": False, "verification": "pending"},
     }

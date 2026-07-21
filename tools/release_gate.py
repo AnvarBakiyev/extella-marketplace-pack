@@ -13,6 +13,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -42,6 +43,14 @@ ALLOWED_AGENT_IDS = {
     "agent_extella_alibaba_default",
     "agent_extella_default",
     "agent_XXXXXXXX",
+}
+FORBIDDEN_SOURCE = {
+    "security.tls_verification_disabled": re.compile(
+        r"check_hostname\s*=\s*False|CERT_NONE"
+    ),
+    "security.mutable_source": re.compile(
+        r"raw\.githubusercontent\.com/[^\s'\"]+/(?:main|master)/|refs/heads/(?:main|master)"
+    ),
 }
 
 
@@ -120,6 +129,25 @@ def validate_plugin(path: Path) -> list[Issue]:
         issues.append(Issue("install.idempotent", str(path), "supported installs must be idempotent"))
     if install.get("transactional") is not True:
         issues.append(Issue("install.transactional", str(path), "supported installs must be transactional"))
+    if data.get("classification") == "bundled":
+        entrypoints = install.get("entrypoints") if isinstance(install.get("entrypoints"), dict) else {}
+        if set(entrypoints.values()) != {"installer/client_install.py"}:
+            issues.append(
+                Issue(
+                    "install.unified_entrypoint",
+                    str(path),
+                    "bundled capabilities must use the unified client installer",
+                )
+            )
+        uninstall = data.get("uninstall") if isinstance(data.get("uninstall"), dict) else {}
+        if uninstall.get("entrypoint") != "installer/client_uninstall.py":
+            issues.append(
+                Issue(
+                    "uninstall.unified_entrypoint",
+                    str(path),
+                    "bundled capabilities must use the unified client uninstaller",
+                )
+            )
 
     runtime = _required_object(data, "runtime", path, issues)
     if "ready" in runtime:
@@ -151,6 +179,147 @@ def validate_plugin(path: Path) -> list[Issue]:
     return issues
 
 
+def _expert_source_map(root: Path, wizard_root: Path) -> tuple[dict[str, Path], list[Issue]]:
+    issues: list[Issue] = []
+    selected: dict[str, Path] = {}
+    hashes: dict[str, str] = {}
+    paths = [
+        *root.glob("experts/*.py"),
+        *root.glob("platform_experts/*.py"),
+        *root.glob("automations/experts/*.py"),
+        *wizard_root.glob("experts/*.py"),
+    ]
+    for path in sorted(paths, key=lambda item: item.as_posix()):
+        digest = _sha256(path)
+        if path.stem in hashes and hashes[path.stem] != digest:
+            issues.append(
+                Issue("expert.conflicting_source", str(path), f"conflicting source for {path.stem}")
+            )
+        else:
+            hashes[path.stem] = digest
+            selected[path.stem] = path
+    return selected, issues
+
+
+def validate_expert_contract(root: Path, wizard_root: Path) -> list[Issue]:
+    issues: list[Issue] = []
+    inventory_path = root / "release/expert-classification.json"
+    try:
+        inventory = _read_json(inventory_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [Issue("expert.inventory", str(inventory_path), str(exc))]
+    keys = ("bundled", "supportedOnDemand", "thirdPartyUnverified")
+    classified: dict[str, str] = {}
+    for key in keys:
+        values = inventory.get(key) if isinstance(inventory, dict) else None
+        if not isinstance(values, list) or values != sorted(values) or len(values) != len(set(values)):
+            issues.append(Issue("expert.inventory_order", str(inventory_path), f"{key} must be sorted and unique"))
+            continue
+        for value in values:
+            if not isinstance(value, str) or value in classified:
+                issues.append(Issue("expert.inventory_duplicate", str(inventory_path), str(value)))
+            else:
+                classified[value] = key
+    sources, source_issues = _expert_source_map(root, wizard_root)
+    issues.extend(source_issues)
+    if set(sources) != set(classified):
+        missing = sorted(set(sources) - set(classified))
+        stale = sorted(set(classified) - set(sources))
+        issues.append(
+            Issue(
+                "expert.inventory_exact",
+                str(inventory_path),
+                f"classification must exactly cover sources; missing={missing[:8]} stale={stale[:8]}",
+            )
+        )
+    manifest_sets = {"bundled": set(), "supportedOnDemand": set()}
+    for path in sorted((root / "release/plugins").glob("*.json")):
+        try:
+            plugin = _read_json(path)
+        except (OSError, json.JSONDecodeError):
+            continue
+        experts = plugin.get("experts") if isinstance(plugin.get("experts"), dict) else {}
+        names = set(experts.get("required") or []) | set(experts.get("smoke") or [])
+        if plugin.get("classification") == "bundled":
+            manifest_sets["bundled"].update(names)
+        elif plugin.get("classification") == "supported_on_demand":
+            manifest_sets["supportedOnDemand"].update(names)
+    for key in manifest_sets:
+        if manifest_sets[key] != set(inventory.get(key) or []):
+            issues.append(
+                Issue("expert.manifest_union", str(inventory_path), f"{key} differs from plugin contracts")
+            )
+    for name in inventory.get("bundled") or []:
+        path = sources.get(name)
+        if path is None:
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for code, pattern in FORBIDDEN_SOURCE.items():
+            if pattern.search(text):
+                issues.append(Issue(code, str(path), f"forbidden pattern in bundled expert {name}"))
+        if not re.search(rf"(?m)^def[ \t]+{re.escape(name)}[ \t]*\(", text):
+            issues.append(Issue("expert.entrypoint", str(path), f"entrypoint {name} was not found"))
+    return issues
+
+
+def validate_evidence(root: Path, release: dict[str, Any]) -> list[Issue]:
+    path = root / "release/verification-evidence.json"
+    try:
+        evidence = _read_json(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [Issue("evidence.invalid", str(path), str(exc))]
+    issues: list[Issue] = []
+    if evidence.get("schemaVersion") != 1 or evidence.get("releaseVersion") != release.get("version"):
+        issues.append(Issue("evidence.identity", str(path), "evidence version differs from release"))
+    matrix = evidence.get("platformMatrix") if isinstance(evidence.get("platformMatrix"), dict) else {}
+    if set(matrix) != SUPPORTED_PLATFORMS:
+        issues.append(Issue("evidence.platforms", str(path), "evidence must cover the exact platform matrix"))
+    allowed = {"pending", "passed", "failed", "blocked_external"}
+    for platform_key, scenarios in matrix.items():
+        if not isinstance(scenarios, dict) or not scenarios:
+            issues.append(Issue("evidence.scenarios", str(path), f"missing scenarios for {platform_key}"))
+            continue
+        for scenario, status in scenarios.items():
+            if not PLUGIN_ID.fullmatch(str(scenario).replace("_", "-")) or status not in allowed:
+                issues.append(Issue("evidence.status", str(path), f"invalid evidence row: {platform_key}/{scenario}"))
+    if release.get("status") == "released":
+        not_passed = [
+            f"{platform_key}/{scenario}"
+            for platform_key, scenarios in matrix.items()
+            for scenario, status in scenarios.items()
+            if status != "passed"
+        ]
+        if not_passed:
+            issues.append(
+                Issue("evidence.release_incomplete", str(path), f"released evidence is incomplete: {not_passed[:8]}")
+            )
+    return issues
+
+
+def validate_catalog_policy(root: Path) -> list[Issue]:
+    path = root / "release/catalog-policy.json"
+    try:
+        policy = _read_json(path)
+    except (OSError, json.JSONDecodeError) as exc:
+        return [Issue("catalog.policy", str(path), str(exc))]
+    issues: list[Issue] = []
+    expected = {"_mkt_apps", "_mkt_loc", "_mkt_mcp", "_mkt_models", "_mkt_programs"}
+    sources = policy.get("sources") if isinstance(policy.get("sources"), dict) else {}
+    if policy.get("schemaVersion") != 1 or set(sources) != expected:
+        issues.append(Issue("catalog.policy_exact", str(path), "catalog policy must cover all live sources"))
+    if policy.get("supportedOnDemand"):
+        issues.append(Issue("catalog.on_demand", str(path), "on-demand catalog is non-empty without release-gated manifests"))
+    for key, value in sources.items():
+        if not isinstance(value, dict) or value.get("classification") != "third_party_unverified":
+            issues.append(Issue("catalog.classification", str(path), f"{key} is not classified"))
+        if isinstance(value, dict) and value.get("advertisedAsGuaranteed") is not False:
+            issues.append(Issue("catalog.advertisement", str(path), f"{key} is advertised as guaranteed"))
+    visibility = policy.get("visibility") if isinstance(policy.get("visibility"), dict) else {}
+    if visibility.get("hideField") != "hidden" or visibility.get("hideWhenTrue") is not True:
+        issues.append(Issue("catalog.visibility", str(path), "stale-item hiding contract is missing"))
+    return issues
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -159,7 +328,7 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def validate_release(root: Path, manifest_path: Path) -> list[Issue]:
+def validate_release(root: Path, manifest_path: Path, *, wizard_root: Path | None = None) -> list[Issue]:
     issues: list[Issue] = []
     try:
         data = _read_json(manifest_path)
@@ -170,7 +339,9 @@ def validate_release(root: Path, manifest_path: Path) -> list[Issue]:
 
     required = {
         "schemaVersion", "releaseId", "version", "status", "supportedPlatforms",
-        "sourceRepositories", "artifacts", "capabilities", "installers", "verification",
+        "distribution", "dependencies", "accountResources", "lifecycle", "services",
+        "telemetry", "sourceRepositories", "artifacts", "capabilities", "installers",
+        "verification",
     }
     for key in sorted(required - set(data)):
         issues.append(Issue("release.missing", str(manifest_path), f"missing required field: {key}"))
@@ -180,6 +351,40 @@ def validate_release(root: Path, manifest_path: Path) -> list[Issue]:
         issues.append(Issue("release.version", str(manifest_path), "version must be semantic"))
     if set(data.get("supportedPlatforms") or []) != SUPPORTED_PLATFORMS:
         issues.append(Issue("release.platforms", str(manifest_path), "release must target exactly the approved matrix"))
+
+    distribution = data.get("distribution") if isinstance(data.get("distribution"), dict) else {}
+    if data.get("status") == "released" and (
+        distribution.get("status") != "released"
+        or not SHA256.fullmatch(str(distribution.get("sha256") or ""))
+        or not isinstance(distribution.get("bytes"), int)
+        or not isinstance(distribution.get("fileCount"), int)
+    ):
+        issues.append(Issue("distribution.release", str(manifest_path), "released distribution requires exact hash, size, and file count"))
+
+    dependencies = data.get("dependencies") or []
+    dependency_names = [item.get("name") for item in dependencies if isinstance(item, dict)]
+    required_dependencies = {
+        "python", "uv", "node", "npm", "npx", "uvx", "git", "brew", "winget",
+        "ffmpeg", "ghostscript", "imagemagick", "pandoc", "ollama",
+    }
+    if set(dependency_names) != required_dependencies or len(dependency_names) != len(set(dependency_names)):
+        issues.append(Issue("dependency.exact", str(manifest_path), "dependency contract is incomplete or duplicated"))
+    for dependency in dependencies:
+        if not isinstance(dependency, dict):
+            continue
+        name = dependency.get("name")
+        if name in {"python", "uv"}:
+            if dependency.get("requiredForCore") is not True or dependency.get("resolver") != "pinned_native_bootstrap":
+                issues.append(Issue("dependency.core", str(manifest_path), f"{name} must be pinned for core"))
+        elif dependency.get("resolver") != "ensure_tool":
+            issues.append(Issue("dependency.resolver", str(manifest_path), f"{name} must route through ensure_tool"))
+
+    lifecycle = data.get("lifecycle") if isinstance(data.get("lifecycle"), dict) else {}
+    if lifecycle.get("install") != "installer/client_install.py" or lifecycle.get("uninstall") != "installer/client_uninstall.py":
+        issues.append(Issue("lifecycle.unified", str(manifest_path), "release lifecycle must use unified install/uninstall"))
+    telemetry = data.get("telemetry") if isinstance(data.get("telemetry"), dict) else {}
+    if telemetry.get("transport") != "disabled" or telemetry.get("schema") != "release/schemas/stability-telemetry.schema.json":
+        issues.append(Issue("telemetry.contract", str(manifest_path), "telemetry must remain local until an approved transport exists"))
 
     for source in data.get("sourceRepositories") or []:
         if not isinstance(source, dict) or not SHA40.fullmatch(str(source.get("revision", ""))):
@@ -207,11 +412,20 @@ def validate_release(root: Path, manifest_path: Path) -> list[Issue]:
             issues.append(Issue("artifact.sha256", str(target), "artifact SHA-256 does not match manifest"))
 
     capabilities = data.get("capabilities") or []
+    capability_ids: set[str] = set()
+    referenced_manifests: set[Path] = set()
+    local_ports: dict[int, str] = {}
+    bundled_local_services: set[str] = set()
     for capability in capabilities:
         if not isinstance(capability, dict):
             issues.append(Issue("capability.object", str(manifest_path), "capability must be an object"))
             continue
         plugin_path = root / str(capability.get("manifest", ""))
+        referenced_manifests.add(plugin_path.resolve())
+        capability_id = str(capability.get("id") or "")
+        if not capability_id or capability_id in capability_ids:
+            issues.append(Issue("capability.duplicate", str(manifest_path), capability_id))
+        capability_ids.add(capability_id)
         plugin_issues = validate_plugin(plugin_path)
         issues.extend(plugin_issues)
         if plugin_path.is_file():
@@ -220,6 +434,59 @@ def validate_release(root: Path, manifest_path: Path) -> list[Issue]:
                 issues.append(Issue("capability.id", str(plugin_path), "capability id differs from plugin manifest"))
             if plugin.get("classification") != capability.get("classification"):
                 issues.append(Issue("capability.classification", str(plugin_path), "classification differs from release manifest"))
+            runtime = plugin.get("runtime") if isinstance(plugin.get("runtime"), dict) else {}
+            if runtime.get("kind") == "local_service":
+                port_data = runtime.get("port") if isinstance(runtime.get("port"), dict) else {}
+                try:
+                    port = int(port_data.get("preferred"))
+                except (TypeError, ValueError):
+                    port = 0
+                if port in local_ports:
+                    issues.append(
+                        Issue("runtime.port_conflict", str(plugin_path), f"port {port} also belongs to {local_ports[port]}")
+                    )
+                elif port:
+                    local_ports[port] = capability_id
+                if capability.get("classification") == "bundled" and capability.get("required") is True:
+                    bundled_local_services.add(capability_id)
+                if port_data.get("bind") != "127.0.0.1":
+                    issues.append(Issue("runtime.bind", str(plugin_path), "local services must bind to 127.0.0.1"))
+
+    all_manifests = {path.resolve() for path in (root / "release/plugins").glob("*.json")}
+    if referenced_manifests != all_manifests:
+        issues.append(
+            Issue(
+                "capability.manifest_exact",
+                str(manifest_path),
+                "release capabilities must reference every and only plugin manifest",
+            )
+        )
+
+    release_services = data.get("services") or []
+    release_service_ids = {
+        str(item.get("id")) for item in release_services if isinstance(item, dict)
+    }
+    if release_service_ids != bundled_local_services:
+        issues.append(Issue("service.exact", str(manifest_path), "top-level services differ from bundled local runtimes"))
+    service_ports: set[int] = set()
+    for item in release_services:
+        if not isinstance(item, dict):
+            continue
+        try:
+            port = int(item.get("port"))
+        except (TypeError, ValueError):
+            port = 0
+        if not port or port in service_ports:
+            issues.append(Issue("service.port", str(manifest_path), f"invalid/duplicate top-level port: {port}"))
+        service_ports.add(port)
+
+    wizard = wizard_root or root.parent / "wizard"
+    if not wizard.is_dir():
+        issues.append(Issue("expert.wizard_root", str(wizard), "wizard source root is required"))
+    else:
+        issues.extend(validate_expert_contract(root, wizard))
+    issues.extend(validate_evidence(root, data))
+    issues.extend(validate_catalog_policy(root))
 
     verification = data.get("verification") or {}
     matrix = verification.get("matrix") if isinstance(verification, dict) else {}
@@ -235,11 +502,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--manifest", type=Path, default=Path("release/release-manifest.json"))
+    parser.add_argument("--wizard-root", type=Path)
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     manifest = args.manifest if args.manifest.is_absolute() else root / args.manifest
-    issues = validate_release(root, manifest)
+    wizard_root = args.wizard_root.resolve() if args.wizard_root else None
+    issues = validate_release(root, manifest, wizard_root=wizard_root)
     if args.as_json:
         print(json.dumps({"status": "failed" if issues else "passed", "issues": [asdict(i) for i in issues]}, indent=2))
     else:

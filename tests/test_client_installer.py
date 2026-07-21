@@ -138,6 +138,7 @@ class ClientInstallerTests(unittest.TestCase):
                 platform_info=mac,
                 env={"HOME": str(root / "home"), "EXTELLA_DATA_ROOT": str(root / "data")},
                 python_executable=Path(sys.executable),
+                network_urls=(),
             )
             report = prepared.transaction.commit()
             self.assertEqual(verified.release_version, "2.0.0-rc.1")

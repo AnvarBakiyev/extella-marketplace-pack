@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "defaultClassification": "third_party_unverified",
+  "supportedOnDemand": [],
+  "sources": {
+    "_mkt_apps": {"classification": "third_party_unverified", "advertisedAsGuaranteed": false},
+    "_mkt_loc": {"classification": "third_party_unverified", "advertisedAsGuaranteed": false},
+    "_mkt_mcp": {"classification": "third_party_unverified", "advertisedAsGuaranteed": false},
+    "_mkt_models": {"classification": "third_party_unverified", "advertisedAsGuaranteed": false},
+    "_mkt_programs": {"classification": "third_party_unverified", "advertisedAsGuaranteed": false}
+  },
+  "visibility": {
+    "hideField": "hidden",
+    "hideWhenTrue": true,
+    "unverifiedLabelRu": "Стороннее · не проверено",
+    "unverifiedLabelEn": "Third-party · unverified"
+  }
+}

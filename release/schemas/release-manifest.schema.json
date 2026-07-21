@@ -10,6 +10,12 @@
     "version",
     "status",
     "supportedPlatforms",
+    "distribution",
+    "dependencies",
+    "accountResources",
+    "lifecycle",
+    "services",
+    "telemetry",
     "sourceRepositories",
     "artifacts",
     "capabilities",
@@ -27,6 +33,100 @@
       "maxItems": 3,
       "uniqueItems": true,
       "items": {"enum": ["macos-x86_64", "macos-arm64", "windows11-x86_64"]}
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "fileName", "sha256", "bytes", "fileCount"],
+      "properties": {
+        "status": {"enum": ["pending", "candidate", "released"]},
+        "fileName": {"type": "string", "minLength": 1},
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": ["integer", "null"], "minimum": 1},
+        "fileCount": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "requiredForCore", "minimumVersion", "resolver"],
+        "properties": {
+          "name": {"type": "string"},
+          "requiredForCore": {"type": "boolean"},
+          "minimumVersion": {"type": ["string", "null"]},
+          "resolver": {"enum": ["ensure_tool", "pinned_native_bootstrap"]}
+        }
+      }
+    },
+    "accountResources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "agents", "experts", "kv"],
+      "properties": {
+        "scope": {"const": "current_account"},
+        "agents": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["count", "provider", "model"],
+          "properties": {
+            "count": {"const": 2},
+            "provider": {"const": "alibaba"},
+            "model": {"type": "string"}
+          }
+        },
+        "experts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["inventory", "installClass", "smokeContract"],
+          "properties": {
+            "inventory": {"type": "string"},
+            "installClass": {"const": "bundled"},
+            "smokeContract": {"const": "extella-install-smoke-v1"}
+          }
+        },
+        "kv": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["install", "start", "stop", "restart", "health", "uninstall"],
+      "properties": {
+        "install": {"type": "string"},
+        "start": {"type": "string"},
+        "stop": {"type": "string"},
+        "restart": {"type": "string"},
+        "health": {"type": "string"},
+        "uninstall": {"type": "string"}
+      }
+    },
+    "services": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "owner", "port", "autostart"],
+        "properties": {
+          "id": {"type": "string"},
+          "owner": {"type": "string"},
+          "port": {"type": "integer", "minimum": 1024, "maximum": 65535},
+          "autostart": {"enum": ["native", "activity_center"]}
+        }
+      }
+    },
+    "telemetry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "transport", "storage"],
+      "properties": {
+        "schema": {"type": "string"},
+        "transport": {"const": "disabled"},
+        "storage": {"type": "string"}
+      }
     },
     "sourceRepositories": {
       "type": "array",
@@ -106,4 +206,3 @@
     }
   }
 }
-

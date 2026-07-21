@@ -317,6 +317,7 @@ def required_experts(bundle_root: Path) -> tuple[set[str], set[str]]:
 def catalog_kv_artifacts(bundle_root: Path) -> list[KVArtifact]:
     marketplace = bundle_root / "payload/marketplace"
     inputs = (
+        ("release/catalog-policy.json", "_mkt_release_policy", "release catalog classification policy"),
         ("composer_catalog.json", "composer:catalog", "composer catalog"),
         ("models_catalog.json", None, "verified model catalog"),
         ("mcp_catalog.json", None, "verified MCP catalog"),

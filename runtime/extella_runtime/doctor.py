@@ -201,6 +201,8 @@ def _network_check(url: str, timeout: int = 10) -> DoctorCheck:
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             status = int(response.status)
+    except urllib.error.HTTPError as exc:
+        status = int(exc.code)
     except (urllib.error.URLError, OSError) as exc:
         return DoctorCheck(
             "network",
@@ -210,8 +212,8 @@ def _network_check(url: str, timeout: int = 10) -> DoctorCheck:
         )
     return DoctorCheck(
         "network",
-        "pass" if 200 <= status < 400 else "action_required",
-        "Required release endpoint is reachable" if 200 <= status < 400 else "Release endpoint rejected the request",
+        "pass" if 200 <= status < 500 else "action_required",
+        "Required release endpoint is reachable" if 200 <= status < 500 else "Release endpoint rejected the request",
         details={"origin": urllib.parse.urlsplit(url).netloc, "httpStatus": status},
     )
 

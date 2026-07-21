@@ -48,6 +48,7 @@ class PreparedClient:
     python: Path
     service_environment: dict[str, str]
     release_version: str
+    doctor_report: dict[str, Any]
 
 
 def _run(argv: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -318,6 +319,7 @@ def prepare_local_client(
     env: Mapping[str, str] | None = None,
     bootstrap_python_root: Path | None = None,
     python_executable: Path | None = None,
+    network_urls: Sequence[str] = ("https://github.com", "https://api.extella.ai"),
 ) -> tuple[PreparedClient, VerifiedBundle]:
     platform_info = platform_info or detect_platform()
     if not platform_info.supported:
@@ -329,8 +331,22 @@ def prepare_local_client(
         platform_info=platform_info,
         data_root=paths.data_root,
         required_tools=(),
-        optional_tools=(),
+        optional_tools=(
+            "node",
+            "npm",
+            "npx",
+            "uv",
+            "uvx",
+            "git",
+            "ffmpeg",
+            "ghostscript",
+            "imagemagick",
+            "pandoc",
+            "ollama",
+            "brew" if platform_info.system == "Darwin" else "winget",
+        ),
         ports=(8765, 8766, 8767, 8799),
+        network_urls=network_urls,
         env=environment,
     )
     if not doctor.ready:
@@ -341,6 +357,17 @@ def prepare_local_client(
     )
     installed_python_root = paths.runtime_root / "python"
     try:
+        transaction.run(
+            "doctor.report",
+            lambda: (
+                transaction.atomic_write(
+                    (json.dumps(doctor.to_dict(), ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+                    paths.state_root / "doctor" / "latest.json",
+                    mode=0o600,
+                )
+                and "Computer Doctor report saved"
+            ),
+        )
         if bootstrap_python_root is not None:
             transaction.run(
                 "runtime.python",
@@ -395,6 +422,7 @@ def prepare_local_client(
             python,
             _runtime_environment(paths),
             bundle.release_version,
+            doctor.to_dict(),
         ),
         bundle,
     )
@@ -624,6 +652,12 @@ def install_client(
         "status": "installed",
         "releaseVersion": prepared.release_version,
         "platform": platform_info.key,
+        "doctor": {
+            "status": prepared.doctor_report["status"],
+            "warnings": sum(
+                1 for check in prepared.doctor_report["checks"] if check["status"] == "warning"
+            ),
+        },
         "local": {"status": local_report["status"], "steps": len(local_report["steps"])},
         "account": {"status": account_report["status"], "steps": len(account_report["steps"])},
     }

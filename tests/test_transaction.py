@@ -124,6 +124,26 @@ class InstallTransactionTests(unittest.TestCase):
             self.assertFalse(target.exists())
             self.assertFalse((state_root / "install-state.json").exists())
 
+    def test_committed_local_phase_can_be_compensated_if_account_commit_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "new.txt"
+            target = root / "target.txt"
+            state_root = root / "state"
+            source.write_text("new")
+            target.write_text("old")
+            transaction = InstallTransaction(release_version="2.0.0", state_root=state_root)
+            transaction.run("local", lambda: transaction.atomic_copy(source, target))
+            transaction.commit()
+            self.assertEqual(target.read_text(), "new")
+
+            transaction.rollback(failed_step="account.commit")
+
+            self.assertEqual(target.read_text(), "old")
+            self.assertFalse((state_root / "install-state.json").exists())
+            report = json.loads((state_root / "last-install-report.json").read_text())
+            self.assertEqual(report["status"], "rolled_back")
+
 
 if __name__ == "__main__":
     unittest.main()

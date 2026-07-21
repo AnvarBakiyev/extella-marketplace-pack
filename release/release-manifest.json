@@ -8,6 +8,160 @@
     "macos-arm64",
     "windows11-x86_64"
   ],
+  "distribution": {
+    "status": "pending",
+    "fileName": "extella-client-2.0.0-rc.1.zip",
+    "sha256": null,
+    "bytes": null,
+    "fileCount": null
+  },
+  "dependencies": [
+    {
+      "name": "python",
+      "requiredForCore": true,
+      "minimumVersion": "3.12",
+      "resolver": "pinned_native_bootstrap"
+    },
+    {
+      "name": "uv",
+      "requiredForCore": true,
+      "minimumVersion": "0.11.30",
+      "resolver": "pinned_native_bootstrap"
+    },
+    {
+      "name": "node",
+      "requiredForCore": false,
+      "minimumVersion": "18.0",
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "npm",
+      "requiredForCore": false,
+      "minimumVersion": "9.0",
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "npx",
+      "requiredForCore": false,
+      "minimumVersion": "9.0",
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "uvx",
+      "requiredForCore": false,
+      "minimumVersion": "0.5",
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "git",
+      "requiredForCore": false,
+      "minimumVersion": "2.30",
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "brew",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "winget",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "ffmpeg",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "ghostscript",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "imagemagick",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "pandoc",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    },
+    {
+      "name": "ollama",
+      "requiredForCore": false,
+      "minimumVersion": null,
+      "resolver": "ensure_tool"
+    }
+  ],
+  "accountResources": {
+    "scope": "current_account",
+    "agents": {
+      "count": 2,
+      "provider": "alibaba",
+      "model": "qwen3.7-max-2026-06-08"
+    },
+    "experts": {
+      "inventory": "release/expert-classification.json",
+      "installClass": "bundled",
+      "smokeContract": "extella-install-smoke-v1"
+    },
+    "kv": [
+      "_mkt_release_policy",
+      "composer:catalog",
+      "apps_catalog",
+      "loc_catalog",
+      "mcp_catalog",
+      "models_catalog",
+      "extella:client:agents:v1"
+    ]
+  },
+  "lifecycle": {
+    "install": "installer/client_install.py",
+    "start": "activity-center:/api/services/{id}/start",
+    "stop": "activity-center:/api/services/{id}/stop",
+    "restart": "activity-center:/api/services/{id}/restart",
+    "health": "activity-center:/api/services",
+    "uninstall": "installer/client_uninstall.py"
+  },
+  "services": [
+    {
+      "id": "extella_activity_center",
+      "owner": "extella_activity_center",
+      "port": 8799,
+      "autostart": "native"
+    },
+    {
+      "id": "extella_adoption_wizard",
+      "owner": "extella_adoption_wizard",
+      "port": 8765,
+      "autostart": "activity_center"
+    },
+    {
+      "id": "extella_travel_agency",
+      "owner": "extella_travel_agency",
+      "port": 8766,
+      "autostart": "activity_center"
+    },
+    {
+      "id": "extella_contract_agent",
+      "owner": "extella_contract_agent",
+      "port": 8767,
+      "autostart": "activity_center"
+    }
+  ],
+  "telemetry": {
+    "schema": "release/schemas/stability-telemetry.schema.json",
+    "transport": "disabled",
+    "storage": "${EXTELLA_STATE}/telemetry/stability.json"
+  },
   "sourceRepositories": [
     {
       "id": "toolbar",
@@ -29,8 +183,8 @@
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "8b6cf3e12ad36600ff4e29096292e7bd33ae0c52428edb5cba1a926d381d4da7",
-      "bytes": 5856990,
+      "sha256": "c639086d0fbf79152b78220733070a638200e4e20f52f1e801b5c770fe4cb28b",
+      "bytes": 5857414,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -41,8 +195,8 @@
     {
       "id": "installer-macos",
       "path": "toolbar/install-all.sh",
-      "sha256": "b36dd5f9b1476da1b165f870bc2124cdd8ffc10e2a62f49de5578e5f59bd2a59",
-      "bytes": 5959,
+      "sha256": "a9f0f5731920435a9eeb3929420c7e75a0a8e756fb576336fc400664359f3382",
+      "bytes": 6339,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -52,8 +206,8 @@
     {
       "id": "installer-windows11",
       "path": "toolbar/install-all.ps1",
-      "sha256": "e1c37d6d136f54e17c4a1b90c9eb95c9ff04afac1aa855c63932dd0fdc8ee816",
-      "bytes": 3982,
+      "sha256": "c82a5aba45831323522ea1e5a13854e190de129686551b3c3d33d170d73656ff",
+      "bytes": 7003,
       "required": true,
       "platforms": [
         "windows11-x86_64"
@@ -62,8 +216,8 @@
     {
       "id": "runtime-init",
       "path": "runtime/extella_runtime/__init__.py",
-      "sha256": "239e9e8f23fb61a4b2ae10d145375451b98c9b618d7edd1e089fe9ae333764f6",
-      "bytes": 725,
+      "sha256": "2286d419fa3ccaabe8840ce5757298d1765403df02b3a690edd762d4fc5b540f",
+      "bytes": 983,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -122,8 +276,8 @@
     {
       "id": "runtime-doctor",
       "path": "runtime/extella_runtime/doctor.py",
-      "sha256": "ccedc3cb96040a26fe37f8e9fb7370dfb2df49313e311263fc57135ebedfab16",
-      "bytes": 8383,
+      "sha256": "ac70c53920f6ef0425d466d480fc596cacf2fd51d4644549bad26361623f4020",
+      "bytes": 12257,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -134,8 +288,8 @@
     {
       "id": "runtime-transaction",
       "path": "runtime/extella_runtime/transaction.py",
-      "sha256": "7fdd6e59601b494670f47f739133b5e5b447efc07fc220a6547262cbbd9a597f",
-      "bytes": 9380,
+      "sha256": "62aacaf39458cd0d4336eaca7135ea7face28930afc268c4ce0f189170bd2bfc",
+      "bytes": 15148,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -170,8 +324,8 @@
     {
       "id": "runtime-installer",
       "path": "runtime/install_runtime.py",
-      "sha256": "ec29914141171ea13be41b8986f9dcbe5d20cfed32f193b12f07736f6ede1871",
-      "bytes": 4514,
+      "sha256": "1154e112a5951ceba8c469fbb58774969a60ba8279c05e9857bcd5a007844d3c",
+      "bytes": 4620,
       "required": true,
       "platforms": [
         "macos-x86_64",
