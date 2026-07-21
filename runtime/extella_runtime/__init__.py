@@ -6,6 +6,7 @@ from .platforms import PlatformInfo, detect_platform
 from .paths import ClientPaths, client_paths
 from .transaction import InstallTransaction, InstallationError, uninstall_from_state
 from .processes import ProcessSupervisor, RuntimeSpec
+from .autostart import AutostartSpec, install_autostart, remove_autostart
 
 __all__ = [
     "DoctorReport",
@@ -16,10 +17,13 @@ __all__ = [
     "PlatformInfo",
     "ProcessSupervisor",
     "RuntimeSpec",
+    "AutostartSpec",
     "detect_platform",
     "client_paths",
     "ensure_many",
     "ensure_tool",
     "run_doctor",
+    "install_autostart",
+    "remove_autostart",
     "uninstall_from_state",
 ]

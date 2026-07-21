@@ -11,6 +11,32 @@ from runtime.extella_runtime.transaction import (
 
 
 class InstallTransactionTests(unittest.TestCase):
+    def test_directory_tree_rolls_back_and_uninstalls(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            target = root / "target"
+            state = root / "state"
+            source.mkdir()
+            target.mkdir()
+            (source / "new.txt").write_text("new", encoding="utf-8")
+            (target / "old.txt").write_text("old", encoding="utf-8")
+
+            failed = InstallTransaction(release_version="2.0.0", state_root=state / "failed")
+            with self.assertRaises(InstallationError):
+                failed.run("tree", lambda: failed.atomic_tree(source, target))
+                failed.run("fail", lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+            self.assertEqual((target / "old.txt").read_text(encoding="utf-8"), "old")
+            self.assertFalse((target / "new.txt").exists())
+
+            installed = InstallTransaction(release_version="2.0.0", state_root=state / "ok")
+            installed.run("tree", lambda: installed.atomic_tree(source, target))
+            installed.commit()
+            self.assertEqual((target / "new.txt").read_text(encoding="utf-8"), "new")
+            report = uninstall_from_state(state / "ok" / "install-state.json")
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertEqual((target / "old.txt").read_text(encoding="utf-8"), "old")
+
     def test_required_failure_rolls_back_replaced_and_created_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
