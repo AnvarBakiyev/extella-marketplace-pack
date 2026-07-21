@@ -11,8 +11,8 @@
   "distribution": {
     "status": "candidate",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "25f9b3e416c7af02484847dfd25bb82eccefbcbebede2c920ddc33f321aaf84c",
-    "bytes": 3283733,
+    "sha256": "032ab3a4f74d4d5824aff42268dc971ea7b5d82ae0071c3a12ad207e83d7c5bd",
+    "bytes": 3284329,
     "fileCount": 264
   },
   "dependencies": [
@@ -171,7 +171,7 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "db44451820ff438d295051c7bfe7a74adf2bbdc8"
+      "revision": "9c29ecce7f48eb3db436a9791705809c1b56c896"
     },
     {
       "id": "wizard",
@@ -195,8 +195,8 @@
     {
       "id": "installer-macos",
       "path": "toolbar/install-all.sh",
-      "sha256": "ad034198e1a9f6423b2d3ced46a3c57ac3934b1c6fb106cf4b75da3e1a8b4edc",
-      "bytes": 8210,
+      "sha256": "9dbfff4b2445c0c3e095d89e92ffde54462ebbbc0027e86603fec965d7302557",
+      "bytes": 9603,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -206,8 +206,8 @@
     {
       "id": "installer-windows11",
       "path": "toolbar/install-all.ps1",
-      "sha256": "feebcab8e3f603b93fade2e116b5ff9ada29c205f4878576bafdba643355078f",
-      "bytes": 8794,
+      "sha256": "3fa32eb335616c2f2802b0bf69a6562445a29c58aa013d38664ae57f8627f60a",
+      "bytes": 10547,
       "required": true,
       "platforms": [
         "windows11-x86_64"
@@ -384,8 +384,8 @@
     {
       "id": "external-matrix-protocol",
       "path": "release/EXTERNAL_MATRIX.md",
-      "sha256": "1ad8b1fbaf3ba18233adf29c02495f872855d9fbe492f7a12e6efdb0820840e8",
-      "bytes": 7776,
+      "sha256": "1c3e933cb1cac138dae6e26ccbd06693ceb420b7df6fbf4d0be649a04931d91f",
+      "bytes": 7948,
       "required": true,
       "platforms": [
         "macos-x86_64",
