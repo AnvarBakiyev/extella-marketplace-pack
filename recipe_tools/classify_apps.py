@@ -3,10 +3,12 @@
 Тянет сырые файлы рецепта (install.js/torch.js/requirements.txt) через raw.githubusercontent,
 ищет маркеры платформы/GPU → метит каждое приложение {platforms, gpu, note}.
 Обновляет _mkt_apps (shard) полем compat. Клиент показывает релевантное своей ОС."""
-import re, json, urllib.request, concurrent.futures as cf
+import re, json, os, urllib.request, concurrent.futures as cf
 
-TOK = re.search(r'AUTH_TOKEN\s*=\s*["\']([^"\']+)', open('/Users/anvarbakiyev/.claude/extella_mcp_server.py').read()).group(1)
-H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": "agent_hM0qLHwu-Hw_4sjydTU1g", "Content-Type": "application/json"}
+TOK = os.environ.get("EXTELLA_TOKEN", "").strip()
+if not TOK:
+    raise SystemExit("EXTELLA_TOKEN is required")
+H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": os.environ.get("EXTELLA_SCOPE_AGENT", "agent_extella_default"), "Content-Type": "application/json"}
 
 def kv_get(k):
     req = urllib.request.Request("https://api.extella.ai/api/kv/get", data=json.dumps({"key": k, "global": True}).encode(), headers=H)

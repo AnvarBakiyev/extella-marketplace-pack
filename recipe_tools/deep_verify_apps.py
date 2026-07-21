@@ -4,8 +4,10 @@
 Отделяет 'по рецепту должно' от 'проверено вживую' (как модели 197/197)."""
 import re, json, time, os, socket, urllib.request
 
-TOK = re.search(r'AUTH_TOKEN\s*=\s*["\']([^"\']+)', open('/Users/anvarbakiyev/.claude/extella_mcp_server.py').read()).group(1)
-H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": "agent_hM0qLHwu-Hw_4sjydTU1g", "Content-Type": "application/json"}
+TOK = os.environ.get("EXTELLA_TOKEN", "").strip()
+if not TOK:
+    raise SystemExit("EXTELLA_TOKEN is required")
+H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": os.environ.get("EXTELLA_SCOPE_AGENT", "agent_extella_default"), "Content-Type": "application/json"}
 
 # загрузить эксперты локально (быстрее, чем через API-мост)
 NS_I = {}; exec(open('/tmp/app_install.py').read(), NS_I)

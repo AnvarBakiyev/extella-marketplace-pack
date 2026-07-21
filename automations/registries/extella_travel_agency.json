@@ -43,8 +43,8 @@
     "mechanism": "wz_scheduler_tick",
     "kvKey": "sched:wz_20260709_travel",
     "registered": true,
-    "target": "85800354-f7b7-449f-b526-9357cd91f780",
-    "tick": "cron VPS */15min /home/ubuntu/extella_wizard/tick.py",
+    "target": "__EXTELLA_TARGET__",
+    "tick": "managed scheduler for the current account",
     "next": "2026-07-10T03:00:00Z (09:00 Алматы), затем ежедневно"
   },
   "params": {
@@ -57,8 +57,8 @@
   "synthAgent": {
     "id": "__EXTELLA_AGENT__",
     "name": "Extella Qwen fine-tuned",
-    "provider": "custom",
-    "model": "extella_test_llm",
+    "provider": "alibaba",
+    "model": "qwen3.7-max-2026-06-08",
     "keyless": true
   },
   "sampleRun": {
@@ -123,10 +123,9 @@
     ]
   },
   "hosting": {
-    "target": "85800354-f7b7-449f-b526-9357cd91f780",
-    "vps": "PS.kz 82.115.42.21",
-    "config": "/opt/extella-listener/extella_wizard/app/config.json (user extella) + /home/ubuntu/extella_wizard/app/config.json",
-    "verified": "ta_tv_get выполнен на VPS 09.07.2026"
+    "target": "__EXTELLA_TARGET__",
+    "config": "configured per account through the encrypted vault",
+    "verified": false
   },
   "demoKit": {
     "script": "demo/DEMO_SCRIPT.md",

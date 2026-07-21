@@ -258,7 +258,7 @@
      "gpu": "cpu",
      "note": "лёгкое, без GPU-требований",
      "verified": false,
-     "verify_note": "install: шаг упал: npm install | m error A complete log of this run can be found in: /Users/anvarba"
+     "verify_note": "install: npm install failed; see the local redacted diagnostic report"
     }
    },
    {

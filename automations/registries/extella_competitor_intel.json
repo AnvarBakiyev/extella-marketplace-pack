@@ -35,7 +35,7 @@
     "cadence": "daily",
     "mechanism": "wz_scheduler_tick",
     "kvKey": "sched:ci",
-    "target": "85800354-f7b7-449f-b526-9357cd91f780",
+    "target": "__EXTELLA_TARGET__",
     "lastrunKey": "lastrun:ci",
     "registered": true
   },
@@ -57,8 +57,8 @@
   "synthAgent": {
     "id": "__EXTELLA_AGENT__",
     "name": "Extella Qwen fine-tuned",
-    "provider": "custom",
-    "model": "extella_test_llm",
+    "provider": "alibaba",
+    "model": "qwen3.7-max-2026-06-08",
     "keyless": true,
     "note": "общий агент, всё умеет, MCP-тулы есть; синтез с строгим JSON и без вызова тулов"
   },
