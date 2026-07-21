@@ -7,6 +7,7 @@ param(
     [long]$BundleBytes = $(if ($env:EXTELLA_BUNDLE_BYTES) { [long]$env:EXTELLA_BUNDLE_BYTES } else { 0 }),
     [switch]$NoStart,
     [switch]$VerifyOnly,
+    [switch]$Uninstall,
     [ValidateSet("baseline", "previous-release")]
     [string]$MatrixPhase,
     [string]$MatrixResult,
@@ -45,10 +46,16 @@ try {
 if (($BundlePath -and $BundleUrl) -or (-not $BundlePath -and -not $BundleUrl)) {
     throw "Specify exactly one of -BundlePath or -BundleUrl. Raw main branches are intentionally unsupported."
 }
-if (($MatrixPhase -or $MatrixResult -or $ReleaseManifest) -and (-not $MatrixPhase -or -not $MatrixResult -or -not $ReleaseManifest)) {
+if ($Uninstall) {
+    if ($VerifyOnly -or $NoStart) { throw "-Uninstall cannot be combined with -VerifyOnly or -NoStart." }
+    if ($MatrixPhase) { throw "-MatrixPhase is for install/upgrade baselines, not uninstall." }
+    if ([bool]$MatrixResult -ne [bool]$ReleaseManifest) {
+        throw "Matrix-aware uninstall requires -MatrixResult and -ReleaseManifest together."
+    }
+} elseif (($MatrixPhase -or $MatrixResult -or $ReleaseManifest) -and (-not $MatrixPhase -or -not $MatrixResult -or -not $ReleaseManifest)) {
     throw "Matrix evidence requires -MatrixPhase, -MatrixResult, and -ReleaseManifest together."
 }
-if ($MatrixPhase -and -not $BundlePath) {
+if (($MatrixPhase -or $MatrixResult) -and -not $BundlePath) {
     throw "Matrix evidence requires the local candidate passed with -BundlePath."
 }
 if ($BundleUrl -and -not $BundleUrl.StartsWith("https://", [StringComparison]::OrdinalIgnoreCase)) {
@@ -128,6 +135,30 @@ with zipfile.ZipFile(archive) as source:
         throw "Verified bundle has no client installer."
     }
     $Runner = Join-Path $Extracted "payload\marketplace\tools\external_matrix.py"
+    $Uninstaller = Join-Path $Extracted "payload\marketplace\installer\client_uninstall.py"
+    if ($Uninstall) {
+        if (-not (Test-Path -LiteralPath $Uninstaller -PathType Leaf)) {
+            throw "Verified bundle has no client uninstaller."
+        }
+        $PreviousPythonPath = $env:PYTHONPATH
+        $PreviousNoBytecode = $env:PYTHONDONTWRITEBYTECODE
+        try {
+            $env:PYTHONPATH = Join-Path $Extracted "payload\marketplace"
+            $env:PYTHONDONTWRITEBYTECODE = "1"
+            & $Python.FullName -c "from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))" $Extracted
+            if ($LASTEXITCODE -ne 0) { throw "Strict bundle verification failed." }
+            $UninstallArguments = @($Uninstaller)
+            if ($MatrixResult) {
+                $UninstallArguments += @("--candidate", $ResolvedBundle, "--release-manifest", $ReleaseManifest, "--matrix-result", $MatrixResult)
+            }
+            & $Python.FullName @UninstallArguments
+            if ($LASTEXITCODE -ne 0) { throw "Extella Client uninstall failed with exit code $LASTEXITCODE." }
+            exit 0
+        } finally {
+            $env:PYTHONPATH = $PreviousPythonPath
+            $env:PYTHONDONTWRITEBYTECODE = $PreviousNoBytecode
+        }
+    }
     if ($MatrixPhase) {
         if (-not (Test-Path -LiteralPath $ReleaseManifest -PathType Leaf)) {
             throw "Release manifest not found."

@@ -80,6 +80,24 @@ def main() -> int:
             )
             return 2
     paths = client_paths(platform_info=platform_info)
+    if platform_info.system == "Windows":
+        executable = Path(sys.executable).resolve()
+        runtime_root = paths.runtime_root.resolve()
+        if executable == runtime_root or runtime_root in executable.parents:
+            print(
+                json.dumps(
+                    {
+                        "status": "action_required",
+                        "errorClass": "self_hosted_uninstall",
+                        "message": (
+                            "Run the verified native install-all.ps1 bootstrap with -Uninstall so "
+                            "Windows can remove the managed Python runtime after verification."
+                        ),
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            return 4
     account_state = paths.state_root / "account" / "account-state.json"
     token = prompt_token() if account_state.exists() else ""
     try:

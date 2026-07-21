@@ -87,11 +87,12 @@ restart. This phase fails unless the operating-system boot marker changed:
 "$PYTHON" "$RUNNER" --phase restarted --expected-platform "$PLATFORM" --candidate "$CANDIDATE" --release-manifest "$MANIFEST" --result "$RESULT"
 ```
 
-Finally run the owned uninstaller. It records the post-uninstall state from the
-same still-running Python process after owned files and services are removed:
+Finally run the owned uninstaller through the verified native bootstrap. Its
+temporary Python lives outside Extella, so the managed runtime can also be
+removed completely:
 
 ```sh
-"$PYTHON" "$DATA/installer/client_uninstall.py" --candidate "$CANDIDATE" --release-manifest "$MANIFEST" --matrix-result "$RESULT"
+sh toolbar/install-all.sh --uninstall --bundle "$CANDIDATE" --sha256 "$SHA256" --bytes "$BYTES" --release-manifest "$MANIFEST" --matrix-result "$RESULT"
 ```
 
 ## Windows 11 x64
@@ -139,11 +140,13 @@ $Runner = Join-Path $Data "installer\external_matrix.py"
 ```
 
 Restart Windows 11 normally. After login, do not manually start Extella
-services. Recreate `$Python` and `$Runner`, record `restarted`, then uninstall:
+services. Recreate `$Python` and `$Runner`, record `restarted`, then uninstall
+through the temporary verified bootstrap Python. This avoids a locked running
+`python.exe` inside the managed runtime:
 
 ```powershell
 & $Python $Runner --phase restarted --expected-platform $Platform --candidate $Candidate --release-manifest $Manifest --result $Result
-& $Python (Join-Path $Data "installer\client_uninstall.py") --candidate $Candidate --release-manifest $Manifest --matrix-result $Result
+& .\toolbar\install-all.ps1 -Uninstall -BundlePath $Candidate -BundleSha256 $Sha256 -BundleBytes $Bytes -ReleaseManifest $Manifest -MatrixResult $Result
 ```
 
 ## Previous-release upgrade track
