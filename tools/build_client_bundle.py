@@ -24,7 +24,7 @@ DEVICE_ID = re.compile(
     re.IGNORECASE,
 )
 ACCOUNT_AGENT = re.compile(r"\bagent_[A-Za-z0-9_-]{8,}\b")
-ALLOWED_AGENTS = {"agent_extella_default", "agent_extella_alibaba_default"}
+ALLOWED_AGENTS = {"agent_extella_default", "agent_extella_alibaba_default", "agent_XXXXXXXX"}
 SECRET_ASSIGNMENT = re.compile(
     r"(?i)(?:auth[_-]?token|api[_-]?key|secret|password)\s*[:=]\s*['\"][A-Za-z0-9_./+\-=]{16,}['\"]"
 )

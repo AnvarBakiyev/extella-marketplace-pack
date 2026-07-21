@@ -68,9 +68,15 @@ class BundleVerificationTests(unittest.TestCase):
     def test_source_scan_rejects_personal_home_but_allows_documented_placeholder(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "example.txt"
-            source.write_text("Откройте /Users/имя/Downloads или API /users/{id}", encoding="utf-8")
+            source.write_text(
+                "Откройте /Users/имя/Downloads, API /users/{id}, placeholder agent_XXXXXXXX",
+                encoding="utf-8",
+            )
             _scan(source, "example.txt")
             source.write_text("/Users/anvarbakiyev/Downloads/private", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                _scan(source, "example.txt")
+            source.write_text("agent_AbCd0123456789", encoding="utf-8")
             with self.assertRaises(SystemExit):
                 _scan(source, "example.txt")
 
