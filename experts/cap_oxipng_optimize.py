@@ -5,15 +5,12 @@ def cap_oxipng_optimize(input_path="", output_path="") -> str:
     import os, subprocess, json, shutil, tempfile
 
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/oxipng")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("oxipng")
-        if p: return p
-        for c in ["/opt/homebrew/bin/oxipng", "/usr/local/bin/oxipng"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("oxipng", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     pass

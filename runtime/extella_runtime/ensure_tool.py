@@ -20,6 +20,7 @@ class ToolSpec:
     executables_windows: tuple[str, ...]
     version_args: tuple[str, ...] = ("--version",)
     brew_formula: str | None = None
+    brew_cask: bool = False
     winget_id: str | None = None
     minimum_version: tuple[int, ...] | None = None
 
@@ -73,6 +74,76 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     "ollama": ToolSpec(
         "ollama", ("ollama",), ("ollama.exe",), brew_formula="ollama",
         winget_id="Ollama.Ollama"
+    ),
+    "sox": ToolSpec(
+        "sox", ("sox",), ("sox.exe",), brew_formula="sox"
+    ),
+    "audacity_cli": ToolSpec(
+        "audacity_cli", ("cli-anything-audacity",), ("cli-anything-audacity.exe",),
+        version_args=("--help",)
+    ),
+    "calibre": ToolSpec(
+        "calibre", ("ebook-convert",), ("ebook-convert.exe",),
+        brew_formula="calibre", brew_cask=True
+    ),
+    "cwebp": ToolSpec(
+        "cwebp", ("cwebp",), ("cwebp.exe",), version_args=("-version",),
+        brew_formula="webp"
+    ),
+    "exiftool": ToolSpec(
+        "exiftool", ("exiftool",), ("exiftool.exe",), version_args=("-ver",),
+        brew_formula="exiftool"
+    ),
+    "flac": ToolSpec(
+        "flac", ("flac",), ("flac.exe",), brew_formula="flac"
+    ),
+    "gifsicle": ToolSpec(
+        "gifsicle", ("gifsicle",), ("gifsicle.exe",), brew_formula="gifsicle"
+    ),
+    "graphviz": ToolSpec(
+        "graphviz", ("dot",), ("dot.exe",), version_args=("-V",),
+        brew_formula="graphviz"
+    ),
+    "img2pdf": ToolSpec(
+        "img2pdf", ("img2pdf",), ("img2pdf.exe",)
+    ),
+    "libreoffice": ToolSpec(
+        "libreoffice", ("soffice",), ("soffice.exe",),
+        brew_formula="libreoffice", brew_cask=True
+    ),
+    "ocrmypdf": ToolSpec(
+        "ocrmypdf", ("ocrmypdf",), ("ocrmypdf.exe",), brew_formula="ocrmypdf"
+    ),
+    "tesseract": ToolSpec(
+        "tesseract", ("tesseract",), ("tesseract.exe",), brew_formula="tesseract"
+    ),
+    "oxipng": ToolSpec(
+        "oxipng", ("oxipng",), ("oxipng.exe",), brew_formula="oxipng"
+    ),
+    "pdftotext": ToolSpec(
+        "pdftotext", ("pdftotext",), ("pdftotext.exe",), version_args=("-v",),
+        brew_formula="poppler"
+    ),
+    "pngquant": ToolSpec(
+        "pngquant", ("pngquant",), ("pngquant.exe",), brew_formula="pngquant"
+    ),
+    "qpdf": ToolSpec(
+        "qpdf", ("qpdf",), ("qpdf.exe",), brew_formula="qpdf"
+    ),
+    "rsvg": ToolSpec(
+        "rsvg", ("rsvg-convert",), ("rsvg-convert.exe",), brew_formula="librsvg"
+    ),
+    "conda": ToolSpec(
+        "conda", ("conda",), ("conda.exe", "conda.bat"),
+        brew_formula="miniconda", brew_cask=True, winget_id="Anaconda.Miniconda3"
+    ),
+    "pnpm": ToolSpec(
+        "pnpm", ("pnpm",), ("pnpm.cmd", "pnpm.exe"), brew_formula="pnpm",
+        winget_id="pnpm.pnpm"
+    ),
+    "yarn": ToolSpec(
+        "yarn", ("yarn",), ("yarn.cmd", "yarn.exe"), brew_formula="yarn",
+        winget_id="Yarn.Yarn"
     ),
     "brew": ToolSpec("brew", ("brew",), (), version_args=("--version",)),
     "winget": ToolSpec("winget", (), ("winget.exe",), version_args=("--version",)),
@@ -142,6 +213,10 @@ def _search_path(platform_info: PlatformInfo, env: Mapping[str, str]) -> str:
             (
                 str(home / ".local" / "bin"),
                 str(home / ".cargo" / "bin"),
+                str(home / "miniconda3" / "bin"),
+                "/Applications/calibre.app/Contents/MacOS",
+                "/Applications/LibreOffice.app/Contents/MacOS",
+                "/Applications/Ollama.app/Contents/Resources",
                 "/usr/bin",
                 "/bin",
             )
@@ -155,6 +230,10 @@ def _search_path(platform_info: PlatformInfo, env: Mapping[str, str]) -> str:
                 str(local_app_data / "Programs" / "Python" / "Python312"),
                 str(local_app_data / "Programs" / "Python" / "Python312" / "Scripts"),
                 str(local_app_data / "Programs" / "Ollama"),
+                str(local_app_data / "Programs" / "MiKTeX" / "miktex" / "bin" / "x64"),
+                str(program_files / "Calibre2"),
+                str(program_files / "LibreOffice" / "program"),
+                str(program_files / "Tesseract-OCR"),
                 str(program_files / "nodejs"),
                 str(program_files / "Git" / "cmd"),
             )
@@ -282,7 +361,8 @@ def _install_command(
 ) -> tuple[str, ...] | None:
     if platform_info.system == "Darwin" and spec.brew_formula:
         verb = "reinstall" if repair else "install"
-        return (manager_path, verb, spec.brew_formula)
+        cask = ("--cask",) if spec.brew_cask else ()
+        return (manager_path, verb, *cask, spec.brew_formula)
     if platform_info.system == "Windows" and spec.winget_id:
         command = [
             manager_path,

@@ -63,6 +63,14 @@ FORBIDDEN_SOURCE = {
         r"raw\.githubusercontent\.com/[^\s'\"]+/(?:main|master)/|refs/heads/(?:main|master)"
     ),
 }
+CAP_LEGACY_DEPENDENCY_SOURCE = {
+    "dependency.direct_which": re.compile(r"shutil\.which\s*\("),
+    "dependency.fixed_homebrew_path": re.compile(r"/(?:opt/homebrew|usr/local)/bin/"),
+    "dependency.direct_brew": re.compile(r"subprocess\.(?:run|Popen)\s*\(\s*\[\s*brew\b"),
+    "dependency.direct_pip_install": re.compile(
+        r"(?:pip[\"']\s*,\s*[\"']install|[\"']-m[\"']\s*,\s*[\"']pip[\"']\s*,\s*[\"']install)"
+    ),
+}
 
 
 def _looks_account_specific_agent(value: str) -> bool:
@@ -270,6 +278,34 @@ def validate_expert_contract(root: Path, wizard_root: Path) -> list[Issue]:
                 issues.append(Issue(code, str(path), f"forbidden pattern in bundled expert {name}"))
         if not re.search(rf"(?m)^def[ \t]+{re.escape(name)}[ \t]*\(", text):
             issues.append(Issue("expert.entrypoint", str(path), f"entrypoint {name} was not found"))
+    return issues
+
+
+def validate_cap_dependency_contract(root: Path) -> list[Issue]:
+    """Every shipped cap_* dependency must route through one runtime bridge."""
+
+    issues: list[Issue] = []
+    for path in sorted((root / "experts").glob("cap_*.py")):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        try:
+            compile(text, str(path), "exec")
+        except SyntaxError as error:
+            issues.append(Issue("dependency.cap_syntax", str(path), str(error)))
+            continue
+        uses_external_dependency = path.name != "cap_local_ask.py"
+        if uses_external_dependency and "extella_expert_bridge" not in text:
+            issues.append(
+                Issue(
+                    "dependency.cap_bridge",
+                    str(path),
+                    "capability bypasses the shared Extella dependency bridge",
+                )
+            )
+        for code, pattern in CAP_LEGACY_DEPENDENCY_SOURCE.items():
+            if pattern.search(text):
+                issues.append(
+                    Issue(code, str(path), "capability contains a private dependency resolver")
+                )
     return issues
 
 
@@ -696,6 +732,7 @@ def validate_release(
         issues.append(Issue("expert.wizard_root", str(wizard), "wizard source root is required"))
     else:
         issues.extend(validate_expert_contract(root, wizard))
+    issues.extend(validate_cap_dependency_contract(root))
     issues.extend(validate_evidence(root, data))
     issues.extend(validate_catalog_policy(root))
     if distribution.get("status") in {"candidate", "released"}:

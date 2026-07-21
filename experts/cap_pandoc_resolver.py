@@ -10,8 +10,15 @@ def cap_pandoc_resolver(confirm_install="no") -> str:
     repair = bool(confirm_install) and not str(confirm_install).startswith("{{") and str(confirm_install).lower() == "yes"
     result = ensure("pandoc", repair=repair)
     if result.get("ready") and result.get("path"):
-        directory = os.path.expanduser("~/.extella_cli"); os.makedirs(directory, exist_ok=True)
-        open(os.path.join(directory, "pandoc"), "w", encoding="utf-8").write(result["path"])
+        directory = os.path.expanduser("~/.extella_cli")
+        os.makedirs(directory, exist_ok=True)
+        marker = os.path.join(directory, "pandoc")
+        temporary = marker + ".tmp"
+        open(temporary, "w", encoding="utf-8").write(result["path"])
+        os.replace(temporary, marker)
         result["bin_path"] = result["path"]
+        result["source"] = "extella_runtime"
         result["status"] = "installed" if result.get("changed") else "already"
+    elif not repair and result.get("status") == "action_required":
+        result["status"] = "missing"
     return json.dumps(result, ensure_ascii=False)

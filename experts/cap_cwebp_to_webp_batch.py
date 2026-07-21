@@ -5,15 +5,12 @@ def cap_cwebp_to_webp_batch(in_dir="", out_dir="", quality="80") -> str:
     import os, subprocess, json, glob, shutil, tempfile
     ALLOWED_quality = ('70', '80', '90')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/cwebp")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("cwebp")
-        if p: return p
-        for c in ["/opt/homebrew/bin/cwebp", "/usr/local/bin/cwebp"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("cwebp", repair=False)
+            return path
+        except Exception:
+            return None
     if not in_dir or in_dir.startswith("{{") or not os.path.isdir(in_dir):
         return json.dumps({"status":"error","message":"нужен существующий in_dir"}, ensure_ascii=False)
     if not quality or quality.startswith("{{") or quality not in ALLOWED_quality: quality = "80"

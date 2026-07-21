@@ -2,6 +2,7 @@ import unittest
 
 from runtime.extella_runtime.ensure_tool import (
     CommandOutcome,
+    TOOL_SPECS,
     ensure_tool,
     resolve_tool,
 )
@@ -73,6 +74,44 @@ class EnsureToolTests(unittest.TestCase):
         result = ensure_tool(
             "ffmpeg", allow_install=True, platform_info=MAC, env={"PATH": ""},
             which=which, executor=executor
+        )
+        self.assertEqual(result.status, "installed")
+        self.assertTrue(result.changed)
+
+    def test_extended_capability_tools_have_central_contracts(self):
+        expected = {
+            "audacity_cli", "sox", "calibre", "cwebp", "exiftool", "flac",
+            "gifsicle", "graphviz", "img2pdf", "libreoffice", "ocrmypdf",
+            "tesseract", "oxipng", "pdftotext", "pngquant", "qpdf", "rsvg",
+            "conda", "pnpm", "yarn",
+        }
+        self.assertTrue(expected.issubset(TOOL_SPECS))
+
+    def test_cask_install_is_centralized_and_reverified(self):
+        installed = {"value": False}
+
+        def which(executable, search_path):
+            del search_path
+            if executable == "brew":
+                return "/opt/homebrew/bin/brew"
+            if executable == "soffice" and installed["value"]:
+                return "/Applications/LibreOffice.app/Contents/MacOS/soffice"
+            return None
+
+        def executor(argv, timeout):
+            del timeout
+            if argv == ("/opt/homebrew/bin/brew", "--version"):
+                return CommandOutcome(0, "Homebrew 4.6.0", "")
+            if argv == ("/opt/homebrew/bin/brew", "install", "--cask", "libreoffice"):
+                installed["value"] = True
+                return CommandOutcome(0, "installed", "")
+            if argv[0].endswith("soffice"):
+                return CommandOutcome(0, "LibreOffice 25.2", "")
+            return CommandOutcome(1, "", "unexpected")
+
+        result = ensure_tool(
+            "libreoffice", allow_install=True, platform_info=MAC, env={"PATH": ""},
+            which=which, executor=executor,
         )
         self.assertEqual(result.status, "installed")
         self.assertTrue(result.changed)

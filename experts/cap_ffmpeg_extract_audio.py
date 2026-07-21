@@ -5,15 +5,12 @@ def cap_ffmpeg_extract_audio(input_path="", output_path="") -> str:
     import os, subprocess, json, shutil, tempfile
 
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/ffmpeg")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("ffmpeg")
-        if p: return p
-        for c in ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("ffmpeg", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     pass

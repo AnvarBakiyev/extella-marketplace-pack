@@ -5,15 +5,12 @@ def cap_libreoffice_to_pdf_batch(in_dir="", out_dir="", _pad=None) -> str:
     import os, subprocess, json, glob, shutil, tempfile
 
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/libreoffice")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("soffice")
-        if p: return p
-        for c in ["/Applications/LibreOffice.app/Contents/MacOS/soffice", "/opt/homebrew/bin/soffice", "/usr/bin/soffice"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("libreoffice", repair=False)
+            return path
+        except Exception:
+            return None
     if not in_dir or in_dir.startswith("{{") or not os.path.isdir(in_dir):
         return json.dumps({"status":"error","message":"нужен существующий in_dir"}, ensure_ascii=False)
     pass

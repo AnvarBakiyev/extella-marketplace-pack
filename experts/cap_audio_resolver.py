@@ -2,24 +2,33 @@
 # description: CLI Capability аудио-эффекты (Audacity/sox) — резолвер
 
 def cap_audio_resolver(confirm_install="no") -> str:
-    import os, subprocess, sys, json, shutil
-    def rec(p):
-        d=os.path.expanduser("~/.extella_cli"); os.makedirs(d, exist_ok=True); open(os.path.join(d,"audio"),"w").write(p)
-    def probe():
-        ca=shutil.which("cli-anything-audacity")
-        sox=shutil.which("sox") or ("/opt/homebrew/bin/sox" if os.path.exists("/opt/homebrew/bin/sox") else None)
-        return ca, sox
-    ca,sox=probe()
-    if ca and sox: rec(ca); return json.dumps({"status":"already","bin_path":ca,"sox":sox,"source":"detected"}, ensure_ascii=False)
-    if not confirm_install or confirm_install.startswith("{{") or confirm_install.lower()!="yes":
-        return json.dumps({"status":"missing","message":"Аудио-эффекты не установлены. confirm_install='yes' поставит обвязку+sox."}, ensure_ascii=False)
-    subprocess.run([sys.executable,"-m","pip","install","-q","cli-anything-hub"], capture_output=True, text=True, timeout=200)
-    hub=shutil.which("cli-hub")
-    if hub: subprocess.run([hub,"install","audacity"], capture_output=True, text=True, timeout=200)
-    brew=next((b for b in ["/opt/homebrew/bin/brew","/usr/local/bin/brew"] if os.path.exists(b)), None)
-    if brew:
-        env=dict(os.environ); env["NONINTERACTIVE"]="1"
-        subprocess.run([brew,"install","sox"], capture_output=True, text=True, timeout=280, env=env)
-    ca,sox=probe()
-    if ca and sox: rec(ca); return json.dumps({"status":"installed","bin_path":ca,"sox":sox,"source":"composite"}, ensure_ascii=False)
-    return json.dumps({"status":"failed","message":"Поставили части, но обвязка/sox не найдены"}, ensure_ascii=False)
+    import json, os
+    try:
+        from extella_expert_bridge import ensure
+    except Exception:
+        return json.dumps({"status":"failed","error_class":"client_runtime_missing","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
+    repair = bool(confirm_install) and not str(confirm_install).startswith("{{") and str(confirm_install).lower() == "yes"
+    dependencies = ('audacity_cli', 'sox')
+    results = {name: ensure(name, repair=repair) for name in dependencies}
+    ready = all(result.get("ready") and result.get("path") for result in results.values())
+    if ready:
+        path = results["audacity_cli"]["path"]
+        directory = os.path.expanduser("~/.extella_cli")
+        os.makedirs(directory, exist_ok=True)
+        marker = os.path.join(directory, "audio")
+        temporary = marker + ".tmp"
+        open(temporary, "w", encoding="utf-8").write(path)
+        os.replace(temporary, marker)
+        return json.dumps({
+            "status": "installed" if any(item.get("changed") for item in results.values()) else "already",
+            "bin_path": path,
+            "source": "extella_runtime",
+            "dependencies": results,
+        }, ensure_ascii=False)
+    missing = [name for name, result in results.items() if not result.get("ready")]
+    return json.dumps({
+        "status": "missing" if not repair else "action_required",
+        "error_class": "dependency_missing",
+        "message": "Не готовы зависимости: " + ", ".join(missing),
+        "dependencies": results,
+    }, ensure_ascii=False)

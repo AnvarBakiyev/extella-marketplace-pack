@@ -5,15 +5,12 @@ def cap_qpdf_rotate(input_path="", output_path="", angle="+90") -> str:
     import os, subprocess, json, shutil, tempfile
     ALLOWED_angle = ('+90', '+180', '+270', '-90')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/qpdf")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("qpdf")
-        if p: return p
-        for c in ["/opt/homebrew/bin/qpdf", "/usr/local/bin/qpdf"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("qpdf", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     if not angle or angle.startswith("{{") or angle not in ALLOWED_angle: angle = "+90"

@@ -5,15 +5,12 @@ def cap_ghostscript_compress_pdf(input_path="", output_path="", quality="ebook")
     import os, subprocess, json, shutil, tempfile
     ALLOWED_quality = ('screen', 'ebook', 'printer', 'prepress')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/ghostscript")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("gs")
-        if p: return p
-        for c in ["/opt/homebrew/bin/gs", "/usr/local/bin/gs", "/opt/local/bin/gs", "/usr/bin/gs"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("ghostscript", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     if not quality or quality.startswith("{{") or quality not in ALLOWED_quality: quality = "ebook"

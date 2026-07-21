@@ -5,15 +5,12 @@ def cap_pngquant_compress(input_path="", output_path="", quality="65-80") -> str
     import os, subprocess, json, shutil, tempfile
     ALLOWED_quality = ('50-70', '65-80', '80-95')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/pngquant")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("pngquant")
-        if p: return p
-        for c in ["/opt/homebrew/bin/pngquant", "/usr/local/bin/pngquant"]:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("pngquant", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     if not quality or quality.startswith("{{") or quality not in ALLOWED_quality: quality = "65-80"

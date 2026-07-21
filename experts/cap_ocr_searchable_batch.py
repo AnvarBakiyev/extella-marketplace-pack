@@ -5,15 +5,12 @@ def cap_ocr_searchable_batch(in_dir="", out_dir="", lang="rus+eng") -> str:
     import os, subprocess, json, glob, shutil, tempfile
     ALLOWED_lang = ('rus+eng', 'rus', 'eng')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/ocr")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("ocrmypdf")
-        if p: return p
-        for c in []:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("ocrmypdf", repair=False)
+            return path
+        except Exception:
+            return None
     if not in_dir or in_dir.startswith("{{") or not os.path.isdir(in_dir):
         return json.dumps({"status":"error","message":"нужен существующий in_dir"}, ensure_ascii=False)
     if not lang or lang.startswith("{{") or lang not in ALLOWED_lang: lang = "rus+eng"
@@ -23,7 +20,6 @@ def cap_ocr_searchable_batch(in_dir="", out_dir="", lang="rus+eng") -> str:
     if not out_dir or out_dir.startswith("{{"): out_dir = in_dir.rstrip("/") + "_out"
     os.makedirs(out_dir, exist_ok=True)
     _env = dict(os.environ)
-    _env["PATH"] = '/opt/homebrew/bin' + os.pathsep + _env.get("PATH","")
     srcs = sorted(glob.glob(os.path.join(in_dir, "*.pdf")))
     tin = 0; tout = 0; ok = 0; fail = 0; items = []
     for src in srcs:

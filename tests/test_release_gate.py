@@ -133,5 +133,35 @@ class ToolbarSourceGateTests(unittest.TestCase):
         self.assertIn("toolbar.distribution_drift", {issue.code for issue in issues})
 
 
+class CapDependencyGateTests(unittest.TestCase):
+    def test_capability_using_shared_bridge_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "experts").mkdir()
+            (root / "experts/cap_example.py").write_text(
+                "def cap_example():\n"
+                "    from extella_expert_bridge import path_or_error\n"
+                "    return path_or_error('ffmpeg')\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], release_gate.validate_cap_dependency_contract(root))
+
+    def test_private_capability_resolver_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "experts").mkdir()
+            (root / "experts/cap_example.py").write_text(
+                "def cap_example():\n"
+                "    import shutil\n"
+                "    return shutil.which('ffmpeg') or '/opt/homebrew/bin/ffmpeg'\n",
+                encoding="utf-8",
+            )
+            issues = release_gate.validate_cap_dependency_contract(root)
+        codes = {issue.code for issue in issues}
+        self.assertIn("dependency.cap_bridge", codes)
+        self.assertIn("dependency.direct_which", codes)
+        self.assertIn("dependency.fixed_homebrew_path", codes)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,11 +9,12 @@ def cap_audio_effect(input_path="", output_path="", effect="change_tempo", amoun
     key,default=EFFECTS[effect]
     if key and (not amount or str(amount).startswith("{{")): amount=default
     def ca_path():
-        f=os.path.expanduser("~/.extella_cli/audio")
-        if os.path.exists(f):
-            p=open(f).read().strip()
-            if p and os.path.exists(p): return p
-        return shutil.which("cli-anything-audacity")
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("audacity_cli", repair=False)
+            return path
+        except Exception:
+            return None
     ca=ca_path()
     if not ca: return json.dumps({"status":"error","message":"не установлено — сначала cap_audio_resolver(confirm_install='yes')"}, ensure_ascii=False)
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
@@ -22,7 +23,7 @@ def cap_audio_effect(input_path="", output_path="", effect="change_tempo", amoun
     if not ext: ext=".wav"
     if not output_path or output_path.startswith("{{"): output_path=base+"_fx"+ext
     os.makedirs(os.path.dirname(os.path.abspath(output_path)) or ".", exist_ok=True)
-    env=dict(os.environ); env["PATH"]="/opt/homebrew/bin"+os.pathsep+env.get("PATH","")
+    env=dict(os.environ)
     d=tempfile.mkdtemp(prefix="_aud_"); proj=os.path.join(d,"p.json")
     def run(args, t=120):
         r=subprocess.run([ca]+args, capture_output=True, text=True, timeout=t, env=env)

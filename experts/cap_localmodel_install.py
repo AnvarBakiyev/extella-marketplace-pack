@@ -5,8 +5,12 @@ def cap_localmodel_install(model="") -> str:
     # Ставит локальную модель через Ollama. НЕ открывает приложение (служба поднимается headless).
     import os, subprocess, json, re, time, urllib.request
     if not model or model.startswith("{{"): return json.dumps({"status":"error","message":"нужен параметр model"}, ensure_ascii=False)
-    ol = next((p for p in ["/usr/local/bin/ollama","/opt/homebrew/bin/ollama","/Applications/Ollama.app/Contents/Resources/ollama"] if os.path.exists(p)), None)
-    if not ol: return json.dumps({"status":"error","message":"Ollama не установлен — поставьте Ollama.app с ollama.com"}, ensure_ascii=False)
+    try:
+        from extella_expert_bridge import path_or_error
+        ol, runtime = path_or_error("ollama", repair=True)
+    except Exception:
+        ol, runtime = None, {"message": "Системный runtime Extella не установлен. Запустите Repair Extella Client."}
+    if not ol: return json.dumps({"status":"error","message":runtime.get("message") or "Ollama недоступен"}, ensure_ascii=False)
     def up():
         try: urllib.request.urlopen("http://localhost:11434/api/version", timeout=3); return True
         except Exception: return False

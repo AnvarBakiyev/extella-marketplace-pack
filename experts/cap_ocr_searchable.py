@@ -5,15 +5,12 @@ def cap_ocr_searchable(input_path="", output_path="", lang="rus+eng") -> str:
     import os, subprocess, json, shutil, tempfile
     ALLOWED_lang = ('rus+eng', 'rus', 'eng')
     def binpath():
-        f = os.path.expanduser("~/.extella_cli/ocr")
-        if os.path.exists(f):
-            p = open(f).read().strip()
-            if p and os.path.exists(p): return p
-        p = shutil.which("ocrmypdf")
-        if p: return p
-        for c in []:
-            if os.path.exists(c): return c
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error("ocrmypdf", repair=False)
+            return path
+        except Exception:
+            return None
     if not input_path or input_path.startswith("{{") or not os.path.exists(input_path):
         return json.dumps({"status":"error","message":"нужен существующий input_path"}, ensure_ascii=False)
     if not lang or lang.startswith("{{") or lang not in ALLOWED_lang: lang = "rus+eng"
@@ -32,7 +29,6 @@ def cap_ocr_searchable(input_path="", output_path="", lang="rus+eng") -> str:
             tok = tok.replace("{" + k + "}", str(v))
         argv.append(tok)
     _env = dict(os.environ)
-    _env["PATH"] = '/opt/homebrew/bin' + os.pathsep + _env.get("PATH","")
     try:
         r = subprocess.run(argv, capture_output=True, text=True, timeout=300, env=_env)
     except Exception as e:
