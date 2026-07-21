@@ -62,8 +62,8 @@
     {
       "id": "runtime-init",
       "path": "runtime/extella_runtime/__init__.py",
-      "sha256": "d2d9e071f8991682272b38849cb82a1961bb31757a3fad6c3a7e8fc903f324df",
-      "bytes": 543,
+      "sha256": "8d2658aa7ea45aff40be1b96c33aa759d9dbf7c6df5be3fe465f89571dbc58e2",
+      "bytes": 627,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -88,6 +88,18 @@
       "path": "runtime/extella_runtime/platforms.py",
       "sha256": "30f884965cae21f4de18b1e10b028866baa290f64441e91f8914fbb9c69786b1",
       "bytes": 3318,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-paths",
+      "path": "runtime/extella_runtime/paths.py",
+      "sha256": "b9e80283f99d7b9bb69b75ff12e0918f3d8077eeeb71d66baca8f07470c86ad4",
+      "bytes": 2121,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -136,6 +148,18 @@
       "path": "runtime/doctor_cli.py",
       "sha256": "a8703b2c40a659afc4acb2476b3d04522598cd6837c92c155b44c9993b0fd7ac",
       "bytes": 1666,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-installer",
+      "path": "runtime/install_runtime.py",
+      "sha256": "ec29914141171ea13be41b8986f9dcbe5d20cfed32f193b12f07736f6ede1871",
+      "bytes": 4514,
       "required": true,
       "platforms": [
         "macos-x86_64",
