@@ -6,7 +6,7 @@ def svc_crypto(coin="bitcoin", vs="usd") -> str:
     coin = "bitcoin" if (not coin or str(coin).startswith("{{")) else str(coin).lower().strip()
     vs   = "usd" if (not vs or str(vs).startswith("{{")) else str(vs).lower().strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://api.coingecko.com/api/v3/simple/price?ids="+coin+"&vs_currencies="+vs
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         if coin not in d or vs not in d.get(coin,{}): return json.dumps({"status":"error","message":"не найдена монета/валюта: "+coin+"/"+vs}, ensure_ascii=False)

@@ -5,7 +5,7 @@ def svc_wiki(topic="\u0410\u043b\u043c\u0430\u0442\u044b") -> str:
     import json, urllib.request, urllib.parse, ssl
     topic = "\u0410\u043b\u043c\u0430\u0442\u044b" if (not topic or str(topic).startswith("{{")) else str(topic).strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://ru.wikipedia.org/api/rest_v1/page/summary/"+urllib.parse.quote(topic)
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0 (extella.ai)"}),timeout=20,context=ctx).read())
         ex=d.get("extract","")

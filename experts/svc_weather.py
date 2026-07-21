@@ -5,7 +5,7 @@ def svc_weather(city="\u0410\u043b\u043c\u0430\u0442\u044b") -> str:
     import json, urllib.request, urllib.parse, ssl
     city = "\u0410\u043b\u043c\u0430\u0442\u044b" if (not city or str(city).startswith("{{")) else str(city).strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         g=json.loads(urllib.request.urlopen(urllib.request.Request("https://geocoding-api.open-meteo.com/v1/search?"+urllib.parse.urlencode({"name":city,"count":1,"language":"ru"}),headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         res=(g.get("results") or [])
         if not res: return json.dumps({"status":"error","message":"город не найден: "+city}, ensure_ascii=False)

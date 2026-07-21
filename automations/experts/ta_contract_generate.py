@@ -11,7 +11,7 @@ def ta_contract_generate(doc_no="", tour_json="{}", draft_phone="", out_dir="", 
     tok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")
     if not tok:
         return json.dumps({"status": "error", "error": "no_api_token"}, ensure_ascii=False)
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
 
     def kv_get(key):
         req = urllib.request.Request("https://api.extella.ai/api/kv/get",

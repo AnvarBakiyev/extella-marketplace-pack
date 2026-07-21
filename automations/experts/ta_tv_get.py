@@ -36,7 +36,7 @@ def ta_tv_get(path="/departures", query_json="{}", jwt="", timeout=25) -> str:
             pairs.append((k, str(v).lower() if isinstance(v, bool) else str(v)))
     qs = urllib.parse.urlencode(pairs)
     url = "https://api.tourvisor.ru/search/api/v1" + str(path) + (("?" + qs) if qs else "")
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     req = urllib.request.Request(url, headers={"Authorization": "Bearer " + token, "User-Agent": "ExtellaTA/1.0"})
     try:
         with urllib.request.urlopen(req, timeout=t, context=ctx) as r:

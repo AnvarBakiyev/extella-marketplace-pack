@@ -17,7 +17,7 @@ def lp_wa_send(phone="", text="", id_instance="", api_token_instance="") -> str:
     ph = "".join(ch for ch in str(phone) if ch.isdigit())
     if not ph or not msg:
         return json.dumps({"status": "error", "error": "phone and text required"}, ensure_ascii=False)
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     url = "https://api.green-api.com/waInstance%s/sendMessage/%s" % (iid, gtok)
     body = json.dumps({"chatId": ph + "@c.us", "message": msg}).encode("utf-8")
     try:

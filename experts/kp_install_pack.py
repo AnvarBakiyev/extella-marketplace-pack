@@ -43,7 +43,7 @@ def kp_install_pack(pack_id="") -> str:
         try: urllib.request.urlopen("http://localhost:11434/api/version", timeout=5); return True
         except Exception: return False
     if not serve(): return json.dumps({"status":"error","message":"движок знаний не запущен (Ollama)"}, ensure_ascii=False)
-    ctx = ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     def fetch_adilet(docid):
         req=urllib.request.Request("https://adilet.zan.kz/rus/docs/"+docid, headers={"User-Agent":"Mozilla/5.0"})
         h=urllib.request.urlopen(req, timeout=90, context=ctx).read().decode("utf-8","ignore")

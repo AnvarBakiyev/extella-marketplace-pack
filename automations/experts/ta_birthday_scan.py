@@ -15,7 +15,7 @@ def ta_birthday_scan(days_ahead=0, phones_json="[]", agent_id="__EXTELLA_AGENT__
         return json.dumps({"status": "error", "error": "no_api_token"}, ensure_ascii=False)
     agent = agent_id if agent_id and not str(agent_id).startswith("{{") else "__EXTELLA_AGENT__"
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     HDR = {"X-Auth-Token": tok, "Content-Type": "application/json", "X-Profile-Id": "default",
            "X-Agent-Id": cfg.get("agent_id", "__EXTELLA_AGENT__") if isinstance(cfg, dict) else "__EXTELLA_AGENT__"}
 

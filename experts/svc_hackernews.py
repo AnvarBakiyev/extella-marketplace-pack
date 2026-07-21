@@ -7,7 +7,7 @@ def svc_hackernews(count="5") -> str:
     try: n=max(1,min(15,int(count)))
     except Exception: n=5
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         ids=json.loads(urllib.request.urlopen(urllib.request.Request("https://hacker-news.firebaseio.com/v0/topstories.json",headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())[:n]
         items=[]
         for i in ids:

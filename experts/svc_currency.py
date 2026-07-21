@@ -9,7 +9,7 @@ def svc_currency(base="USD", to="KZT", amount="1") -> str:
     try: amt=float(amount.replace(",",".").replace(" ",""))
     except Exception: amt=1.0
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://open.er-api.com/v6/latest/"+base
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         rate=d.get("rates",{}).get(to)

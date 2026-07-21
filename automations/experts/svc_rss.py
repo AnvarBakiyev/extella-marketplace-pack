@@ -12,7 +12,7 @@ def svc_rss(feeds="https://hnrss.org/frontpage", per_feed=3) -> str:
         per = 3
     per = max(1, min(per, 10))
     feed_list = [f.strip() for f in (feeds if isinstance(feeds, list) else str(feeds).split(",")) if str(f).strip()]
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     items = []; errors = []
 
     def _txt(node, *tags):

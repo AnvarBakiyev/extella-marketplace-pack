@@ -6,7 +6,7 @@ def svc_postal(country="us", code="90210") -> str:
     country = "us" if (not country or str(country).startswith("{{")) else str(country).lower().strip()
     code = "90210" if (not code or str(code).startswith("{{")) else str(code).strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         d=json.loads(urllib.request.urlopen(urllib.request.Request("https://api.zippopotam.us/%s/%s"%(country,code),headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         pl=(d.get("places") or [])
         if not pl: return json.dumps({"status":"error","message":"индекс не найден"}, ensure_ascii=False)

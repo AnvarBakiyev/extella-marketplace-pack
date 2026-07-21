@@ -11,7 +11,7 @@ def svc_github_releases(repos="anthropics/anthropic-sdk-python,openai/openai-pyt
         per = 1
     per = max(1, min(per, 5))
     repo_list = [r.strip().strip("/") for r in (repos if isinstance(repos, list) else str(repos).split(",")) if str(r).strip()]
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     items = []; errors = []
     for repo in repo_list[:25]:
         try:

@@ -14,7 +14,7 @@ def ta_wa_send(phone="", text="", draft_key="", id_instance="", api_token_instan
         return json.dumps({"status": "error", "error": "no_greenapi_credentials"}, ensure_ascii=False)
     xtok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
 
     def xapi(path, payload):
         req = urllib.request.Request("https://api.extella.ai" + path, data=json.dumps(payload).encode("utf-8"),

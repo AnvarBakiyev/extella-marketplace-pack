@@ -16,7 +16,7 @@ def ta_tg_send(text="", chat_id="", bot_token="") -> str:
     msg = text if text and not str(text).startswith("{{") else ""
     if not msg:
         return json.dumps({"status": "error", "error": "text required"}, ensure_ascii=False)
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     url = "https://api.telegram.org/bot%s/sendMessage" % tok
     body = json.dumps({"chat_id": cid, "text": msg[:4000], "disable_web_page_preview": True}).encode("utf-8")
     try:

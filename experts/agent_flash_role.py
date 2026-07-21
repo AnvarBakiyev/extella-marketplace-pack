@@ -15,7 +15,7 @@ def agent_flash_role(agent_id="", role_id="") -> str:
     try: tok = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"))).get("auth_token","")
     except Exception: pass
     if not tok: return err("\u043d\u0435\u0442 \u0442\u043e\u043a\u0435\u043d\u0430 (config.json)")
-    ctx = ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     def api(path, payload, aid):
         H = {"Content-Type":"application/json","X-Auth-Token":tok,"X-Profile-Id":"default","X-Agent-Id":aid}
         req = urllib.request.Request("https://api.extella.ai"+path, data=json.dumps(payload).encode(), headers=H)

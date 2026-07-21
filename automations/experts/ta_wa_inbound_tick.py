@@ -16,7 +16,7 @@ def ta_wa_inbound_tick(max_msgs=10, simulate_from="", simulate_text="", start_ph
     qwen = "__EXTELLA_AGENT__"
     iid = cfg.get("greenapi_id", ""); gtok = cfg.get("greenapi_token", "")
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     HDR = {"X-Auth-Token": tok, "Content-Type": "application/json", "X-Profile-Id": "default",
            "X-Agent-Id": cfg.get("agent_id", "__EXTELLA_AGENT__")}
 

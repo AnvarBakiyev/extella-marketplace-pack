@@ -7,7 +7,7 @@ def svc_translate(text="hello", src="en", to="ru") -> str:
     src = "en" if (not src or str(src).startswith("{{")) else str(src).lower().strip()
     to  = "ru" if (not to or str(to).startswith("{{")) else str(to).lower().strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://api.mymemory.translated.net/get?"+urllib.parse.urlencode({"q":text[:400],"langpair":src+"|"+to})
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         tr=d.get("responseData",{}).get("translatedText")

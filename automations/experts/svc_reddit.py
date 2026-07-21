@@ -16,7 +16,7 @@ def svc_reddit(subreddits="LocalLLaMA,artificial", sort="top", t="day", per_sub=
         per = 4
     per = max(1, min(per, 15))
     subs = [s.strip().lstrip("r/").strip("/") for s in (subreddits if isinstance(subreddits, list) else str(subreddits).split(",")) if str(s).strip()]
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     ua = "ExtellaSvc/1.0 (competitor-intel; contact via extella.ai)"
     items = []; errors = []
 

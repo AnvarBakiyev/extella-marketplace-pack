@@ -75,7 +75,7 @@ def ta_passport_extract(image_path="", mrz_text="", api_token="") -> str:
     saved = ""
     if tok and doc_no:
         try:
-            ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+            ctx = ssl.create_default_context()
             req = urllib.request.Request("https://api.extella.ai/api/kv/set",
                 data=json.dumps({"key": "ta:client_doc:" + doc_no, "value": json.dumps(data, ensure_ascii=False),
                                  "description": "TA passport data %s %s (doc %s)" % (surname, given, doc_no),

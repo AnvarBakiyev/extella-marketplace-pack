@@ -17,7 +17,7 @@ def ta_lead_upsert(phone="", fio="", channel="", answers_json="{}", status="", n
     if not ph or str(phone).startswith("{{"):
         return json.dumps({"status": "error", "error": "phone required"}, ensure_ascii=False)
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     HDR = {"X-Auth-Token": tok, "Content-Type": "application/json", "X-Profile-Id": "default",
            "X-Agent-Id": cfg.get("agent_id", "__EXTELLA_AGENT__") if isinstance(cfg, dict) else "__EXTELLA_AGENT__"}
 

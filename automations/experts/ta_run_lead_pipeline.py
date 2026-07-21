@@ -17,7 +17,7 @@ def ta_run_lead_pipeline(phone="", fio="", channel="whatsapp", direction="", dat
     if not tok:
         return json.dumps({"status": "error", "error": "no_api_token"}, ensure_ascii=False)
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     HDR = {"X-Auth-Token": tok, "Content-Type": "application/json", "X-Profile-Id": "default",
            "X-Agent-Id": cfg.get("agent_id", "__EXTELLA_AGENT__") if isinstance(cfg, dict) else "__EXTELLA_AGENT__"}
 

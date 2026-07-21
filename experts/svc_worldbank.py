@@ -6,7 +6,7 @@ def svc_worldbank(country="KZ", indicator="NY.GDP.MKTP.CD") -> str:
     country = "KZ" if (not country or str(country).startswith("{{")) else str(country).upper().strip()
     indicator = "NY.GDP.MKTP.CD" if (not indicator or str(indicator).startswith("{{")) else str(indicator).strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://api.worldbank.org/v2/country/%s/indicator/%s?format=json&per_page=1&mrv=1"%(country,indicator)
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=20,context=ctx).read())
         if not isinstance(d,list) or len(d)<2 or not d[1]: return json.dumps({"status":"error","message":"нет данных: "+country+"/"+indicator}, ensure_ascii=False)

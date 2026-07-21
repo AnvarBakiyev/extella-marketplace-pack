@@ -22,7 +22,7 @@ def ta_tv_search(departure_id=0, country_id=0, date_from="", date_to="", nights_
     if not token:
         return json.dumps({"status": "error", "error": "no_tourvisor_jwt"}, ensure_ascii=False)
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     BASE = "https://api.tourvisor.ru/search/api/v1"
 
     def _get(path, pairs=None):

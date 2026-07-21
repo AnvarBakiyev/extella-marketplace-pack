@@ -16,7 +16,7 @@ def ta_season_campaign(season="лето", do_search=0, max_clients=20, phones_js
     agent = agent_id if agent_id and not str(agent_id).startswith("{{") else "__EXTELLA_AGENT__"
     sz = season if season and not str(season).startswith("{{") else "лето"
 
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     HDR = {"X-Auth-Token": tok, "Content-Type": "application/json", "X-Profile-Id": "default",
            "X-Agent-Id": cfg.get("agent_id", "__EXTELLA_AGENT__") if isinstance(cfg, dict) else "__EXTELLA_AGENT__"}
 

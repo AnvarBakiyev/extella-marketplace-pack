@@ -13,7 +13,7 @@ def lp_wa_state(id_instance="", api_token_instance="") -> str:
     if not iid or not tok:
         return json.dumps({"status": "error", "error": "no_greenapi_credentials",
                            "hint": "получите idInstance и apiTokenInstance на green-api.com, сохраните через онбординг"}, ensure_ascii=False)
-    ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
+    ctx = ssl.create_default_context()
     url = "https://api.green-api.com/waInstance%s/getStateInstance/%s" % (iid, tok)
     try:
         with urllib.request.urlopen(urllib.request.Request(url), timeout=20, context=ctx) as r:

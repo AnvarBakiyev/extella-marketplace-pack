@@ -5,7 +5,7 @@ def svc_books(query="\u0412\u043e\u0439\u043d\u0430 \u0438 \u043c\u0438\u0440") 
     import json, urllib.request, urllib.parse, ssl
     query = "\u0412\u043e\u0439\u043d\u0430 \u0438 \u043c\u0438\u0440" if (not query or str(query).startswith("{{")) else str(query).strip()
     try:
-        ctx=ssl.create_default_context(); ctx.check_hostname=False; ctx.verify_mode=ssl.CERT_NONE
+        ctx=ssl.create_default_context()
         u="https://openlibrary.org/search.json?"+urllib.parse.urlencode({"q":query,"limit":5,"fields":"title,author_name,first_publish_year"})
         d=json.loads(urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"ExtellaSvc/1.0"}),timeout=25,context=ctx).read())
         docs=d.get("docs") or []
