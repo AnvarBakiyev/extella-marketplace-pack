@@ -567,7 +567,12 @@ class AccountInstaller:
             _, owned_agent_kv = self.ensure_agents(agent_instructions)
         if not self.agent_id:
             raise AccountInstallError("current-account Qwen agent was not resolved")
-        for name, source in sorted(experts.items()):
+        # Source discovery intentionally sees bundled, supported-on-demand, and
+        # unverified experts. A base install owns only the explicit release
+        # contract; merely being present in the source tree is never consent to
+        # advertise or install an expert into every account.
+        for name in sorted(required | smokes):
+            source = experts[name]
             self.transaction.run(f"expert:{name}", lambda source=source: self.install_expert(source))
         for artifact in [*kv_artifacts, *owned_agent_kv]:
             self.transaction.run(f"kv:{artifact.key}", lambda artifact=artifact: self.install_kv(artifact))

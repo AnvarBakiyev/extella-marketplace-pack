@@ -161,6 +161,28 @@ class AccountInstallerTests(unittest.TestCase):
             report = json.loads((Path(directory) / "last-account-report.json").read_text())
             self.assertEqual(report["status"], "rolled_back")
 
+    def test_does_not_install_discovered_but_unowned_experts(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {
+                    "built_in": expert("built_in"),
+                    "third_party_unverified": expert("third_party_unverified"),
+                },
+                required={"built_in"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            self.assertEqual(set(api.experts), {"built_in"})
+            saved = [payload["name"] for endpoint, payload in api.calls if endpoint == "/api/expert/save"]
+            self.assertEqual(saved, ["built_in"])
+
 
 if __name__ == "__main__":
     unittest.main()
