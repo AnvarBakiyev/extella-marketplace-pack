@@ -6,13 +6,13 @@ def mcp_call(server="", tool="__list__", args_json="{}") -> str:
     def err(m): return json.dumps({"status":"error","message":m}, ensure_ascii=False)
 
     def _abs(cmd0):
-        ABS = {"uvx": ["/opt/homebrew/bin/uvx", "/usr/local/bin/uvx"],
-               "npx": ["/opt/homebrew/bin/npx", "/usr/local/bin/npx", "/opt/homebrew/opt/node@24/bin/npx"]}
-        for p_ in ABS.get(cmd0, []):
-            if os.path.exists(p_): return p_
-        return cmd0
+        try:
+            from extella_expert_bridge import path_or_error
+            return path_or_error(cmd0, repair=False)
+        except Exception:
+            return None, {"message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}
     def _session(cmd, timeout):
-        env = dict(os.environ); env["PATH"] = "/opt/homebrew/bin:/usr/local/bin:" + env.get("PATH", "")
+        env = dict(os.environ)
         p = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env, text=True, bufsize=1)
         q = queue.Queue()
         def reader():
@@ -56,7 +56,9 @@ def mcp_call(server="", tool="__list__", args_json="{}") -> str:
     if not cmd: return err("сервер не подключён: "+server+". Подключи его из каталога (mcp_connect) или используй: "+", ".join(BUILTIN))
     try: args = json.loads(args_json)
     except Exception: return err("args_json — не валидный JSON")
-    cmd = [_abs(cmd[0])] + list(cmd[1:])
+    executable, runtime = _abs(cmd[0])
+    if not executable: return err(runtime.get("message") or (cmd[0] + " недоступен"))
+    cmd = [executable] + list(cmd[1:])
     try:
         p, rpc, notify = _session(cmd, 90)
     except Exception as e:

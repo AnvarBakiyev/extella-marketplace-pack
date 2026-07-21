@@ -5,8 +5,12 @@ def app_start(app_id="", root="", entry="start.js"):
     def err(m): return json.dumps({"status":"error","message":m,"app_id":app_id}, ensure_ascii=False)
     root = os.path.expanduser(root or ("~/extella-apps/"+app_id))
     if not os.path.isdir(root): return err("приложение не установлено: "+root)
-    node = shutil.which("node") or next((p for p in ["/opt/homebrew/bin/node","/usr/local/bin/node"] if os.path.exists(p)), None)
-    if not node: return err("нужен Node для резолва рецепта")
+    try:
+        from extella_expert_bridge import path_or_error
+    except Exception:
+        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.")
+    node, node_state = path_or_error("node", repair=False)
+    if not node: return err(node_state.get("message") or "Node.js недоступен")
     # найти стартовый скрипт
     for cand in (entry, "start.js", "run.js", "pinokio.js"):
         if os.path.exists(os.path.join(root, cand)): entry = cand; break
@@ -57,7 +61,8 @@ def app_start(app_id="", root="", entry="start.js"):
         env = venv_env(p.get("venv"))
         for k,v in (p.get("env") or {}).items(): env[str(k)] = str(v)
         for msg in (p.get("message") or []):
-            msg2 = msg if shutil.which("uv") else msg.replace("uv pip","pip")
+            uv_path, _uv_state = path_or_error("uv", repair=False)
+            msg2 = msg if uv_path else msg.replace("uv pip","pip")
             subprocess.Popen(msg2, shell=True, cwd=cwd, env=env,
                              stdout=open(os.path.join(root,"server.log"),"a"), stderr=subprocess.STDOUT)
     # дождаться готовности: приложение печатает свой URL в лог (приём Pinokio on:event) — берём порт ОТТУДА

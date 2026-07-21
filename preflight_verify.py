@@ -243,7 +243,10 @@ def main():
         mark = OK if g == t else BAD
         if g != t: allgreen = False
         print("  %s %-10s %d / %d" % (mark, nm, g, t))
-    print("\n%s" % ("ВСЁ ЗЕЛЁНОЕ — можно публиковать" if allgreen else "ЕСТЬ КРАСНОЕ — чинить/убирать перед публикацией"))
+    print("\n%s" % (
+        "ВЫБРАННЫЕ ЛОКАЛЬНЫЕ ПРОВЕРКИ ПРОЙДЕНЫ — это не разрешение на публикацию; нужен полный release gate"
+        if allgreen else "ЕСТЬ КРАСНОЕ — чинить/убирать перед полным release gate"
+    ))
     sys.exit(0 if allgreen else 1)
 
 if __name__ == "__main__":

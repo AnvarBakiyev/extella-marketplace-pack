@@ -72,6 +72,18 @@
       ]
     },
     {
+      "id": "runtime-expert-bridge",
+      "path": "runtime/extella_expert_bridge.py",
+      "sha256": "a04cc1fea07bad1a48376f76b9aeb7b92aa7924d2bab165b8d317a43fbe4401a",
+      "bytes": 873,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
       "id": "runtime-platforms",
       "path": "runtime/extella_runtime/platforms.py",
       "sha256": "30f884965cae21f4de18b1e10b028866baa290f64441e91f8914fbb9c69786b1",

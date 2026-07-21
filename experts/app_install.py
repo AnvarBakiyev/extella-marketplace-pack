@@ -7,9 +7,12 @@ def app_install(repo="", app_id="", branch="main"):
     if not app_id:
         app_id = re.sub(r"[^a-z0-9]+","_", (repo.rstrip("/").split("/")[-1] or "app").lower())
     root = os.path.expanduser("~/extella-apps/"+app_id)
-    # node?
-    node = shutil.which("node") or next((p for p in ["/opt/homebrew/bin/node","/usr/local/bin/node"] if os.path.exists(p)), None)
-    if not node: return err("нужен Node (разовый Homebrew-шаг установщика)")
+    try:
+        from extella_expert_bridge import path_or_error
+    except Exception:
+        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.")
+    node, node_state = path_or_error("node", repair=True)
+    if not node: return err(node_state.get("message") or "Node.js недоступен")
     # 1. клон / локальная папка
     if repo.startswith("http") or repo.startswith("git@"):
         if os.path.isdir(os.path.join(root,".git")):
@@ -36,29 +39,7 @@ def app_install(repo="", app_id="", branch="main"):
     except Exception: resolved=None
     if resolved is None:
         _se=(rr.stderr or rr.stdout or "")
-        # Node повреждён после обновления Homebrew: dyld не находит .dylib зависимости
-        # (у Гульжан: simdjson обновился, node@24 ссылается на удалённую версию).
-        # Пробуем перелинковать node автоматически, потом честное сообщение.
-        _dyld = (".dylib" in _se) and any(m in _se for m in ("Library not loaded","image not found","no such file","dyld"))
-        if _dyld:
-            brew=next((b for b in ["/opt/homebrew/bin/brew","/usr/local/bin/brew"] if os.path.exists(b)),None)
-            if brew:
-                _env=dict(os.environ); _env["NONINTERACTIVE"]="1"
-                for _formula in ("node","node@24"):
-                    try: subprocess.run([brew,"reinstall",_formula],capture_output=True,text=True,timeout=400,env=_env)
-                    except Exception: pass
-                    _node2=shutil.which("node") or next((q for q in ["/opt/homebrew/bin/node","/usr/local/bin/node"] if os.path.exists(q)),None)
-                    if _node2:
-                        try:
-                            rr=subprocess.run([_node2,resolve_js,root,entry],capture_output=True,text=True,timeout=120)
-                            resolved=json.loads(rr.stdout); break
-                        except Exception: resolved=None
-                if resolved is None:
-                    return err("Node на этом компьютере повреждён после обновления Homebrew и не чинится сам. Открой Терминал и выполни: brew reinstall node — затем повтори установку.")
-            else:
-                return err("Node повреждён (обновилась системная библиотека), а Homebrew не найден. Переустанови Node и повтори.")
-        else:
-            return err("резолв не удался: "+_se[-150:])
+        return err("резолв не удался после проверки Node.js: "+_se[-150:])
     steps=resolved.get("steps",[])
     if not steps:
         _why="; ".join((resolved.get("errors") or [])+(resolved.get("whenErrors") or []))[:200]
@@ -66,17 +47,16 @@ def app_install(repo="", app_id="", branch="main"):
                    ". Это ошибка на нашей стороне, не ваша — напишите нам, приложив это сообщение.")
     # 2.5 РАНТАЙМ-БУТСТРАП: доставить пакет-менеджеры, которые нужны рецепту (как встроенные у Pinokio)
     def _ensure_runtime(steps):
-        import shutil, platform
+        import platform
         allmsg = " ".join(m for st in steps if st.get("method")=="shell.run" for m in (st.get("params",{}).get("message") or []))
         got, extra_path = [], []
         # uv — быстрый pip (user-space, без админа)
         if "uv " in allmsg:
-            uv = shutil.which("uv") or os.path.expanduser("~/.local/bin/uv")
-            if not os.path.exists(uv):
-                subprocess.run([sys.executable,"-m","pip","install","-q","uv"], capture_output=True, text=True, timeout=180)
-                got.append("uv")
-            uvbin = os.path.dirname(shutil.which("uv") or "") or os.path.dirname(sys.executable)
-            extra_path.append(uvbin)
+            uv, uv_state = path_or_error("uv", repair=True)
+            if not uv:
+                return None, [], got, uv_state.get("message") or "uv недоступен"
+            if uv_state.get("changed"): got.append("uv")
+            extra_path.append(os.path.dirname(uv))
         # conda — Miniconda (user-space, без админа)
         if ("conda " in allmsg or "conda activate" in allmsg):
             conda = shutil.which("conda") or os.path.expanduser("~/miniconda3/bin/conda")
@@ -93,8 +73,11 @@ def app_install(repo="", app_id="", branch="main"):
             extra_path.append(os.path.expanduser("~/miniconda3/bin"))
         # node/npm — нужен brew (админ, разовый шаг установщика) — сами не ставим
         node_needed = any(t in allmsg for t in ("npm ","npx ","node ","pnpm ","yarn "))
-        if node_needed and not (shutil.which("node") or os.path.exists("/opt/homebrew/bin/node")):
-            return None, [p for p in extra_path if p], got, "нужен Node (разовый Homebrew-шаг установщика) — рецепт использует npm/node"
+        if node_needed:
+            checked_node, checked_state = path_or_error("node", repair=True)
+            if not checked_node:
+                return None, [p for p in extra_path if p], got, checked_state.get("message") or "Node.js недоступен"
+            extra_path.append(os.path.dirname(checked_node))
         return True, [p for p in extra_path if p], got, ""
 
     ok_rt, RT_PATH, rt_got, rt_err = _ensure_runtime(steps)
@@ -102,11 +85,9 @@ def app_install(repo="", app_id="", branch="main"):
         return err(rt_err)
 
     # 3. исполнить shell-шаги в venv
-    def _best_py():  # новейший Python (3.9 Xcode ломает X|None и др.) — берём 3.12/3.11/3.10, иначе текущий
-        for c in ("python3.12","python3.11","python3.10"):
-            p=shutil.which(c)
-            if p: return p
-        return sys.executable
+    def _best_py():
+        checked_python, _state = path_or_error("python", repair=False)
+        return checked_python or sys.executable
     def venv_py(vp):
         vabs=os.path.normpath(os.path.join(root,vp)); py=os.path.join(vabs,"bin","python")
         if not os.path.exists(py): subprocess.run([_best_py(),"-m","venv",vabs],capture_output=True,text=True,timeout=120)
