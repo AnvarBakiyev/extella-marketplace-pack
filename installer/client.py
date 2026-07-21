@@ -21,14 +21,15 @@ from installer.account import (
     discover_bundle_experts,
     prompt_token,
     required_experts,
+    uninstall_account_resources,
 )
 from installer.bundle import VerifiedBundle, verify_bundle
-from runtime.extella_runtime.autostart import AutostartSpec, install_autostart
+from runtime.extella_runtime.autostart import AutostartSpec, install_autostart, remove_autostart
 from runtime.extella_runtime.doctor import run_doctor
 from runtime.extella_runtime.paths import ClientPaths, client_paths
 from runtime.extella_runtime.platforms import PlatformInfo, detect_platform
 from runtime.extella_runtime.processes import ProcessSupervisor, RuntimeSpec
-from runtime.extella_runtime.transaction import InstallTransaction, InstallationError
+from runtime.extella_runtime.transaction import InstallTransaction, InstallationError, uninstall_from_state
 
 
 ACTIVITY_ID = "extella_activity_center"
@@ -241,6 +242,8 @@ def _install_local_payload(
 ) -> str:
     marketplace = bundle_root / "payload/marketplace"
     wizard = bundle_root / "payload/wizard"
+    if not _tree_same(transaction, marketplace / "installer", paths.data_root / "installer"):
+        transaction.atomic_tree(marketplace / "installer", paths.data_root / "installer")
     transaction.atomic_copy(marketplace / "toolbar/toolbar.js", paths.toolbar_root / "toolbar.js")
     if not _tree_same(transaction, wizard / "ui", paths.wizard_root):
         transaction.atomic_tree(wizard / "ui", paths.wizard_root)
@@ -526,4 +529,126 @@ def install_client(
         "platform": platform_info.key,
         "local": {"status": local_report["status"], "steps": len(local_report["steps"])},
         "account": {"status": account_report["status"], "steps": len(account_report["steps"])},
+    }
+
+
+def _installed_runtime_spec(
+    runtime_id: str,
+    *,
+    paths: ClientPaths,
+    python: Path,
+) -> RuntimeSpec:
+    if runtime_id == ACTIVITY_ID:
+        root = paths.data_root / "activity-center"
+        return RuntimeSpec(
+            runtime_id,
+            "Extella Activity Center",
+            (str(python), str(root / "server.py")),
+            root,
+            8799,
+            "http://127.0.0.1:8799/api/health",
+            paths.logs_root / "activity-center.log",
+            ACTIVITY_ID,
+            "native",
+        )
+    ports = {
+        "extella_adoption_wizard": 8765,
+        "extella_travel_agency": 8766,
+        "extella_contract_agent": 8767,
+    }
+    roots = {
+        "extella_adoption_wizard": paths.wizard_root,
+        "extella_travel_agency": paths.plugins_root / "extella_travel_agency",
+        "extella_contract_agent": paths.plugins_root / "extella_contract_agent",
+    }
+    root = roots[runtime_id]
+    port = ports[runtime_id]
+    return RuntimeSpec(
+        runtime_id,
+        runtime_id.replace("_", " ").title(),
+        (str(python), str(root / "server.py")),
+        root,
+        port,
+        f"http://127.0.0.1:{port}/x/health",
+        paths.logs_root / f"{runtime_id}.log",
+        runtime_id,
+        "activity_center",
+    )
+
+
+def uninstall_client(
+    *,
+    token: str,
+    api_base: str = "https://api.extella.ai",
+    platform_info: PlatformInfo | None = None,
+    env: Mapping[str, str] | None = None,
+    account_api: Any | None = None,
+) -> dict[str, Any]:
+    """Uninstall owned resources while preserving user data and later edits."""
+
+    platform_info = platform_info or detect_platform()
+    if not platform_info.supported:
+        raise InstallationError(platform_info.reason or "unsupported platform")
+    environment = dict(os.environ if env is None else env)
+    paths = client_paths(platform_info=platform_info, env=environment)
+    account_state = paths.state_root / "account" / "account-state.json"
+    local_state = paths.state_root / "client" / "install-state.json"
+    if not account_state.exists() and not local_state.exists():
+        return {
+            "schemaVersion": 1,
+            "status": "not_installed",
+            "platform": platform_info.key,
+        }
+
+    account_report: dict[str, Any] = {"status": "not_installed", "steps": []}
+    if account_state.exists():
+        api = account_api or ExtellaAPI(token, api_base=api_base)
+        account_report = uninstall_account_resources(api, account_state)
+        if account_report["status"] != "uninstalled":
+            return {
+                "schemaVersion": 1,
+                "status": account_report["status"],
+                "platform": platform_info.key,
+                "account": account_report,
+                "local": {"status": "preserved"},
+            }
+
+    local_report: dict[str, Any] = {"status": "not_installed", "steps": []}
+    if local_state.exists():
+        candidates = _python_candidates(paths.runtime_root / "python", platform_info)
+        python = candidates[0] if candidates else (Path(sys.executable).resolve())
+        supervisor = ProcessSupervisor(
+            state_file=paths.state_root / "processes.json",
+            platform_info=platform_info,
+            environment={**environment, **_runtime_environment(paths)},
+        )
+        for runtime_id in (*LOCAL_SERVICE_IDS, ACTIVITY_ID):
+            spec = _installed_runtime_spec(runtime_id, paths=paths, python=python)
+            supervisor.stop(spec)
+        remove_autostart(
+            "activity-center", platform_info=platform_info, paths=paths
+        )
+        preserves = (
+            paths.data_root / "wizard" / "sessions",
+            paths.data_root / "wizard" / "runs",
+            paths.data_root / "wizard" / "reports",
+            paths.data_root / "wizard" / "published",
+            paths.data_root / "wizard" / "library",
+            paths.plugins_root / "extella_contract_agent" / "out",
+            paths.plugins_root / "extella_contract_agent" / "kb",
+            paths.plugins_root / "extella_travel_agency" / "contracts",
+        )
+        local_report = uninstall_from_state(local_state, preserve=preserves)
+    status = (
+        "uninstalled"
+        if account_report["status"] in {"uninstalled", "not_installed"}
+        and local_report["status"] in {"uninstalled", "not_installed"}
+        else "failed"
+    )
+    return {
+        "schemaVersion": 1,
+        "status": status,
+        "platform": platform_info.key,
+        "account": account_report,
+        "local": local_report,
     }

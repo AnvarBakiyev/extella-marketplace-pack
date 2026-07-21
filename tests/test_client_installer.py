@@ -32,6 +32,8 @@ class ClientInstallerTests(unittest.TestCase):
         for source in sorted((ROOT / "runtime/extella_runtime").glob("*.py")):
             copy(source, "payload/marketplace/runtime/extella_runtime/" + source.name)
         copy(ROOT / "runtime/extella_expert_bridge.py", "payload/marketplace/runtime/extella_expert_bridge.py")
+        for source in sorted((ROOT / "installer").glob("*.py")):
+            copy(source, "payload/marketplace/installer/" + source.name)
         copy(ROOT / "toolbar/toolbar.js", "payload/marketplace/toolbar/toolbar.js")
         for directory in ("bridge", "instrumentation"):
             for source in sorted((ROOT / "device/activity-center" / directory).glob("*.py")):
@@ -111,6 +113,7 @@ class ClientInstallerTests(unittest.TestCase):
             self.assertEqual(verified.release_version, "2.0.0-rc.1")
             self.assertEqual(report["status"], "installed")
             self.assertTrue((root / "data/wizard/app/wizard.html").is_file())
+            self.assertTrue((root / "data/installer/client_uninstall.py").is_file())
             registry = json.loads(
                 (root / "data/plugins/_registry/extella_adoption_wizard.json").read_text()
             )

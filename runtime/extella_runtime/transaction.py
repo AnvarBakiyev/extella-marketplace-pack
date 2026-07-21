@@ -100,6 +100,14 @@ class InstallTransaction:
         self._undos: list[tuple[InstallStep, Undo]] = []
         self._committed = False
         self._started_at = int(time.time())
+        self._state_file = self.state_root / "install-state.json"
+        self._previous_state: dict[str, Any] | None = None
+        try:
+            previous = json.loads(self._state_file.read_text(encoding="utf-8"))
+            if isinstance(previous, dict) and previous.get("status") == "installed":
+                self._previous_state = previous
+        except (OSError, ValueError):
+            pass
 
     def _backup_path(self, target: Path) -> Path:
         identity = f"{len(self.files)}:{target}"
@@ -276,6 +284,15 @@ class InstallTransaction:
         payload["failedStep"] = failed_step
         payload["rollbackErrors"] = rollback_errors
         _atomic_json(self.state_root / "last-install-report.json", payload)
+        if self._committed:
+            if rollback_errors:
+                payload["previousState"] = self._previous_state
+                _atomic_json(self._state_file, payload)
+            elif self._previous_state is not None:
+                _atomic_json(self._state_file, self._previous_state)
+            else:
+                self._state_file.unlink(missing_ok=True)
+            self._committed = False
 
     def commit(self) -> dict[str, Any]:
         if self._committed:
@@ -283,7 +300,9 @@ class InstallTransaction:
         if any(step.required and step.status == "failed" for step in self.steps):
             raise InstallationError("cannot commit a transaction with failed required steps")
         payload = self.report(status="installed")
-        _atomic_json(self.state_root / "install-state.json", payload)
+        if self._previous_state is not None:
+            payload["previousState"] = self._previous_state
+        _atomic_json(self._state_file, payload)
         _atomic_json(self.state_root / "last-install-report.json", payload)
         self._committed = True
         return payload
@@ -311,52 +330,63 @@ def uninstall_from_state(state_file: Path, *, preserve: tuple[Path, ...] = ()) -
     """
 
     data = json.loads(state_file.read_text(encoding="utf-8"))
-    ordered: list[FileChange | DirectoryChange] = []
-    if isinstance(data.get("changes"), list):
-        for item in data["changes"]:
-            if not isinstance(item, dict):
-                continue
-            payload = {key: value for key, value in item.items() if key != "kind"}
-            if item.get("kind") == "directory":
-                ordered.append(DirectoryChange(**payload))
-            elif item.get("kind") == "file":
-                ordered.append(FileChange(**payload))
-    else:
-        # Compatibility with state written before ordered change journalling.
-        ordered.extend(FileChange(**item) for item in data.get("files", []))
-        ordered.extend(DirectoryChange(**item) for item in data.get("directories", []))
+    if not isinstance(data, dict):
+        raise InstallationError("install state must be an object")
     preserved = {path.resolve() for path in preserve}
     steps: list[dict[str, Any]] = []
-    failed = False
-    for change in reversed(ordered):
-        target = Path(change.target)
-        try:
-            resolved = target.resolve()
-        except OSError:
-            resolved = target.absolute()
-        if any(resolved == item or item in resolved.parents for item in preserved):
-            steps.append({"target": str(target), "status": "preserved"})
-            continue
-        try:
-            backup = Path(change.backup) if change.backup else None
-            if change.existed and backup and backup.exists():
-                target.parent.mkdir(parents=True, exist_ok=True)
-                if target.is_dir() and not target.is_symlink():
-                    shutil.rmtree(target)
+
+    def apply_state(current: dict[str, Any]) -> bool:
+        failed = False
+        ordered: list[FileChange | DirectoryChange] = []
+        if isinstance(current.get("changes"), list):
+            for item in current["changes"]:
+                if not isinstance(item, dict):
+                    continue
+                payload = {key: value for key, value in item.items() if key != "kind"}
+                if item.get("kind") == "directory":
+                    ordered.append(DirectoryChange(**payload))
+                elif item.get("kind") == "file":
+                    ordered.append(FileChange(**payload))
+        else:
+            ordered.extend(FileChange(**item) for item in current.get("files", []))
+            ordered.extend(DirectoryChange(**item) for item in current.get("directories", []))
+        for change in reversed(ordered):
+            target = Path(change.target)
+            try:
+                resolved = target.resolve()
+            except OSError:
+                resolved = target.absolute()
+            if any(resolved == item or item in resolved.parents for item in preserved):
+                steps.append({"target": str(target), "status": "preserved"})
+                continue
+            try:
+                backup = Path(change.backup) if change.backup else None
+                if change.existed and backup and backup.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    if target.is_dir() and not target.is_symlink():
+                        shutil.rmtree(target)
+                    else:
+                        target.unlink(missing_ok=True)
+                    os.replace(backup, target)
+                    status = "restored"
                 else:
-                    target.unlink(missing_ok=True)
-                os.replace(backup, target)
-                status = "restored"
-            else:
-                if target.is_dir() and not target.is_symlink():
-                    shutil.rmtree(target)
-                else:
-                    target.unlink(missing_ok=True)
-                status = "removed"
-            steps.append({"target": str(target), "status": status})
-        except OSError as exc:
-            failed = True
-            steps.append(
-                {"target": str(target), "status": "failed", "errorClass": type(exc).__name__}
-            )
+                    if target.is_dir() and not target.is_symlink():
+                        shutil.rmtree(target)
+                    else:
+                        target.unlink(missing_ok=True)
+                    status = "removed"
+                steps.append({"target": str(target), "status": status})
+            except OSError as exc:
+                failed = True
+                steps.append(
+                    {"target": str(target), "status": "failed", "errorClass": type(exc).__name__}
+                )
+        previous = current.get("previousState")
+        if not failed and isinstance(previous, dict):
+            failed = apply_state(previous)
+        return failed
+
+    failed = apply_state(data)
+    if not failed:
+        state_file.unlink(missing_ok=True)
     return {"schemaVersion": 1, "status": "failed" if failed else "uninstalled", "steps": steps}

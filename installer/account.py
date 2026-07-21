@@ -120,6 +120,15 @@ class AccountStep:
     error_class: str | None = None
 
 
+@dataclass
+class AccountChange:
+    kind: str
+    identity: str
+    existed: bool
+    installed_sha256: str
+    previous: Any = None
+
+
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
@@ -130,6 +139,10 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, path)
+        try:
+            os.chmod(path, 0o600)
+        except OSError:
+            pass
     except Exception:
         try:
             os.unlink(temporary)
@@ -143,13 +156,28 @@ class AccountTransaction:
         self.release_version = release_version
         self.state_root = state_root
         self.steps: list[AccountStep] = []
+        self.changes: list[AccountChange] = []
         self._undos: list[Callable[[], None]] = []
         self.started_at = int(time.time())
+        self._committed = False
+        self._state_file = self.state_root / "account-state.json"
+        self._previous_state: dict[str, Any] | None = None
+        try:
+            previous = json.loads(self._state_file.read_text(encoding="utf-8"))
+            if isinstance(previous, dict) and previous.get("status") == "installed":
+                self._previous_state = previous
+        except (OSError, ValueError):
+            pass
 
     def register_undo(self, undo: Callable[[], None]) -> None:
         if not self.steps or self.steps[-1].status != "running":
             raise RuntimeError("account undo must be registered inside a running step")
         self._undos.append(undo)
+
+    def register_change(self, change: AccountChange) -> None:
+        if not self.steps or self.steps[-1].status != "running":
+            raise RuntimeError("account change must be registered inside a running step")
+        self.changes.append(change)
 
     def run(self, name: str, action: Callable[[], tuple[str, Callable[[], None] | None]]) -> None:
         step = AccountStep(name, "running")
@@ -194,11 +222,28 @@ class AccountTransaction:
             self.state_root / "last-account-report.json",
             self._report("rollback_failed" if errors else "rolled_back", failed_step=failed_step, rollback_errors=errors),
         )
+        if errors:
+            state = self._report("rollback_failed", failed_step=failed_step, rollback_errors=errors)
+            state["changes"] = [asdict(change) for change in self.changes]
+            if self._previous_state is not None:
+                state["previousState"] = self._previous_state
+            _atomic_json(self._state_file, state)
+        elif self._committed:
+            if self._previous_state is not None:
+                _atomic_json(self._state_file, self._previous_state)
+            else:
+                self._state_file.unlink(missing_ok=True)
+        self._committed = False
 
     def commit(self) -> dict[str, Any]:
         report = self._report("installed")
-        _atomic_json(self.state_root / "account-state.json", report)
+        state = dict(report)
+        state["changes"] = [asdict(change) for change in self.changes]
+        if self._previous_state is not None:
+            state["previousState"] = self._previous_state
+        _atomic_json(self._state_file, state)
         _atomic_json(self.state_root / "last-account-report.json", report)
+        self._committed = True
         return report
 
     def prepared_report(self) -> dict[str, Any]:
@@ -415,6 +460,9 @@ class AccountInstaller:
                 raise AccountInstallError("agent rollback delete failed")
 
         self.transaction.register_undo(undo)
+        self.transaction.register_change(
+            AccountChange("agent", agent_id, False, hashlib.sha256(agent_id.encode("utf-8")).hexdigest())
+        )
         created = self._get_agent(agent_id)
         if not self._verified_qwen(created):
             raise AccountInstallError(f"created agent is not the required Qwen: {role}")
@@ -489,6 +537,15 @@ class AccountInstaller:
         installed = self._get_expert(source.name)
         if installed is None or installed["code"].replace("\r\n", "\n") != code.replace("\r\n", "\n"):
             raise AccountInstallError(f"expert verification failed: {source.name}")
+        self.transaction.register_change(
+            AccountChange(
+                "expert",
+                source.name,
+                previous is not None,
+                hashlib.sha256(code.replace("\r\n", "\n").encode("utf-8")).hexdigest(),
+                previous,
+            )
+        )
         return f"expert verified: {source.name}", None
 
     def _get_kv(self, key: str) -> str | None:
@@ -527,6 +584,15 @@ class AccountInstaller:
         )
         if not _response_success(response) or self._get_kv(artifact.key) != artifact.value:
             raise AccountInstallError(f"KV verification failed: {artifact.key}")
+        self.transaction.register_change(
+            AccountChange(
+                "kv",
+                artifact.key,
+                previous is not None,
+                hashlib.sha256(artifact.value.encode("utf-8")).hexdigest(),
+                previous,
+            )
+        )
         return f"KV verified: {artifact.key}", None
 
     def smoke_expert(self, name: str) -> tuple[str, None]:
@@ -583,3 +649,137 @@ class AccountInstaller:
 
 def prompt_token() -> str:
     return getpass.getpass("Extella token (input is hidden): ").strip()
+
+
+def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, Any]:
+    """Restore or remove installer-owned account resources from durable state.
+
+    A resource changed after installation is preserved and reported as requiring
+    action. This prevents uninstall from overwriting later user edits.
+    """
+
+    state = json.loads(state_file.read_text(encoding="utf-8"))
+    steps: list[dict[str, Any]] = []
+    failed = False
+    action_required = False
+
+    def current_expert(name: str) -> dict[str, Any] | None:
+        try:
+            return _normalise_expert(api.post("/api/expert/get", {"name": name, "global": True}))
+        except APIError as error:
+            if _missing(error):
+                return None
+            raise
+
+    def current_kv(key: str) -> str | None:
+        try:
+            response = api.post("/api/kv/get", {"key": key, "global": True})
+        except APIError as error:
+            if _missing(error):
+                return None
+            raise
+        value = response.get("value")
+        return value if isinstance(value, str) else None
+
+    def apply_state(current_state: dict[str, Any]) -> None:
+        nonlocal failed, action_required
+        raw_changes = current_state.get("changes")
+        if not isinstance(raw_changes, list):
+            raise AccountInstallError("account state has no reversible change inventory")
+        for raw in reversed(raw_changes):
+            if not isinstance(raw, dict):
+                failed = True
+                steps.append({"status": "failed", "errorClass": "InvalidChange"})
+                continue
+            try:
+                change = AccountChange(**raw)
+                status = "failed"
+                if change.kind == "expert":
+                    current = current_expert(change.identity)
+                    if current is None:
+                        status = "already_absent"
+                    else:
+                        digest = hashlib.sha256(
+                            current["code"].replace("\r\n", "\n").encode("utf-8")
+                        ).hexdigest()
+                        if digest != change.installed_sha256:
+                            status = "preserved_modified"
+                            action_required = True
+                        elif change.existed:
+                            if not isinstance(change.previous, dict):
+                                raise AccountInstallError("expert restore snapshot is invalid")
+                            response = api.post("/api/expert/save", change.previous, timeout=120)
+                            if not _response_success(response):
+                                raise AccountInstallError("expert restore was not acknowledged")
+                            status = "restored"
+                        else:
+                            response = api.post(
+                                "/api/expert/delete", {"name": change.identity, "global": True}
+                            )
+                            if not _response_success(response):
+                                raise AccountInstallError("expert removal was not acknowledged")
+                            status = "removed"
+                elif change.kind == "kv":
+                    current = current_kv(change.identity)
+                    if current is None:
+                        status = "already_absent"
+                    elif hashlib.sha256(current.encode("utf-8")).hexdigest() != change.installed_sha256:
+                        status = "preserved_modified"
+                        action_required = True
+                    elif change.existed:
+                        if not isinstance(change.previous, str):
+                            raise AccountInstallError("KV restore snapshot is invalid")
+                        response = api.post(
+                            "/api/kv/set",
+                            {
+                                "key": change.identity,
+                                "value": change.previous,
+                                "description": "restored by Extella uninstaller",
+                                "global": True,
+                            },
+                        )
+                        if not _response_success(response):
+                            raise AccountInstallError("KV restore was not acknowledged")
+                        status = "restored"
+                    else:
+                        response = api.post(
+                            "/api/kv/remove", {"key": change.identity, "global": True}
+                        )
+                        if not _response_success(response):
+                            raise AccountInstallError("KV removal was not acknowledged")
+                        status = "removed"
+                elif change.kind == "agent":
+                    try:
+                        api.post("/api/agent/get", {"agent_id": change.identity})
+                    except APIError as error:
+                        if _missing(error):
+                            status = "already_absent"
+                        else:
+                            raise
+                    else:
+                        response = api.post("/api/agent/delete", {"agent_id": change.identity})
+                        if not _response_success(response):
+                            raise AccountInstallError("agent removal was not acknowledged")
+                        status = "removed"
+                else:
+                    raise AccountInstallError(f"unknown account change kind: {change.kind}")
+                steps.append({"kind": change.kind, "identity": change.identity, "status": status})
+            except Exception as error:
+                failed = True
+                steps.append(
+                    {
+                        "kind": raw.get("kind"),
+                        "identity": raw.get("identity"),
+                        "status": "failed",
+                        "errorClass": type(error).__name__,
+                    }
+                )
+        previous = current_state.get("previousState")
+        if not failed and not action_required and isinstance(previous, dict):
+            apply_state(previous)
+
+    apply_state(state)
+    status = "failed" if failed else "action_required" if action_required else "uninstalled"
+    if status == "uninstalled":
+        state_file.unlink(missing_ok=True)
+    return {"schemaVersion": 1, "status": status, "steps": steps}

@@ -100,6 +100,30 @@ class InstallTransactionTests(unittest.TestCase):
             self.assertEqual(previous.read_text(encoding="utf-8"), "old")
             self.assertFalse(owned.exists())
 
+    def test_reinstall_chain_uninstalls_back_to_pre_extella_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_v1 = root / "v1.txt"
+            source_v2 = root / "v2.txt"
+            target = root / "installed" / "owned.txt"
+            state_root = root / "state"
+            source_v1.write_text("version one", encoding="utf-8")
+            source_v2.write_text("version two", encoding="utf-8")
+
+            first = InstallTransaction(release_version="1.0.0", state_root=state_root)
+            first.run("install-v1", lambda: first.atomic_copy(source_v1, target))
+            first.commit()
+            second = InstallTransaction(release_version="2.0.0", state_root=state_root)
+            second.run("install-v2", lambda: second.atomic_copy(source_v2, target))
+            second.commit()
+
+            state = json.loads((state_root / "install-state.json").read_text())
+            self.assertEqual(state["previousState"]["releaseVersion"], "1.0.0")
+            report = uninstall_from_state(state_root / "install-state.json")
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertFalse(target.exists())
+            self.assertFalse((state_root / "install-state.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ from installer.account import (
     AccountInstaller,
     ExpertSource,
     KVArtifact,
+    uninstall_account_resources,
 )
 
 
@@ -182,6 +183,96 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertEqual(set(api.experts), {"built_in"})
             saved = [payload["name"] for endpoint, payload in api.calls if endpoint == "/api/expert/save"]
             self.assertEqual(saved, ["built_in"])
+
+    def test_durable_uninstall_restores_previous_and_removes_owned_resources(self):
+        api = FakeAPI()
+        api.experts["previous"] = {
+            "status": "success",
+            "name": "previous",
+            "expert_code": "# expert: previous\ndef previous(): return 'old'\n",
+            "description": "old",
+            "kwargs": {},
+            "cspl": "fython",
+            "global": True,
+        }
+        api.kv["catalog"] = "old catalog"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"previous": expert("previous"), "new": expert("new")},
+                required={"previous", "new"},
+                smokes=set(),
+                kv_artifacts=[KVArtifact("catalog", "new catalog", "catalog")],
+            )
+            state_file = root / "account-state.json"
+            self.assertEqual(state_file.stat().st_mode & 0o777, 0o600)
+            report = uninstall_account_resources(api, state_file)
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertIn("return 'old'", api.experts["previous"]["expert_code"])
+            self.assertNotIn("new", api.experts)
+            self.assertEqual(api.kv["catalog"], "old catalog")
+            self.assertFalse(state_file.exists())
+
+    def test_durable_uninstall_preserves_resource_changed_after_install(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"owned": expert("owned")},
+                required={"owned"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            api.experts["owned"]["expert_code"] += "# user edit\n"
+            report = uninstall_account_resources(api, root / "account-state.json")
+            self.assertEqual(report["status"], "action_required")
+            self.assertIn("user edit", api.experts["owned"]["expert_code"])
+
+    def test_reinstall_chain_removes_first_install_from_clean_account(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = AccountInstaller(
+                api,
+                release_version="1.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            first.install(
+                {"owned": expert("owned", "# expert: owned\ndef owned(): return 'v1'\n")},
+                required={"owned"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            second = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            second.install(
+                {"owned": expert("owned", "# expert: owned\ndef owned(): return 'v2'\n")},
+                required={"owned"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            state = json.loads((root / "account-state.json").read_text())
+            self.assertEqual(state["previousState"]["releaseVersion"], "1.0.0")
+            report = uninstall_account_resources(api, root / "account-state.json")
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertNotIn("owned", api.experts)
 
 
 if __name__ == "__main__":
