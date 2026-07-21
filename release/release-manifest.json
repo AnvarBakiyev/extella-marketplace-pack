@@ -62,8 +62,8 @@
     {
       "id": "runtime-init",
       "path": "runtime/extella_runtime/__init__.py",
-      "sha256": "83963881b9cecf98daef7629c88420e52b83ffa1225743afa4d6d3d043b58a13",
-      "bytes": 379,
+      "sha256": "d2d9e071f8991682272b38849cb82a1961bb31757a3fad6c3a7e8fc903f324df",
+      "bytes": 543,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -100,6 +100,18 @@
       "path": "runtime/extella_runtime/doctor.py",
       "sha256": "ccedc3cb96040a26fe37f8e9fb7370dfb2df49313e311263fc57135ebedfab16",
       "bytes": 8383,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-transaction",
+      "path": "runtime/extella_runtime/transaction.py",
+      "sha256": "7fdd6e59601b494670f47f739133b5e5b447efc07fc220a6547262cbbd9a597f",
+      "bytes": 9380,
       "required": true,
       "platforms": [
         "macos-x86_64",
