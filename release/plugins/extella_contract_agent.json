@@ -31,7 +31,7 @@
   },
   "experts": {
     "required": ["p2d4_evaluate_contract_batch", "p2d4_generate_document_package", "p2d4_run_pipeline", "p2d5_negotiate", "lp_notify", "lp_email_send", "lp_wa_state", "lp_wa_send", "lp_assistant"],
-    "smoke": ["lp_wa_state"]
+    "smoke": ["lp_install_smoke"]
   },
   "secrets": [
     {"key": "notification_credentials", "source": "encrypted_vault", "required": false}
@@ -40,4 +40,3 @@
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.0.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }
-
