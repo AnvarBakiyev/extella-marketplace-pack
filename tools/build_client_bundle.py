@@ -33,6 +33,7 @@ TEXT_SUFFIXES = {".py", ".json", ".js", ".html", ".md", ".txt", ".ps1", ".sh"}
 
 MARKETPLACE_PATTERNS = (
     "installer/**/*.py",
+    "tools/external_matrix.py",
     "runtime/**/*.py",
     "device/activity-center/bridge/*.py",
     "device/activity-center/instrumentation/*.py",

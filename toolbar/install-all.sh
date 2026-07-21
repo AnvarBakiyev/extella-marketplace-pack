@@ -10,9 +10,12 @@ BUNDLE_SHA256="${EXTELLA_BUNDLE_SHA256:-}"
 BUNDLE_BYTES="${EXTELLA_BUNDLE_BYTES:-}"
 NO_START=0
 VERIFY_ONLY=0
+MATRIX_PHASE=""
+MATRIX_RESULT=""
+RELEASE_MANIFEST=""
 
 usage() {
-  printf '%s\n' "Usage: $0 (--bundle PATH | --url HTTPS_URL) --sha256 HEX --bytes N [--no-start] [--verify-only]"
+  printf '%s\n' "Usage: $0 (--bundle PATH | --url HTTPS_URL) --sha256 HEX --bytes N [--no-start] [--verify-only] [--matrix-phase baseline|previous-release --matrix-result PATH --release-manifest PATH]"
 }
 
 while [ "$#" -gt 0 ]; do
@@ -23,6 +26,9 @@ while [ "$#" -gt 0 ]; do
     --bytes) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; BUNDLE_BYTES=$2; shift 2 ;;
     --no-start) NO_START=1; shift ;;
     --verify-only) VERIFY_ONLY=1; shift ;;
+    --matrix-phase) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; MATRIX_PHASE=$2; shift 2 ;;
+    --matrix-result) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; MATRIX_RESULT=$2; shift 2 ;;
+    --release-manifest) [ "$#" -ge 2 ] || { usage >&2; exit 2; }; RELEASE_MANIFEST=$2; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) printf 'Unknown argument: %s\n' "$1" >&2; usage >&2; exit 2 ;;
   esac
@@ -66,6 +72,17 @@ fi
 if [ -z "$BUNDLE_PATH" ] && [ -z "$BUNDLE_URL" ]; then
   printf '%s\n' "No release bundle was specified. Raw main branches are intentionally unsupported." >&2
   usage >&2
+  exit 2
+fi
+if { [ -n "$MATRIX_PHASE" ] || [ -n "$MATRIX_RESULT" ] || [ -n "$RELEASE_MANIFEST" ]; } && { [ -z "$MATRIX_PHASE" ] || [ -z "$MATRIX_RESULT" ] || [ -z "$RELEASE_MANIFEST" ]; }; then
+  printf '%s\n' "Matrix evidence requires --matrix-phase, --matrix-result, and --release-manifest together." >&2
+  exit 2
+fi
+if [ -n "$MATRIX_PHASE" ]; then
+  case "$MATRIX_PHASE" in baseline|previous-release) ;; *) printf '%s\n' "Native bootstrap matrix phase must be baseline or previous-release." >&2; exit 2 ;; esac
+fi
+if [ -n "$MATRIX_PHASE" ] && [ -z "$BUNDLE_PATH" ]; then
+  printf '%s\n' "Matrix evidence requires the local candidate passed with --bundle." >&2
   exit 2
 fi
 if [ -n "$BUNDLE_URL" ]; then
@@ -127,6 +144,18 @@ PY
 
 INSTALLER="$EXTRACTED/payload/marketplace/installer/client_install.py"
 [ -f "$INSTALLER" ] || { printf '%s\n' "Verified bundle has no client installer." >&2; exit 2; }
+RUNNER="$EXTRACTED/payload/marketplace/tools/external_matrix.py"
+if [ -n "$MATRIX_PHASE" ]; then
+  [ -f "$RELEASE_MANIFEST" ] || { printf '%s\n' "Release manifest not found." >&2; exit 2; }
+  [ -f "$RUNNER" ] || { printf '%s\n' "Verified bundle has no external matrix runner." >&2; exit 2; }
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" -c 'from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))' "$EXTRACTED"
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" "$RUNNER" \
+    --phase "$MATRIX_PHASE" \
+    --expected-platform "$PLATFORM" \
+    --candidate "$BUNDLE_PATH" \
+    --release-manifest "$RELEASE_MANIFEST" \
+    --result "$MATRIX_RESULT"
+fi
 if [ "$VERIFY_ONLY" -eq 1 ]; then
   PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$EXTRACTED/payload/marketplace" "$PYTHON" -c 'from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))' "$EXTRACTED"
   printf 'Verified Extella bootstrap, managed Python, and bundle for %s. No client files were changed.\n' "$PLATFORM"

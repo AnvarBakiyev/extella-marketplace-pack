@@ -26,6 +26,16 @@ SUPPORTED_PLATFORMS = {
     "macos-arm64",
     "windows11-x86_64",
 }
+EVIDENCE_SCENARIOS = {
+    "native_bootstrap",
+    "clean_os_install",
+    "clean_account",
+    "service_control",
+    "reinstall_repair_uninstall",
+    "cold_restart",
+    "upgrade_previous",
+    "ui_live_extella",
+}
 CLASSIFICATIONS = {"bundled", "supported_on_demand", "third_party_unverified"}
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
@@ -280,9 +290,48 @@ def validate_evidence(root: Path, release: dict[str, Any]) -> list[Issue]:
         if not isinstance(scenarios, dict) or not scenarios:
             issues.append(Issue("evidence.scenarios", str(path), f"missing scenarios for {platform_key}"))
             continue
+        if set(scenarios) != EVIDENCE_SCENARIOS:
+            issues.append(
+                Issue(
+                    "evidence.scenarios_exact",
+                    str(path),
+                    f"{platform_key} must cover the exact external scenario contract",
+                )
+            )
         for scenario, status in scenarios.items():
             if not PLUGIN_ID.fullmatch(str(scenario).replace("_", "-")) or status not in allowed:
                 issues.append(Issue("evidence.status", str(path), f"invalid evidence row: {platform_key}/{scenario}"))
+    external_runs = evidence.get("externalRuns")
+    if not isinstance(external_runs, dict) or not set(external_runs).issubset(SUPPORTED_PLATFORMS):
+        issues.append(Issue("evidence.external_runs", str(path), "externalRuns must be keyed by supported platform"))
+        external_runs = {}
+    fully_passed = {
+        platform_key
+        for platform_key, scenarios in matrix.items()
+        if isinstance(scenarios, dict) and scenarios and all(status == "passed" for status in scenarios.values())
+    }
+    release_distribution = release.get("distribution") if isinstance(release.get("distribution"), dict) else {}
+    for platform_key in fully_passed:
+        run = external_runs.get(platform_key)
+        if not isinstance(run, dict) or run.get("candidateSha256") != release_distribution.get("sha256"):
+            issues.append(
+                Issue(
+                    "evidence.external_candidate",
+                    str(path),
+                    f"fully passed row has no exact external candidate evidence: {platform_key}",
+                )
+            )
+            continue
+        for track in ("clean", "upgrade"):
+            value = run.get(track)
+            if not isinstance(value, dict) or not SHA256.fullmatch(str(value.get("evidenceSha256") or "")) or not SHA256.fullmatch(str(value.get("desktopEvidenceSha256") or "")):
+                issues.append(
+                    Issue(
+                        "evidence.external_track",
+                        str(path),
+                        f"external {track} evidence is incomplete: {platform_key}",
+                    )
+                )
     if release.get("status") == "released":
         not_passed = [
             f"{platform_key}/{scenario}"
@@ -293,6 +342,14 @@ def validate_evidence(root: Path, release: dict[str, Any]) -> list[Issue]:
         if not_passed:
             issues.append(
                 Issue("evidence.release_incomplete", str(path), f"released evidence is incomplete: {not_passed[:8]}")
+            )
+        if set(external_runs) != SUPPORTED_PLATFORMS:
+            issues.append(
+                Issue(
+                    "evidence.external_exact",
+                    str(path),
+                    "released evidence requires accepted clean and upgrade runs on every supported platform",
+                )
             )
     return issues
 
@@ -337,6 +394,21 @@ def validate_release(
     bundle_path: Path | None = None,
 ) -> list[Issue]:
     issues: list[Issue] = []
+    for required_path in (
+        root / "release/EXTERNAL_MATRIX.md",
+        root / "tools/external_matrix.py",
+        root / "tools/import_external_evidence.py",
+        root / "installer/client_verify.py",
+        root / "installer/verification.py",
+    ):
+        if not required_path.is_file():
+            issues.append(
+                Issue(
+                    "verification.tooling",
+                    str(required_path),
+                    "required external release verification tooling is missing",
+                )
+            )
     try:
         data = _read_json(manifest_path)
     except (OSError, json.JSONDecodeError) as exc:
@@ -382,6 +454,24 @@ def validate_release(
                     bundled = json.loads(archive.read("bundle-manifest.json"))
                 if len(bundled.get("files") or []) != distribution.get("fileCount"):
                     issues.append(Issue("distribution.files", str(bundle_path), "bundle file count differs from manifest"))
+                bundled_paths = {
+                    item.get("path")
+                    for item in bundled.get("files") or []
+                    if isinstance(item, dict)
+                }
+                required_verification_payload = {
+                    "payload/marketplace/installer/client_verify.py",
+                    "payload/marketplace/installer/verification.py",
+                    "payload/marketplace/tools/external_matrix.py",
+                }
+                if not required_verification_payload.issubset(bundled_paths):
+                    issues.append(
+                        Issue(
+                            "distribution.verification_runner",
+                            str(bundle_path),
+                            "bundle is missing the installed verifier or external matrix runner",
+                        )
+                    )
                 release_sources = {
                     item.get("id"): item.get("revision")
                     for item in data.get("sourceRepositories") or []

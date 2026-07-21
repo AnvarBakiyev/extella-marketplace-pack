@@ -64,6 +64,7 @@ class ClientInstallerTests(unittest.TestCase):
         copy(ROOT / "runtime/extella_expert_bridge.py", "payload/marketplace/runtime/extella_expert_bridge.py")
         for source in sorted((ROOT / "installer").glob("*.py")):
             copy(source, "payload/marketplace/installer/" + source.name)
+        copy(ROOT / "tools/external_matrix.py", "payload/marketplace/tools/external_matrix.py")
         copy(ROOT / "toolbar/toolbar.js", "payload/marketplace/toolbar/toolbar.js")
         for directory in ("bridge", "instrumentation"):
             for source in sorted((ROOT / "device/activity-center" / directory).glob("*.py")):
@@ -145,6 +146,7 @@ class ClientInstallerTests(unittest.TestCase):
             self.assertEqual(report["status"], "installed")
             self.assertTrue((root / "data/wizard/app/wizard.html").is_file())
             self.assertTrue((root / "data/installer/client_uninstall.py").is_file())
+            self.assertTrue((root / "data/installer/external_matrix.py").is_file())
             registry = json.loads(
                 (root / "data/plugins/_registry/extella_adoption_wizard.json").read_text()
             )

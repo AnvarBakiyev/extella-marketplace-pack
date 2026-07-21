@@ -212,6 +212,33 @@ class ProcessSupervisor:
             return None
         return identity
 
+    def claim_current_process(self, spec: RuntimeSpec) -> dict[str, Any]:
+        """Bind a native-autostart process to its new post-login identity.
+
+        The caller must already own the listening socket. This is used by the
+        Activity Center after LaunchAgent or Task Scheduler starts it directly,
+        because a PID fingerprint from the previous boot can never be reused.
+        """
+
+        with _LOCK:
+            pid = os.getpid()
+            identity = process_identity(pid, platform_info=self.platform_info)
+            listeners = listening_pids(spec.port, platform_info=self.platform_info)
+            if identity is None or listeners != [pid]:
+                raise ProcessControlError(
+                    "current autostart process does not exclusively own its declared port"
+                )
+            state = _read_state(self.state_file)
+            state.setdefault("runtimes", {})[spec.runtime_id] = {
+                "pid": identity.pid,
+                "startedAt": identity.started_at,
+                "commandHash": identity.command_hash,
+                "owner": spec.owner,
+                "port": spec.port,
+            }
+            _write_state(self.state_file, state)
+            return identity.to_dict()
+
     def status(self, spec: RuntimeSpec) -> dict[str, Any]:
         identity = self._owned_identity(spec.runtime_id)
         pids = listening_pids(spec.port, platform_info=self.platform_info)

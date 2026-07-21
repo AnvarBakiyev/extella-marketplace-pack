@@ -284,6 +284,10 @@ def _install_local_payload(
     wizard = bundle_root / "payload/wizard"
     if not _tree_same(transaction, marketplace / "installer", paths.data_root / "installer"):
         transaction.atomic_tree(marketplace / "installer", paths.data_root / "installer")
+    transaction.atomic_copy(
+        marketplace / "tools" / "external_matrix.py",
+        paths.data_root / "installer" / "external_matrix.py",
+    )
     transaction.atomic_copy(marketplace / "toolbar/toolbar.js", paths.toolbar_root / "toolbar.js")
     if not _tree_same(transaction, wizard / "ui", paths.wizard_root):
         transaction.atomic_tree(wizard / "ui", paths.wizard_root)

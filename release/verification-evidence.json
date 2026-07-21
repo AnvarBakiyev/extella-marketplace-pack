@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "releaseVersion": "2.0.0-rc.1",
-  "generatedAt": "2026-07-22T01:54:49+05:00",
+  "generatedAt": "2026-07-22T02:18:37+05:00",
   "automatedChecks": {
-    "marketplaceUnit": {"status": "passed", "tests": 58},
-    "activityCenter": {"status": "passed", "tests": 21, "skipped": 2},
+    "marketplaceUnit": {"status": "passed", "tests": 67},
+    "activityCenter": {"status": "passed", "tests": 22, "skipped": 2},
     "toolbarBuild": {"status": "passed"},
     "wizardPackaging": {"status": "passed"},
     "bundleReproducibility": {"status": "passed"},
@@ -22,27 +22,38 @@
       "native_bootstrap": "blocked_external",
       "clean_os_install": "blocked_external",
       "clean_account": "blocked_external",
+      "service_control": "blocked_external",
       "reinstall_repair_uninstall": "blocked_external",
-      "cold_restart": "blocked_external"
+      "cold_restart": "blocked_external",
+      "upgrade_previous": "blocked_external",
+      "ui_live_extella": "blocked_external"
     },
     "macos-arm64": {
       "native_bootstrap": "passed",
       "clean_os_install": "pending",
       "clean_account": "blocked_external",
+      "service_control": "pending",
       "reinstall_repair_uninstall": "pending",
-      "cold_restart": "pending"
+      "cold_restart": "pending",
+      "upgrade_previous": "pending",
+      "ui_live_extella": "pending"
     },
     "windows11-x86_64": {
       "native_bootstrap": "blocked_external",
       "clean_os_install": "blocked_external",
       "clean_account": "blocked_external",
+      "service_control": "blocked_external",
       "reinstall_repair_uninstall": "blocked_external",
-      "cold_restart": "blocked_external"
+      "cold_restart": "blocked_external",
+      "upgrade_previous": "blocked_external",
+      "ui_live_extella": "blocked_external"
     }
   },
+  "externalRuns": {},
   "externalRequirements": [
     "A physical or virtual macOS Intel x86_64 runner",
     "A physical or virtual Windows 11 x64 runner",
-    "A clean Extella account and token for each platform"
+    "A clean Extella account and token for each platform",
+    "A live Extella Desktop session on every supported platform"
   ]
 }

@@ -26,8 +26,19 @@ class FakeSupervisor:
         self.value.setdefault("started", []).append(spec.runtime_id)
         return {"status": "running"}
 
+    def claim_current_process(self, spec):
+        self.value["claimed"] = spec.runtime_id
+        return {"pid": 8799}
+
 
 class ServiceManagerTests(unittest.TestCase):
+    def test_native_controller_claims_current_post_login_pid(self) -> None:
+        supervisor = FakeSupervisor({})
+        with patch.object(service_manager, "_SUPERVISOR", supervisor):
+            claimed = service_manager.claim_controller_process()
+        self.assertEqual(claimed["pid"], 8799)
+        self.assertEqual(supervisor.value["claimed"], "extella_activity_center")
+
     def test_system_controller_is_visible_with_pid_but_cannot_disable_itself(self) -> None:
         service = service_manager._controller_service()
         public = service_manager._public_service(

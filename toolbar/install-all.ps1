@@ -6,7 +6,11 @@ param(
     [string]$BundleSha256 = $env:EXTELLA_BUNDLE_SHA256,
     [long]$BundleBytes = $(if ($env:EXTELLA_BUNDLE_BYTES) { [long]$env:EXTELLA_BUNDLE_BYTES } else { 0 }),
     [switch]$NoStart,
-    [switch]$VerifyOnly
+    [switch]$VerifyOnly,
+    [ValidateSet("baseline", "previous-release")]
+    [string]$MatrixPhase,
+    [string]$MatrixResult,
+    [string]$ReleaseManifest
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,6 +44,12 @@ try {
 
 if (($BundlePath -and $BundleUrl) -or (-not $BundlePath -and -not $BundleUrl)) {
     throw "Specify exactly one of -BundlePath or -BundleUrl. Raw main branches are intentionally unsupported."
+}
+if (($MatrixPhase -or $MatrixResult -or $ReleaseManifest) -and (-not $MatrixPhase -or -not $MatrixResult -or -not $ReleaseManifest)) {
+    throw "Matrix evidence requires -MatrixPhase, -MatrixResult, and -ReleaseManifest together."
+}
+if ($MatrixPhase -and -not $BundlePath) {
+    throw "Matrix evidence requires the local candidate passed with -BundlePath."
 }
 if ($BundleUrl -and -not $BundleUrl.StartsWith("https://", [StringComparison]::OrdinalIgnoreCase)) {
     throw "Bundle URL must use HTTPS."
@@ -116,6 +126,28 @@ with zipfile.ZipFile(archive) as source:
     $Installer = Join-Path $Extracted "payload\marketplace\installer\client_install.py"
     if (-not (Test-Path -LiteralPath $Installer -PathType Leaf)) {
         throw "Verified bundle has no client installer."
+    }
+    $Runner = Join-Path $Extracted "payload\marketplace\tools\external_matrix.py"
+    if ($MatrixPhase) {
+        if (-not (Test-Path -LiteralPath $ReleaseManifest -PathType Leaf)) {
+            throw "Release manifest not found."
+        }
+        if (-not (Test-Path -LiteralPath $Runner -PathType Leaf)) {
+            throw "Verified bundle has no external matrix runner."
+        }
+        $PreviousPythonPath = $env:PYTHONPATH
+        $PreviousNoBytecode = $env:PYTHONDONTWRITEBYTECODE
+        try {
+            $env:PYTHONPATH = Join-Path $Extracted "payload\marketplace"
+            $env:PYTHONDONTWRITEBYTECODE = "1"
+            & $Python.FullName -c "from pathlib import Path; from installer.bundle import verify_bundle; import sys; print(verify_bundle(Path(sys.argv[1])))" $Extracted
+            if ($LASTEXITCODE -ne 0) { throw "Strict bundle verification failed." }
+            & $Python.FullName $Runner --phase $MatrixPhase --expected-platform windows11-x86_64 --candidate $ResolvedBundle --release-manifest $ReleaseManifest --result $MatrixResult
+            if ($LASTEXITCODE -ne 0) { throw "External matrix initial phase failed." }
+        } finally {
+            $env:PYTHONPATH = $PreviousPythonPath
+            $env:PYTHONDONTWRITEBYTECODE = $PreviousNoBytecode
+        }
     }
     if ($VerifyOnly) {
         $PreviousPythonPath = $env:PYTHONPATH

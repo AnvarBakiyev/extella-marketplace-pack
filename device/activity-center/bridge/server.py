@@ -24,7 +24,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 from activity_model import build_activity, read_events
-from service_manager import ServiceError, control_service, list_services, start_desired_services
+from service_manager import (
+    ServiceError,
+    claim_controller_process,
+    control_service,
+    list_services,
+    start_desired_services,
+)
 from task_state import dismiss_tasks, read_dismissed
 
 
@@ -275,6 +281,7 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     ensure_hooks_installed()
     server = ThreadingHTTPServer((HOST, PORT), Handler)
+    claim_controller_process()
     threading.Thread(target=start_desired_services, name="extella-service-boot", daemon=True).start()
     print(f"Extella Activity Center listening on http://{HOST}:{PORT}", flush=True)
     try:

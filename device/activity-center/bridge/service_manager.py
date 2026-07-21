@@ -320,6 +320,16 @@ def _controller_service() -> dict[str, Any]:
     }
 
 
+def claim_controller_process() -> dict[str, Any]:
+    """Adopt the controller's new PID after native login autostart."""
+
+    controller = _controller_service()
+    spec = controller["runtimeSpec"]
+    if not isinstance(spec, RuntimeSpec):
+        raise ProcessControlError("Activity Center runtime contract is invalid")
+    return _SUPERVISOR.claim_current_process(spec)
+
+
 def list_services() -> list[dict[str, Any]]:
     state = _read_state()
     services = [_controller_service(), *registry_services()]

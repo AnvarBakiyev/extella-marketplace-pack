@@ -1,3 +1,5 @@
+import json
+import os
 import socket
 import sys
 import tempfile
@@ -8,11 +10,64 @@ from pathlib import Path
 from runtime.extella_runtime.platforms import detect_platform
 from runtime.extella_runtime.processes import (
     ProcessControlError,
+    ProcessIdentity,
     ProcessSupervisor,
     RuntimeSpec,
     listening_pids,
     process_identity,
 )
+
+
+class AutostartOwnershipTests(unittest.TestCase):
+    def _supervisor(self, root):
+        return ProcessSupervisor(
+            state_file=root / "processes.json",
+            platform_info=detect_platform(system="Darwin", architecture="arm64", release="15"),
+        )
+
+    def _spec(self, root):
+        return RuntimeSpec(
+            runtime_id="extella_activity_center",
+            name="Activity Center",
+            argv=(sys.executable, str(root / "server.py")),
+            cwd=root,
+            port=8799,
+            health_url="http://127.0.0.1:8799/api/health",
+            log_path=root / "activity.log",
+            owner="extella_activity_center",
+            autostart="native",
+        )
+
+    def test_native_autostart_rebinds_current_pid_after_reboot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            identity = ProcessIdentity(os.getpid(), 1, "python", "new-boot", "a" * 64)
+            supervisor = self._supervisor(root)
+            with (
+                patch("runtime.extella_runtime.processes.process_identity", return_value=identity),
+                patch("runtime.extella_runtime.processes.listening_pids", return_value=[os.getpid()]),
+            ):
+                claimed = supervisor.claim_current_process(self._spec(root))
+            state = json.loads((root / "processes.json").read_text(encoding="utf-8"))
+        self.assertEqual(claimed["pid"], os.getpid())
+        self.assertEqual(
+            state["runtimes"]["extella_activity_center"]["startedAt"], "new-boot"
+        )
+
+    def test_native_autostart_refuses_nonexclusive_port(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            identity = ProcessIdentity(os.getpid(), 1, "python", "new-boot", "a" * 64)
+            supervisor = self._supervisor(root)
+            with (
+                patch("runtime.extella_runtime.processes.process_identity", return_value=identity),
+                patch(
+                    "runtime.extella_runtime.processes.listening_pids",
+                    return_value=[os.getpid(), os.getpid() + 1],
+                ),
+                self.assertRaises(ProcessControlError),
+            ):
+                supervisor.claim_current_process(self._spec(root))
 
 
 class WindowsProcessAdapterTests(unittest.TestCase):
