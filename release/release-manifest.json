@@ -58,6 +58,78 @@
       "platforms": [
         "windows11-x86_64"
       ]
+    },
+    {
+      "id": "runtime-init",
+      "path": "runtime/extella_runtime/__init__.py",
+      "sha256": "83963881b9cecf98daef7629c88420e52b83ffa1225743afa4d6d3d043b58a13",
+      "bytes": 379,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-platforms",
+      "path": "runtime/extella_runtime/platforms.py",
+      "sha256": "30f884965cae21f4de18b1e10b028866baa290f64441e91f8914fbb9c69786b1",
+      "bytes": 3318,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-ensure-tool",
+      "path": "runtime/extella_runtime/ensure_tool.py",
+      "sha256": "4782ccfa1b8781ca933a7b4551ef9e4ee1c7b438a40f923e4051da021db79f80",
+      "bytes": 13123,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "runtime-doctor",
+      "path": "runtime/extella_runtime/doctor.py",
+      "sha256": "ccedc3cb96040a26fe37f8e9fb7370dfb2df49313e311263fc57135ebedfab16",
+      "bytes": 8383,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "doctor-cli",
+      "path": "runtime/doctor_cli.py",
+      "sha256": "a8703b2c40a659afc4acb2476b3d04522598cd6837c92c155b44c9993b0fd7ac",
+      "bytes": 1666,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
+    },
+    {
+      "id": "ensure-tool-cli",
+      "path": "runtime/ensure_tool_cli.py",
+      "sha256": "7f814844043e88197ebab5025c67cca1d1743f6d11d289b607f70858deb7f8a6",
+      "bytes": 705,
+      "required": true,
+      "platforms": [
+        "macos-x86_64",
+        "macos-arm64",
+        "windows11-x86_64"
+      ]
     }
   ],
   "capabilities": [
