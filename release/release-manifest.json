@@ -9,11 +9,11 @@
     "windows11-x86_64"
   ],
   "distribution": {
-    "status": "candidate",
+    "status": "pending",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "3fd35c5b82ceeedd4789d0d48e2ad605c53a7f1a0e6e3ae6bcf8f3d3697f193f",
-    "bytes": 3239751,
-    "fileCount": 264
+    "sha256": null,
+    "bytes": null,
+    "fileCount": null
   },
   "dependencies": [
     {
@@ -172,25 +172,25 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "df4ed2b21e315edd404d995e185d27b5c1b70962"
+      "revision": "e95805769e574d217bd9d38e9022a0c2528e0798"
     },
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "dd5490f64e2e40ea4272cb4a0f1558d2a0ce1c00"
+      "revision": "2e03ad3fedec411ac9c5da54515ce27555bc2546"
     },
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "a70c97a0e1dc1e717fff43e777210cd9da776a33"
+      "revision": "f5062ddd9f05c0cf523a5791f1ba9bc9483b2eb7"
     }
   ],
   "artifacts": [
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "f94ba6e8b2eac054ce8fb9240a2911838a7ec64f4caf65ed0da3f0b1e1f2bf4c",
-      "bytes": 5766195,
+      "sha256": "555c9e8c1bfee5fe936bd9cb2df2e517ada7b83c41d9185fc1c257d9497db216",
+      "bytes": 5772154,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -234,8 +234,8 @@
     {
       "id": "runtime-expert-bridge",
       "path": "runtime/extella_expert_bridge.py",
-      "sha256": "7a06b67c52bff7f02794c863f64d15071be72c6af3a0a4610c92806c1dc350af",
-      "bytes": 13042,
+      "sha256": "d21e0044e030a66fe62518615628b9af654eb657879de3facd1c494c3015f21a",
+      "bytes": 14062,
       "required": true,
       "platforms": [
         "macos-x86_64",
