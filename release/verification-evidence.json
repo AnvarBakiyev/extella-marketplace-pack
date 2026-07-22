@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "releaseVersion": "2.0.0-rc.1",
-  "generatedAt": "2026-07-22T06:17:15+05:00",
+  "generatedAt": "2026-07-22T17:49:29+05:00",
   "automatedChecks": {
-    "marketplaceUnit": {"status": "passed", "tests": 95},
-    "activityCenter": {"status": "passed", "tests": 21, "skipped": 2},
+    "marketplaceUnit": {"status": "passed", "tests": 123},
+    "activityCenter": {"status": "passed", "tests": 22, "skipped": 2},
     "toolbarBuild": {"status": "passed"},
     "toolbarReproducibility": {"status": "passed"},
     "wizardPackaging": {"status": "passed"},
@@ -20,9 +20,9 @@
   },
   "candidateBundle": {
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "301906e51068cd835fce1a02190cd69181aafc367dd30522d3fe8e6ef006a1dd",
-    "bytes": 3258750,
-    "fileCount": 265,
+    "sha256": "9180857fbfd44ce55b5c300a355cf5304e9fe29864cce205fa2764d40c170516",
+    "bytes": 3271522,
+    "fileCount": 268,
     "reproducedCopies": 2
   },
   "platformMatrix": {
@@ -37,7 +37,7 @@
       "ui_live_extella": "blocked_external"
     },
     "macos-arm64": {
-      "native_bootstrap": "passed",
+      "native_bootstrap": "pending",
       "clean_os_install": "pending",
       "clean_account": "blocked_external",
       "service_control": "pending",
