@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import platform
 import re
+import subprocess
 from typing import Any
 
 
@@ -48,12 +49,42 @@ def _windows_build(version: str) -> int | None:
     return None
 
 
+def _native_macos_architecture(reported_architecture: str) -> str:
+    """Return the physical Mac architecture, including under Rosetta.
+
+    ``platform.machine()`` and ``uname -m`` report ``x86_64`` to translated
+    processes on Apple Silicon. External release evidence must describe the
+    physical platform, so use Apple's read-only sysctls before accepting an
+    Intel row. Failure to query them leaves a genuinely reported Intel Mac as
+    Intel; either positive Apple Silicon signal changes the result to arm64.
+    """
+
+    arch = _normalise_architecture(reported_architecture)
+    if arch != "x86_64":
+        return arch
+    for name in ("sysctl.proc_translated", "hw.optional.arm64"):
+        try:
+            result = subprocess.run(
+                ("/usr/sbin/sysctl", "-in", name),
+                capture_output=True,
+                text=True,
+                timeout=2,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if result.returncode == 0 and result.stdout.strip() == "1":
+            return "arm64"
+    return arch
+
+
 def detect_platform(
     *,
     system: str | None = None,
     architecture: str | None = None,
     release: str | None = None,
     version: str | None = None,
+    physical_architecture: str | None = None,
 ) -> PlatformInfo:
     """Return a supported platform key or an explicit rejection reason.
 
@@ -69,6 +100,10 @@ def detect_platform(
     combined_version = " ".join(part for part in (raw_release, raw_version) if part)
 
     if raw_system == "Darwin":
+        if physical_architecture is not None:
+            arch = _normalise_architecture(physical_architecture)
+        elif architecture is None:
+            arch = _native_macos_architecture(arch)
         if arch == "x86_64":
             return PlatformInfo(
                 "macos-x86_64", True, raw_system, arch, combined_version

@@ -50,6 +50,9 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertIn("PYTHONDONTWRITEBYTECODE=1", mac)
         self.assertIn('$env:PYTHONDONTWRITEBYTECODE = "1"', windows)
         self.assertLess(mac.index('if [ "$(uname -s'), mac.index("WORK=$(mktemp"))
+        self.assertIn("sysctl.proc_translated", mac)
+        self.assertIn("hw.optional.arm64", mac)
+        self.assertLess(mac.index("sysctl.proc_translated"), mac.index("WORK=$(mktemp"))
         self.assertLess(windows.index("Keep platform rejection"), windows.index("New-Item -ItemType Directory -Path $Work"))
 
     def test_bootstrap_syntax(self):

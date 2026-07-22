@@ -43,7 +43,16 @@ if [ "$(uname -s 2>/dev/null || true)" != "Darwin" ]; then
   exit 3
 fi
 
+# Rosetta reports x86_64 from uname even on Apple Silicon. Release evidence and
+# native runtime selection must use the physical architecture instead.
 ARCH=$(uname -m 2>/dev/null || true)
+if [ "$ARCH" = "x86_64" ] && [ -x /usr/sbin/sysctl ]; then
+  TRANSLATED=$(/usr/sbin/sysctl -in sysctl.proc_translated 2>/dev/null || true)
+  ARM64_CAPABLE=$(/usr/sbin/sysctl -in hw.optional.arm64 2>/dev/null || true)
+  if [ "$TRANSLATED" = "1" ] || [ "$ARM64_CAPABLE" = "1" ]; then
+    ARCH="arm64"
+  fi
+fi
 case "$ARCH" in
   arm64)
     PLATFORM="macos-arm64"

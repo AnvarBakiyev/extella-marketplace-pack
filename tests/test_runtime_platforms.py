@@ -46,6 +46,17 @@ class PlatformDetectionTests(unittest.TestCase):
                 self.assertFalse(result.supported)
                 self.assertIsNone(result.key)
 
+    def test_rosetta_report_is_bound_to_physical_apple_silicon(self):
+        result = detect_platform(
+            system="Darwin",
+            architecture="x86_64",
+            physical_architecture="arm64",
+            release="25.5",
+        )
+        self.assertTrue(result.supported)
+        self.assertEqual(result.key, "macos-arm64")
+        self.assertEqual(result.architecture, "arm64")
+
 
 if __name__ == "__main__":
     unittest.main()
