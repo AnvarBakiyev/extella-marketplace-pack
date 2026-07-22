@@ -9,11 +9,11 @@
     "windows11-x86_64"
   ],
   "distribution": {
-    "status": "candidate",
+    "status": "pending",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "1217db00df1ae6b473bc99fc8b7e4eccf0f81ae26f143ba1c8f7fad100965a96",
-    "bytes": 3257453,
-    "fileCount": 265
+    "sha256": null,
+    "bytes": null,
+    "fileCount": null
   },
   "dependencies": [
     {
@@ -172,12 +172,12 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "c69933d4e9b374ccd9c4cb5770c2b0753a02b9e2"
+      "revision": "bfce70cc37f3ac760933de59f7a9f0f8c1564209"
     },
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "ff34be2e76b4da9fd1e21db8ae53371d61ec8795"
+      "revision": "345d77aeca91fdd7ddc948cfa5c1bcd28c9792dd"
     },
     {
       "id": "wizard",
@@ -189,8 +189,8 @@
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "555c9e8c1bfee5fe936bd9cb2df2e517ada7b83c41d9185fc1c257d9497db216",
-      "bytes": 5772154,
+      "sha256": "4270b788463390c26041683c4855b111c4465d56a31a6b894eedb34824fd0b42",
+      "bytes": 5774080,
       "required": true,
       "platforms": [
         "macos-x86_64",

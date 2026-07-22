@@ -8,15 +8,15 @@
     "toolbarBuild": {"status": "passed"},
     "toolbarReproducibility": {"status": "passed"},
     "wizardPackaging": {"status": "passed"},
-    "bundleReproducibility": {"status": "passed"},
+    "bundleReproducibility": {"status": "pending"},
     "unsupportedPlatformPreMutation": {"status": "passed"}
   },
   "candidateBundle": {
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "1217db00df1ae6b473bc99fc8b7e4eccf0f81ae26f143ba1c8f7fad100965a96",
-    "bytes": 3257453,
-    "fileCount": 265,
-    "reproducedCopies": 2
+    "sha256": null,
+    "bytes": null,
+    "fileCount": null,
+    "reproducedCopies": 0
   },
   "platformMatrix": {
     "macos-x86_64": {
@@ -30,7 +30,7 @@
       "ui_live_extella": "blocked_external"
     },
     "macos-arm64": {
-      "native_bootstrap": "passed",
+      "native_bootstrap": "pending",
       "clean_os_install": "pending",
       "clean_account": "blocked_external",
       "service_control": "pending",
