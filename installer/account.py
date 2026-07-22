@@ -461,11 +461,15 @@ def _retry_transient_api(action: Callable[[], Any]) -> Any:
 
     The live account API can briefly throttle a long clean-account install.
     Rollback mutations are restore-by-identity or delete-by-identity, so they
-    are safe to retry without creating duplicate resources.
+    are safe to retry without creating duplicate resources. Provider-backed
+    expert execution can also return a short burst of 5xx responses while the
+    just-saved expert is being compiled. Keep the retry bounded, but allow that
+    propagation window to exceed a few seconds.
     """
 
     last_error: APIError | None = None
-    for attempt, delay in enumerate((0.0, 0.5, 1.5, 3.0), start=1):
+    delays = (0.0, 1.0, 3.0, 7.0, 15.0, 30.0)
+    for attempt, delay in enumerate(delays, start=1):
         if delay:
             time.sleep(delay)
         try:
@@ -477,7 +481,7 @@ def _retry_transient_api(action: Callable[[], Any]) -> Any:
                 or error.http_status in {408, 425, 429}
                 or error.http_status >= 500
             )
-            if not retryable or attempt == 4:
+            if not retryable or attempt == len(delays):
                 raise
     raise last_error or AccountInstallError("transient account mutation failed")
 

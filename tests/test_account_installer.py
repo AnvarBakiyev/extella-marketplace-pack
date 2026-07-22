@@ -555,6 +555,27 @@ class AccountInstallerTests(unittest.TestCase):
         saves = [endpoint for endpoint, _ in api.calls if endpoint == "/api/expert/save"]
         self.assertEqual(len(saves), 3)
 
+    def test_install_smoke_waits_for_bounded_provider_propagation(self):
+        api = FakeAPI()
+        api.transient_api_failures["/api/expert/run"] = 5
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep") as sleep:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            report = installer.install(
+                {"slow_compile": expert("slow_compile")},
+                required={"slow_compile"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+        self.assertEqual(report["status"], "installed")
+        runs = [endpoint for endpoint, _ in api.calls if endpoint == "/api/expert/run"]
+        self.assertEqual(len(runs), 6)
+        self.assertEqual([call.args[0] for call in sleep.call_args_list], [1.0, 3.0, 7.0, 15.0, 30.0])
+
     def test_next_install_repairs_durable_failed_rollback_first(self):
         api = FakeAPI()
         with tempfile.TemporaryDirectory() as directory:
@@ -692,7 +713,7 @@ class AccountInstallerTests(unittest.TestCase):
             state = json.loads(state_file.read_text())
             state["status"] = "rollback_failed"
             state_file.write_text(json.dumps(state))
-            api.transient_api_failures["/api/expert/get"] = 5
+            api.transient_api_failures["/api/expert/get"] = 6
 
             with self.assertRaisesRegex(AccountInstallError, "status=failed, failed=1"):
                 repair_interrupted_account(api, state_file)
