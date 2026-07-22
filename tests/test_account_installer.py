@@ -41,6 +41,7 @@ class FakeAPI:
         }
         self.next_agent = 1
         self.fail_agent_runs = set()
+        self.transient_agent_run_failures = {}
         self.agent_scope = ""
         self.scope_history = []
 
@@ -105,6 +106,10 @@ class FakeAPI:
         if endpoint == "/api/agent/run":
             if payload["agent_id"] in self.fail_agent_runs:
                 raise APIError(endpoint, "http_error", http_status=400, code="pro_key_required")
+            remaining = self.transient_agent_run_failures.get(payload["agent_id"], 0)
+            if remaining:
+                self.transient_agent_run_failures[payload["agent_id"]] = remaining - 1
+                raise APIError(endpoint, "http_error", http_status=500, code="temporary provider failure")
             return {"status": "success", "output_text": "EXTELLA_READY"}
         if endpoint == "/api/agent/delete":
             self.agents.pop(payload["agent_id"], None)
@@ -349,6 +354,25 @@ class AccountInstallerTests(unittest.TestCase):
             )
             self.assertEqual(report["status"], "installed")
             self.assertFalse(api.experts["newline_normalized"]["expert_code"].endswith("\n"))
+
+    def test_token_qwen_smoke_retries_transient_failure_and_is_cached(self):
+        api = FakeAPI()
+        api.transient_agent_run_failures[api.default_agent_id] = 2
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+            )
+            installer.install(
+                {"safe_smoke": expert("safe_smoke")},
+                required={"safe_smoke"},
+                smokes=set(),
+                kv_artifacts=[],
+                agent_instructions={"wizard": "wizard instructions", "builder": "builder instructions"},
+            )
+        agent_runs = [endpoint for endpoint, _ in api.calls if endpoint == "/api/agent/run"]
+        self.assertEqual(len(agent_runs), 3)
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()

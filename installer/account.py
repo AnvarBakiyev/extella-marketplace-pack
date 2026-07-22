@@ -471,6 +471,7 @@ class AccountInstaller:
         self.api = api
         self.agent_id = agent_id or ""
         self.token_agent_id = ""
+        self._smoked_agents: set[str] = set()
         self.release_version = release_version
         self.transaction = AccountTransaction(release_version=release_version, state_root=state_root)
         if self.agent_id:
@@ -542,19 +543,50 @@ class AccountInstaller:
         return provider == QWEN_PROVIDER and model.startswith("qwen3.7")
 
     def _smoke_agent(self, agent_id: str) -> None:
-        response = self.api.post(
-            "/api/agent/run",
-            {
-                "agent_id": agent_id,
-                "input": "Reply with exactly: EXTELLA_READY",
-                "store": False,
-                "run_timeout": 90,
-            },
-            timeout=140,
-        )
-        serialized = json.dumps(response, ensure_ascii=False).lower()
-        if not _response_success(response) or "pro_key_required" in serialized or "does not belong" in serialized:
-            raise AccountInstallError("Qwen agent smoke failed")
+        if agent_id in self._smoked_agents:
+            return
+        payload = {
+            "agent_id": agent_id,
+            "input": "Reply with exactly: EXTELLA_READY",
+            "store": False,
+            "run_timeout": 90,
+        }
+        last_error: Exception | None = None
+        for attempt, delay in enumerate((0.0, 0.5, 1.5), start=1):
+            if delay:
+                time.sleep(delay)
+            try:
+                response = self.api.post("/api/agent/run", payload, timeout=140)
+            except APIError as error:
+                last_error = error
+                code = error.code.lower()
+                permanent = any(
+                    marker in code
+                    for marker in ("pro_key_required", "does not belong", "forbidden", "invalid token")
+                )
+                retryable = (
+                    not permanent
+                    and (
+                        error.http_status is None
+                        or error.http_status >= 500
+                        or "incorrect api key provided" in code
+                    )
+                )
+                if not retryable or attempt == 3:
+                    raise AccountInstallError("Qwen agent smoke failed") from error
+                continue
+            serialized = json.dumps(response, ensure_ascii=False).lower()
+            if (
+                _response_success(response)
+                and "extella_ready" in serialized
+                and "pro_key_required" not in serialized
+                and "does not belong" not in serialized
+            ):
+                self._smoked_agents.add(agent_id)
+                return
+            last_error = AccountInstallError("Qwen agent smoke returned an invalid result")
+            break
+        raise AccountInstallError("Qwen agent smoke failed") from last_error
 
     def ensure_agent(self, *, role: str, name: str, instructions: str, existing_id: str = "") -> tuple[str, Callable[[], None] | None]:
         if existing_id:
