@@ -177,7 +177,7 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "345d77aeca91fdd7ddc948cfa5c1bcd28c9792dd"
+      "revision": "9099cd6f24655f8bdf451a801407a2cca5e2fd66"
     },
     {
       "id": "wizard",
@@ -201,8 +201,8 @@
     {
       "id": "installer-macos",
       "path": "toolbar/install-all.sh",
-      "sha256": "9dbfff4b2445c0c3e095d89e92ffde54462ebbbc0027e86603fec965d7302557",
-      "bytes": 9603,
+      "sha256": "92f6165af2abbd400c6aa4da33adc87d444d252382970e3f616629fd608abe26",
+      "bytes": 10061,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -246,8 +246,8 @@
     {
       "id": "runtime-platforms",
       "path": "runtime/extella_runtime/platforms.py",
-      "sha256": "30f884965cae21f4de18b1e10b028866baa290f64441e91f8914fbb9c69786b1",
-      "bytes": 3318,
+      "sha256": "21876b3ba557a394d3fb6ff924944e5a514c0c6b7eb8965bf594e6db15438260",
+      "bytes": 4702,
       "required": true,
       "platforms": [
         "macos-x86_64",
