@@ -73,6 +73,30 @@ class UnhealthySupervisor(FakeSupervisor):
         return self.status(spec)
 
 
+class FakeResponse:
+    status = 200
+    headers = {"Content-Type": "text/html; charset=utf-8"}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def getcode(self):
+        return self.status
+
+    def read(self, _size):
+        return b"<html><body>ready</body></html>"
+
+
+class FakeOpener:
+    def open(self, request, timeout):
+        self.request = request
+        self.timeout = timeout
+        return FakeResponse()
+
+
 class SupportedPluginLifecycleTests(unittest.TestCase):
     def setUp(self):
         FakeAccountInstaller.installs = []
@@ -138,13 +162,18 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
             patch.object(plugin_lifecycle, "AccountInstaller", FakeAccountInstaller),
             patch.object(plugin_lifecycle, "ProcessSupervisor", FakeSupervisor),
             patch.object(plugin_lifecycle, "_restrict_secret_file"),
+            patch.object(
+                plugin_lifecycle,
+                "_probe_ui",
+                return_value={"status": "ready", "url": "http://127.0.0.1:8766/onboarding.html", "sampleBytes": 32},
+            ),
         )
 
     def test_install_is_explicit_transactional_and_starts_owned_service(self):
         with tempfile.TemporaryDirectory() as directory:
             package, data, env = self.fixture(Path(directory))
             patches = self.lifecycle_patches()
-            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6]:
                 result = plugin_lifecycle.install_supported_plugin(
                     "extella_travel_agency",
                     package_root=package,
@@ -155,6 +184,7 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
                 )
             self.assertEqual(result["status"], "installed")
             self.assertEqual(result["service"]["pid"], 4242)
+            self.assertEqual(result["ui"]["status"], "ready")
             self.assertTrue((data / "plugins/extella_travel_agency/server.py").is_file())
             registry = json.loads((data / "plugins/_registry/extella_travel_agency.json").read_text())
             self.assertTrue(registry["installedByExtella"])
@@ -165,7 +195,7 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             package, data, env = self.fixture(Path(directory))
             patches = self.lifecycle_patches()
-            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6]:
                 plugin_lifecycle.install_supported_plugin(
                     "extella_travel_agency",
                     package_root=package,
@@ -213,7 +243,7 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
             with (
                 patches[0], patches[1], patches[2], patches[3],
                 patch.object(plugin_lifecycle, "ProcessSupervisor", UnhealthySupervisor),
-                patches[5],
+                patches[5], patches[6],
             ):
                 with self.assertRaisesRegex(Exception, "plugin.service"):
                     plugin_lifecycle.install_supported_plugin(
@@ -227,6 +257,50 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
             self.assertTrue(FakeAccountInstaller.instances[0].transaction.rolled_back)
             self.assertFalse((data / "plugins/extella_travel_agency/server.py").exists())
             self.assertFalse((data / "plugins/_registry/extella_travel_agency.json").exists())
+
+    def test_ui_failure_rolls_back_account_files_registration_and_service(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package, data, env = self.fixture(Path(directory))
+            patches = self.lifecycle_patches()
+            with (
+                patches[0], patches[1], patches[2], patches[3], patches[4], patches[5],
+                patch.object(
+                    plugin_lifecycle,
+                    "_probe_ui",
+                    side_effect=plugin_lifecycle.PluginLifecycleError("plugin UI did not open"),
+                ),
+            ):
+                with self.assertRaisesRegex(Exception, "plugin.ui"):
+                    plugin_lifecycle.install_supported_plugin(
+                        "extella_travel_agency",
+                        package_root=package,
+                        platform_info=self.mac,
+                        env=env,
+                        account_api=object(),
+                        python_executable=Path(sys.executable),
+                    )
+            self.assertTrue(FakeAccountInstaller.instances[0].transaction.rolled_back)
+            self.assertFalse(FakeSupervisor.running)
+            self.assertFalse((data / "plugins/extella_travel_agency/server.py").exists())
+            self.assertFalse((data / "plugins/_registry/extella_travel_agency.json").exists())
+
+    def test_ui_probe_is_loopback_html_only_and_bounded(self):
+        manifest = {
+            "id": "extella_travel_agency",
+            "ui": {
+                "type": "local_server",
+                "runtimeId": "extella_travel_agency",
+                "entrypoint": "/onboarding.html",
+            },
+        }
+        spec = SimpleNamespace(runtime_id="extella_travel_agency", port=8766)
+        opener = FakeOpener()
+        with patch.object(plugin_lifecycle, "build_opener", return_value=opener):
+            result = plugin_lifecycle._probe_ui(manifest, spec, timeout=45)
+        self.assertEqual(result["status"], "ready")
+        self.assertEqual(result["url"], "http://127.0.0.1:8766/onboarding.html")
+        self.assertEqual(opener.request.full_url, result["url"])
+        self.assertEqual(opener.timeout, 30.0)
 
 
 if __name__ == "__main__":

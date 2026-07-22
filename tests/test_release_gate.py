@@ -117,6 +117,28 @@ class PluginManifestTests(unittest.TestCase):
         issues = release_gate.validate_plugin(self.write(plugin))
         self.assertIn("security.static_agent_scope", {issue.code for issue in issues})
 
+    def test_supported_on_demand_requires_ui_and_real_smoke(self):
+        plugin = valid_plugin()
+        plugin["classification"] = "supported_on_demand"
+        plugin["install"] = {
+            "strategy": "on_demand",
+            "idempotent": True,
+            "transactional": True,
+            "entrypoints": {
+                "macos-x86_64": "installer/plugin_lifecycle.py",
+                "macos-arm64": "installer/plugin_lifecycle.py",
+                "windows11-x86_64": "installer/plugin_lifecycle.py",
+            },
+            "mutablePaths": ["${EXTELLA_DATA}/example"],
+        }
+        plugin["uninstall"]["entrypoint"] = "installer/plugin_lifecycle.py"
+        plugin["ui"]["runtimeId"] = "other_runtime"
+        plugin["experts"]["smoke"] = []
+        issues = release_gate.validate_plugin(self.write(plugin))
+        codes = {issue.code for issue in issues}
+        self.assertIn("ui.on_demand_entrypoint", codes)
+        self.assertIn("expert.on_demand_smoke", codes)
+
 
 class ToolbarSourceGateTests(unittest.TestCase):
     def _fixture(self, root: Path, *, canonical: bytes, distributed: bytes):

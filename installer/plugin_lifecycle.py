@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import sys
 from typing import Any, Iterable, Mapping
+from urllib.error import HTTPError, URLError
+from urllib.request import ProxyHandler, Request, build_opener
 
 from installer.account import (
     AccountInstaller,
@@ -34,6 +36,7 @@ SUPPORTED_IDS = {
     "extella_travel_agency",
 }
 PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
+MAX_UI_SMOKE_BYTES = 64 * 1024
 
 
 class PluginLifecycleError(InstallationError):
@@ -194,6 +197,38 @@ def _registry_payload(manifest: Mapping[str, Any], spec: RuntimeSpec, paths: Cli
     }
 
 
+def _probe_ui(
+    manifest: Mapping[str, Any],
+    spec: RuntimeSpec,
+    *,
+    timeout: float,
+) -> dict[str, Any]:
+    ui = manifest.get("ui") if isinstance(manifest.get("ui"), dict) else {}
+    entrypoint = str(ui.get("entrypoint") or "")
+    if (
+        ui.get("type") != "local_server"
+        or ui.get("runtimeId") != spec.runtime_id
+        or not entrypoint.startswith("/")
+        or entrypoint.startswith("//")
+    ):
+        raise PluginLifecycleError("plugin UI contract is invalid")
+    url = f"http://127.0.0.1:{spec.port}{entrypoint}"
+    request = Request(url, headers={"Accept": "text/html"}, method="GET")
+    opener = build_opener(ProxyHandler({}))
+    try:
+        with opener.open(request, timeout=max(1.0, min(float(timeout), 30.0))) as response:
+            status = int(getattr(response, "status", response.getcode()))
+            content_type = str(response.headers.get("Content-Type") or "").lower()
+            body = response.read(MAX_UI_SMOKE_BYTES)
+    except (HTTPError, URLError, OSError, TimeoutError, ValueError) as error:
+        raise PluginLifecycleError("plugin UI did not open") from error
+    if not 200 <= status < 300 or "text/html" not in content_type:
+        raise PluginLifecycleError("plugin UI did not return HTML")
+    if not body or b"<html" not in body.lower():
+        raise PluginLifecycleError("plugin UI response is invalid")
+    return {"status": "ready", "url": url, "sampleBytes": len(body)}
+
+
 def _copy_files(
     transaction: InstallTransaction,
     mappings: Iterable[tuple[Path, Path]],
@@ -239,6 +274,7 @@ def install_supported_plugin(
         environment={**environment, **_runtime_environment(paths)},
     )
     spec = _runtime_spec(manifest, paths=paths, python=python)
+    ui_report: dict[str, Any] = {}
     try:
         mappings = _source_mappings(package_root, manifest, paths)
         local.run("plugin.files", lambda: _copy_files(local, mappings))
@@ -291,6 +327,17 @@ def install_supported_plugin(
             return "plugin service passed health check"
 
         local.run("plugin.service", start)
+
+        def verify_ui() -> str:
+            nonlocal ui_report
+            ui_report = _probe_ui(
+                manifest,
+                spec,
+                timeout=float((manifest.get("runtime") or {}).get("health", {}).get("timeoutSeconds") or 30),
+            )
+            return "plugin UI entrypoint opened and returned HTML"
+
+        local.run("plugin.ui", verify_ui)
         account_report = account.transaction.commit()
         local_report = local.commit()
     except Exception:
@@ -305,6 +352,7 @@ def install_supported_plugin(
         "version": manifest.get("version"),
         "platform": platform_info.key,
         "service": supervisor.status(spec),
+        "ui": ui_report,
         "local": {"status": local_report["status"], "steps": len(local_report["steps"])},
         "account": {"status": account_report["status"], "steps": len(account_report["steps"])},
     }

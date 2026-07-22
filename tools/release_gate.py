@@ -228,6 +228,36 @@ def validate_plugin(path: Path) -> list[Issue]:
         if not isinstance(command, list) or not command:
             issues.append(Issue("runtime.command", str(path), "local services require argv command templates"))
 
+    ui = _required_object(data, "ui", path, issues)
+    experts = _required_object(data, "experts", path, issues)
+    if data.get("classification") == "supported_on_demand":
+        entrypoint = ui.get("entrypoint")
+        smoke_path = ui.get("smokePath")
+        if (
+            ui.get("type") != "local_server"
+            or ui.get("runtimeId") != data.get("id")
+            or not isinstance(entrypoint, str)
+            or not entrypoint.startswith("/")
+            or entrypoint.startswith("//")
+        ):
+            issues.append(
+                Issue(
+                    "ui.on_demand_entrypoint",
+                    str(path),
+                    "supported on-demand plugins require a local HTML entrypoint bound to their runtime",
+                )
+            )
+        if not isinstance(smoke_path, str) or not smoke_path.startswith("/"):
+            issues.append(Issue("ui.smoke", str(path), "supported on-demand plugins require a UI smoke path"))
+        if not isinstance(experts.get("smoke"), list) or not experts.get("smoke"):
+            issues.append(
+                Issue(
+                    "expert.on_demand_smoke",
+                    str(path),
+                    "supported on-demand plugins require at least one real account smoke",
+                )
+            )
+
     release_state = _required_object(data, "releaseState", path, issues)
     if release_state.get("advertised") is True and release_state.get("verification") != "verified":
         issues.append(Issue("release.unverified_advertisement", str(path), "only verified capabilities may be advertised"))
