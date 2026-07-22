@@ -16,6 +16,14 @@ sys.modules[SPEC.name] = release_gate
 SPEC.loader.exec_module(release_gate)
 
 
+class RequiredBundlePayloadTests(unittest.TestCase):
+    def test_installer_runtime_resolver_is_a_release_gate_requirement(self):
+        self.assertIn(
+            "payload/marketplace/runtime/pinokio_recipe_resolver.js",
+            release_gate.REQUIRED_BUNDLE_PAYLOAD,
+        )
+
+
 def valid_plugin() -> dict:
     return {
         "schemaVersion": 1,

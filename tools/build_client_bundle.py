@@ -36,6 +36,7 @@ MARKETPLACE_PATTERNS = (
     "installer/**/*.py",
     "tools/external_matrix.py",
     "runtime/**/*.py",
+    "runtime/**/*.js",
     "device/activity-center/bridge/*.py",
     "device/activity-center/instrumentation/*.py",
     "automations/experts/*.py",

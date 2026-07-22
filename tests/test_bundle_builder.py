@@ -15,6 +15,25 @@ sys.modules[SPEC.name] = bundle_builder
 SPEC.loader.exec_module(bundle_builder)
 
 
+class BundleRuntimeInventoryTests(unittest.TestCase):
+    def test_runtime_javascript_required_by_installer_is_bundled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "runtime/extella_runtime").mkdir(parents=True)
+            python_runtime = root / "runtime/extella_runtime/platforms.py"
+            javascript_runtime = root / "runtime/pinokio_recipe_resolver.js"
+            python_runtime.write_text("# runtime\n", encoding="utf-8")
+            javascript_runtime.write_text("// resolver\n", encoding="utf-8")
+
+            selected = {
+                path.relative_to(root).as_posix()
+                for path in bundle_builder._files(root, bundle_builder.MARKETPLACE_PATTERNS)
+            }
+
+        self.assertIn("runtime/extella_runtime/platforms.py", selected)
+        self.assertIn("runtime/pinokio_recipe_resolver.js", selected)
+
+
 class ExpertClassificationTests(unittest.TestCase):
     def roots(self, *, inventory: dict | None = None) -> tuple[Path, Path, tempfile.TemporaryDirectory]:
         temporary = tempfile.TemporaryDirectory()

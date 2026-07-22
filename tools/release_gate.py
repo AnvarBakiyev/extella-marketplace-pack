@@ -37,6 +37,14 @@ EVIDENCE_SCENARIOS = {
     "upgrade_previous",
     "ui_live_extella",
 }
+REQUIRED_BUNDLE_PAYLOAD = frozenset(
+    {
+        "payload/marketplace/installer/client_verify.py",
+        "payload/marketplace/installer/verification.py",
+        "payload/marketplace/tools/external_matrix.py",
+        "payload/marketplace/runtime/pinokio_recipe_resolver.js",
+    }
+)
 CLASSIFICATIONS = {"bundled", "supported_on_demand", "third_party_unverified"}
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
@@ -894,17 +902,13 @@ def validate_release(
                     for item in bundled.get("files") or []
                     if isinstance(item, dict)
                 }
-                required_verification_payload = {
-                    "payload/marketplace/installer/client_verify.py",
-                    "payload/marketplace/installer/verification.py",
-                    "payload/marketplace/tools/external_matrix.py",
-                }
-                if not required_verification_payload.issubset(bundled_paths):
+                if not REQUIRED_BUNDLE_PAYLOAD.issubset(bundled_paths):
+                    missing_payload = sorted(REQUIRED_BUNDLE_PAYLOAD - bundled_paths)
                     issues.append(
                         Issue(
-                            "distribution.verification_runner",
+                            "distribution.required_payload",
                             str(bundle_path),
-                            "bundle is missing the installed verifier or external matrix runner",
+                            f"bundle is missing required installer/runtime payload: {missing_payload}",
                         )
                     )
                 release_sources = {
