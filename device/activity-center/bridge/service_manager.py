@@ -266,7 +266,9 @@ def _public_service(
                 "owned": True,
             }
         )
-    elif runtime.get("errorClass") == "port_occupied_by_unowned_process":
+    elif runtime.get("errorClass") == "port_occupied_by_unowned_process" or not isinstance(
+        spec, RuntimeSpec
+    ):
         for pid in listening_pids(service["port"]):
             identity: ProcessIdentity | None = process_identity(pid)
             processes.append(
@@ -277,8 +279,10 @@ def _public_service(
                     "owned": False,
                 }
             )
+        if processes and runtime.get("status") == "stopped":
+            runtime["status"] = "degraded"
     blocked = service.get("blockedReason") or ""
-    if runtime.get("errorClass") == "port_occupied_by_unowned_process":
+    if runtime.get("errorClass") == "port_occupied_by_unowned_process" and not blocked:
         blocked = "The port is occupied by a process whose Extella ownership is not confirmed."
     elif runtime.get("errorClass") == "health_check_failed":
         blocked = "The owned process is running but its health check is failing."

@@ -153,6 +153,28 @@ class ServiceManagerTests(unittest.TestCase):
             )
             self.assertIsNone(services[0]["runtimeSpec"])
             self.assertIsInstance(services[1]["runtimeSpec"], service_manager.RuntimeSpec)
+            identity = service_manager.ProcessIdentity(
+                pid=6789,
+                ppid=1,
+                executable="python",
+                started_at="today",
+                command_hash="not-public",
+            )
+            with (
+                patch.object(service_manager, "listening_pids", return_value=[6789]),
+                patch.object(service_manager, "process_identity", return_value=identity),
+            ):
+                public = service_manager._public_service(
+                    services[0], {"disabled": [], "lastErrors": {}}
+                )
+            self.assertEqual(public["status"], "degraded")
+            self.assertEqual(
+                public["processes"],
+                [{"pid": 6789, "ppid": 1, "process": "python", "owned": False}],
+            )
+            self.assertFalse(public["canStop"])
+            self.assertIn("Legacy shell", public["controlBlockedReason"])
+            self.assertNotIn("not-public", json.dumps(public))
 
     def test_public_payload_never_exposes_argv_or_full_root(self) -> None:
         spec = service_manager.RuntimeSpec(
