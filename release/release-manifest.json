@@ -12,8 +12,8 @@
   "distribution": {
     "status": "candidate",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "dd60b76c826b09ec606d38c3caabe42f3098031f4ae1baf4265d53c1db7fa12a",
-    "bytes": 3269870,
+    "sha256": "ba85ba150267c129bbac216ec1470d3ce0002b3a635449819757c0b98d4cc751",
+    "bytes": 3270576,
     "fileCount": 268
   },
   "dependencies": [
