@@ -2,44 +2,54 @@
 """Extella Contract Agent — onboarding bridge (localhost:8767).
 
 Маршруты: / и /onboarding.html — панель; /x/* — JSON API; /out/<file> — готовые документы.
-Секреты живут в ~/extella_wizard/app/config.json (auth_token, telegram_bot_token, telegram_chat_id).
+Секреты живут в защищённом platform-native конфиге Extella Client.
 Сервер локальный (127.0.0.1), наружу ничего не открывает. Отправку писем/сообщений делает ЧЕЛОВЕК."""
-import json, os, ssl, time, io, base64, subprocess, threading, uuid, urllib.request, urllib.error, mimetypes
+import json, os, ssl, time, io, base64, re, subprocess, tempfile, threading, uuid, urllib.request, urllib.error, mimetypes
 from urllib.parse import unquote, quote
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from extella_expert_bridge import account_config, locations
 
 PROGRESS = {}  # job_id -> {step, index, total, done, error, result}
 
 PORT = 8767
 HERE = os.path.dirname(os.path.abspath(__file__))
-WIZARD_ROOT = os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard")
-PLUGIN_ROOT = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
-CFG_PATH = os.path.join(WIZARD_ROOT, "app", "config.json")
+LOCATIONS = locations()
+PLUGIN_ROOT = LOCATIONS["plugins_root"]
+CFG_PATH = LOCATIONS["account_config"]
 OUT_DIR = os.path.join(PLUGIN_ROOT, "extella_contract_agent", "out")
 os.makedirs(OUT_DIR, exist_ok=True)
-CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
+CTX = ssl.create_default_context()
 
 
 def cfg():
-    try:
-        return json.load(open(CFG_PATH, encoding="utf-8"))
-    except Exception:
-        return {}
+    return account_config()
 
 
 def cfg_save(patch):
     c = cfg(); c.update(patch)
     os.makedirs(os.path.dirname(CFG_PATH), exist_ok=True)
-    json.dump(c, open(CFG_PATH, "w", encoding="utf-8"), ensure_ascii=False)
+    fd, temporary = tempfile.mkstemp(prefix=".config.", dir=os.path.dirname(CFG_PATH))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(c, handle, ensure_ascii=False)
+            handle.flush(); os.fsync(handle.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, CFG_PATH)
+    finally:
+        if os.path.exists(temporary): os.unlink(temporary)
     return c
 
 
 def xapi(path, payload, timeout=120):
     c = cfg()
-    req = urllib.request.Request("https://api.extella.ai" + path, data=json.dumps(payload).encode("utf-8"),
+    agent_id = str(c.get("agent_id") or "")
+    if not re.fullmatch(r"agent_[A-Za-z0-9_-]{6,128}", agent_id):
+        raise RuntimeError("Current-account Extella agent is not configured")
+    api_base = str(c.get("api_base") or "https://api.extella.ai").rstrip("/")
+    req = urllib.request.Request(api_base + path, data=json.dumps(payload).encode("utf-8"),
                                  headers={"X-Auth-Token": c.get("auth_token", ""), "Content-Type": "application/json",
                                           "X-Profile-Id": "default",
-                                          "X-Agent-Id": c.get("agent_id", "agent_extella_alibaba_default")}, method="POST")
+                                          "X-Agent-Id": agent_id}, method="POST")
     with urllib.request.urlopen(req, timeout=timeout, context=CTX) as r:
         return json.loads(r.read().decode("utf-8"))
 

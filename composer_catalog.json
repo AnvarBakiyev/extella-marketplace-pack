@@ -1,18 +1,6 @@
 {
   "blocks": [
     {
-      "id": "fin_scan_statements",
-      "kind": "finance",
-      "what": "Scan a local folder of bank/card CSV statements; returns recurring subscriptions (merchant, price, cadence, price history) and variable spend. Fully local.",
-      "params": {
-        "folder": "path to CSV folder"
-      },
-      "defaults": {
-        "folder": "~/extella_wizard/fin_statements"
-      },
-      "kw": "банковские выписки счета инвойсы транзакции суммы разбор анализ финансы отчёты подписки папка bank statements invoices transactions amounts parse financial scan subscriptions folder"
-    },
-    {
       "id": "svc_github_releases",
       "kind": "source",
       "what": "Latest releases of given GitHub repos (tag, date, notes).",

@@ -1,9 +1,6 @@
 {
-  "version": "1.1.9",
-  "built": "2026-07-13T08:39:42Z",
-  "sha": "446c00a",
-  "bytes": 4398544,
-  "file": "toolbar.js",
-  "marker": "Extella Plugins",
-  "note": "Verified-каталог MCP (198 серверов, npm/pypi проверены) в паке + сидинг + проверка в гейте; Node в разовый Homebrew-шаг"
+  "schemaVersion": 1,
+  "updatesEnabled": false,
+  "releaseManifest": "release/release-manifest.json",
+  "reason": "Raw-branch toolbar auto-update is retired; use a verified Extella Client release bundle."
 }

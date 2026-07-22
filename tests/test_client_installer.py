@@ -62,6 +62,7 @@ class ClientInstallerTests(unittest.TestCase):
         for source in sorted((ROOT / "runtime/extella_runtime").glob("*.py")):
             copy(source, "payload/marketplace/runtime/extella_runtime/" + source.name)
         copy(ROOT / "runtime/extella_expert_bridge.py", "payload/marketplace/runtime/extella_expert_bridge.py")
+        copy(ROOT / "runtime/pinokio_recipe_resolver.js", "payload/marketplace/runtime/pinokio_recipe_resolver.js")
         for source in sorted((ROOT / "installer").glob("*.py")):
             copy(source, "payload/marketplace/installer/" + source.name)
         copy(ROOT / "tools/external_matrix.py", "payload/marketplace/tools/external_matrix.py")
@@ -104,6 +105,16 @@ class ClientInstallerTests(unittest.TestCase):
                     "sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
                 }
             )
+        workspace = bundle / "payload/wizard/dist/workspace/workspace_autopilot.py"
+        workspace.parent.mkdir(parents=True, exist_ok=True)
+        workspace.write_text("print('workspace')\n", encoding="utf-8")
+        files.append(
+            {
+                "path": workspace.relative_to(bundle).as_posix(),
+                "bytes": workspace.stat().st_size,
+                "sha256": hashlib.sha256(workspace.read_bytes()).hexdigest(),
+            }
+        )
         catalog = bundle / "payload/wizard/catalog/catalog.json"
         catalog.parent.mkdir(parents=True, exist_ok=True)
         catalog.write_text('{"capabilities":[],"process_archetypes":[]}', encoding="utf-8")
@@ -123,6 +134,7 @@ class ClientInstallerTests(unittest.TestCase):
                 {"id": "toolbar", "revision": "2" * 40},
                 {"id": "wizard", "revision": "3" * 40},
             ],
+            "packagingRepositoryRevision": "4" * 40,
             "files": sorted(files, key=lambda item: item["path"]),
         }
         (bundle / "bundle-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -145,6 +157,8 @@ class ClientInstallerTests(unittest.TestCase):
             self.assertEqual(verified.release_version, "2.0.0-rc.1")
             self.assertEqual(report["status"], "installed")
             self.assertTrue((root / "data/wizard/app/wizard.html").is_file())
+            self.assertTrue((root / "data/wizard/app/workspace/workspace_autopilot.py").is_file())
+            self.assertTrue((root / "data/runtime/pinokio_recipe_resolver.js").is_file())
             self.assertTrue((root / "data/installer/client_uninstall.py").is_file())
             self.assertTrue((root / "data/installer/external_matrix.py").is_file())
             registry = json.loads(

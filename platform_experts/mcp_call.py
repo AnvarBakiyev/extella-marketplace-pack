@@ -5,6 +5,12 @@ def mcp_call(server="", tool="__list__", args_json="{}") -> str:
     args_json = "{}" if (not args_json or str(args_json).startswith("{{")) else str(args_json)
     def err(m): return json.dumps({"status":"error","message":m}, ensure_ascii=False)
 
+    try:
+        from extella_expert_bridge import locations
+        native = locations()
+    except Exception:
+        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.")
+
     def _abs(cmd0):
         try:
             from extella_expert_bridge import path_or_error
@@ -44,12 +50,12 @@ def mcp_call(server="", tool="__list__", args_json="{}") -> str:
         "fetch": ["uvx", "mcp-server-fetch"],
         "time":  ["uvx", "mcp-server-time"],
         "git":   ["uvx", "mcp-server-git"],
-        "filesystem": ["npx", "-y", "@modelcontextprotocol/server-filesystem", os.path.expanduser("~/Downloads")],
+        "filesystem": ["npx", "-y", "@modelcontextprotocol/server-filesystem", native["user_files_root"]],
     }
     cmd = BUILTIN.get(server)
     if cmd is None:
         try:
-            allow = json.load(open(os.path.expanduser("~/.extella_mcp/allowlist.json")))
+            allow = json.load(open(os.path.join(native["mcp_root"], "allowlist.json"), encoding="utf-8"))
             ent = allow.get(server)
             if ent: cmd = ent.get("cmd")
         except Exception: pass

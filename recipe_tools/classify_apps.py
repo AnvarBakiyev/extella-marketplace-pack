@@ -6,9 +6,10 @@
 import re, json, os, urllib.request, concurrent.futures as cf
 
 TOK = os.environ.get("EXTELLA_TOKEN", "").strip()
-if not TOK:
-    raise SystemExit("EXTELLA_TOKEN is required")
-H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": os.environ.get("EXTELLA_SCOPE_AGENT", "agent_extella_default"), "Content-Type": "application/json"}
+AGENT = os.environ.get("EXTELLA_SCOPE_AGENT", "").strip()
+if not TOK or not AGENT.startswith("agent_"):
+    raise SystemExit("EXTELLA_TOKEN and the current account EXTELLA_SCOPE_AGENT are required")
+H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": AGENT, "Content-Type": "application/json"}
 
 def kv_get(k):
     req = urllib.request.Request("https://api.extella.ai/api/kv/get", data=json.dumps({"key": k, "global": True}).encode(), headers=H)

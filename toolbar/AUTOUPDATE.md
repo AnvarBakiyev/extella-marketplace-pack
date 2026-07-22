@@ -1,14 +1,12 @@
-# Extella toolbar — auto-update
+# Toolbar update policy
 
-Single built bundle `toolbar.js` + `version.json` for the desktop app's auto-update.
+Raw-branch toolbar auto-update is retired. `toolbar.js` is delivered only inside
+an exact Extella Client release bundle whose size, SHA-256, file inventory, and
+source revisions are verified before installation.
 
-**Raw URLs (main):**
-- https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar/version.json
-- https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar/toolbar.js
+The UI does not expose a self-update action. `wz_self_update` is informational:
+it reports the installed release and directs the user to the verified
+Repair/Update path without downloading or modifying files.
 
-**Flow for the app:**
-1. Poll `version.json`. If `version`/`sha` differ from the installed one → download `toolbar.js`.
-2. Verify it contains the marker `Extella Plugins` and matches `bytes`.
-3. Write to `<userData>/toolbar.js` and reload the toolbar view.
-
-The app already injects `<userData>/toolbar.js` on load if present (else the bundled copy), so update = replace that file + reload.
+Do not reintroduce polling of `raw main`, marker-only validation, or replacement
+of a live toolbar outside the transactional client installer.

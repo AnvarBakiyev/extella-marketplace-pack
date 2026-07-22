@@ -1,12 +1,16 @@
 def mcp_list() -> str:
     """Отдаёт РЕАЛЬНОЕ состояние подключений MCP на этом устройстве.
 
-    Правда живёт в ~/.extella_mcp/allowlist.json (его пишет mcp_connect).
+    Правда живёт в платформенном каталоге данных Extella (его пишет mcp_connect).
     Тулбар раньше брал состояние из localStorage и захардкоженного списка,
     поэтому врал в обе стороны. Сопоставлять карточки каталога следует по pkg.
     """
     import json, os
-    fp = os.path.expanduser("~/.extella_mcp/allowlist.json")
+    try:
+        from extella_expert_bridge import locations
+        fp = os.path.join(locations()["mcp_root"], "allowlist.json")
+    except Exception:
+        return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
     try:
         allow = json.load(open(fp))
     except Exception:

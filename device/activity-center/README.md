@@ -7,8 +7,9 @@ It consists of two deliberately separate pieces:
 
 1. `toolbar/src/panels/activity-center.js` renders the bottom-right widget and
    links recurring tasks to **Plugins → Расписания**.
-2. This directory installs a local device bridge. It stores only
-   allow-listed lifecycle fields in `~/.extella/activity-center/events.jsonl`
+2. This directory contains the local device bridge installed by the unified
+   Extella Client installer. It stores only allow-listed lifecycle fields in
+   the platform-native Extella data directory
    and serves the normalized feed on `http://127.0.0.1:8799`. The bridge also
    exposes localhost services declared in the Extella plugin registry, with a
    narrow start/stop endpoint protected by an in-memory control token.
@@ -29,37 +30,32 @@ workbooks. A genuinely active listener task is cancelled with the native red
 
 In **Plugins → Расписания**, the **Локальные сервисы Extella** block shows each
 registered localhost, port, PID, process name, source, and current state. A
-service switched off there is recorded in
-`~/.extella/activity-center/services.json`, so the 10-minute boot checker does
-not immediately bring it back.
+service switched off there is recorded in platform-native controller state.
+The one Activity Center controller honors that state during login autostart and
+never runs a separate shell-based boot checker.
 
 ## Install
 
-The repository `install.sh` installs this observer automatically on macOS after
-deploying the modular toolbar. For observer-only development:
+Activity Center is a required bundled component and is installed atomically on
+all supported targets by `installer/client_install.py`. The old standalone
+`install.py` and `uninstall.py` entrypoints are retained only to fail safely;
+they make no changes. For read-only local bridge development:
 
 ```bash
-python3 device/activity-center/install.py
 curl -s http://127.0.0.1:8799/api/health
 curl -s http://127.0.0.1:8799/api/activity
 curl -s http://127.0.0.1:8799/api/services
 ```
 
-Restart Extella after installing so the listener loads the instrumentation
-hook. Uninstall only the device observer with:
-
-```bash
-python3 device/activity-center/uninstall.py
-```
+Use the verified native bootstrap with `--uninstall`/`-Uninstall` for removal;
+it preserves user-owned data and removes only resources recorded by the
+versioned installer.
 
 ## Test
 
 ```bash
-python3 -m unittest discover -s device/activity-center/tests -v
-node --check toolbar/src/panels/activity-center.js
-cd toolbar && node build.js
+PYTHONPATH=runtime python3 -m unittest discover -s device/activity-center/tests -v
 ```
 
-The Activity Center was first validated as a local override before being ported
-here. Do not copy the live 4.5 MB `toolbar.js` back into git; this repository's
-modular sources remain the source of truth.
+The canonical toolbar panel source lives in the isolated toolbar repository;
+the marketplace receives only its reproducibly built `toolbar.js` artifact.

@@ -19,6 +19,7 @@ import urllib.request
 
 EXPERT_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{1,127}$")
 SAFE_AGENT_ID = re.compile(r"^agent_[A-Za-z0-9_-]{6,128}$")
+BOOTSTRAP_AGENT_SCOPE = "agent_XXXXXXXX"
 QWEN_PROVIDER = "alibaba"
 QWEN_MODEL = "qwen3.7-max-2026-06-08"
 AGENTS_KV_KEY = "extella:client:agents:v1"
@@ -46,7 +47,13 @@ class AccountAPI(Protocol):
 class ExtellaAPI:
     """Small API client that never exposes the auth token in errors or reports."""
 
-    def __init__(self, token: str, *, api_base: str = "https://api.extella.ai", agent_scope: str = "agent_extella_default") -> None:
+    def __init__(
+        self,
+        token: str,
+        *,
+        api_base: str = "https://api.extella.ai",
+        agent_scope: str = BOOTSTRAP_AGENT_SCOPE,
+    ) -> None:
         token = token.strip()
         if len(token) < 20 or any(character.isspace() for character in token):
             raise AccountInstallError("Extella token is missing or malformed")
@@ -58,6 +65,13 @@ class ExtellaAPI:
         self._token = token
         self.api_base = api_base.rstrip("/")
         self.agent_scope = agent_scope
+
+    def set_agent_scope(self, agent_id: str) -> None:
+        """Bind subsequent account-resource calls to a verified current-account agent."""
+
+        if not SAFE_AGENT_ID.fullmatch(agent_id) or agent_id == BOOTSTRAP_AGENT_SCOPE:
+            raise AccountInstallError("invalid current-account API scope agent")
+        self.agent_scope = agent_id
 
     def post(self, endpoint: str, payload: Mapping[str, Any], *, timeout: int = 90) -> dict[str, Any]:
         if not endpoint.startswith("/api/"):
@@ -94,6 +108,16 @@ class ExtellaAPI:
         if not isinstance(parsed, dict):
             raise APIError(endpoint, "invalid_response")
         return parsed
+
+
+def scope_api_to_agent(api: AccountAPI, agent_id: str) -> None:
+    """Use a current-account agent scope when the concrete API supports it."""
+
+    if not SAFE_AGENT_ID.fullmatch(agent_id) or agent_id == BOOTSTRAP_AGENT_SCOPE:
+        raise AccountInstallError("a valid current-account API scope agent is required")
+    setter = getattr(api, "set_agent_scope", None)
+    if callable(setter):
+        setter(agent_id)
 
 
 @dataclass(frozen=True)
@@ -420,13 +444,18 @@ def instrument_expert_code(source: ExpertSource, agent_id: str) -> str:
 class AccountInstaller:
     def __init__(self, api: AccountAPI, *, release_version: str, state_root: Path, agent_id: str | None = None) -> None:
         if agent_id is not None and (
-            not SAFE_AGENT_ID.fullmatch(agent_id) or agent_id == "agent_extella_default"
+            not SAFE_AGENT_ID.fullmatch(agent_id) or agent_id == BOOTSTRAP_AGENT_SCOPE
         ):
             raise AccountInstallError("a valid current-account Qwen agent id is required")
         self.api = api
         self.agent_id = agent_id or ""
         self.release_version = release_version
         self.transaction = AccountTransaction(release_version=release_version, state_root=state_root)
+        if self.agent_id:
+            self._scope_api(self.agent_id)
+
+    def _scope_api(self, agent_id: str) -> None:
+        scope_api_to_agent(self.api, agent_id)
 
     def validate_token(self) -> None:
         response = self.api.post("/api/token/validate", {})
@@ -492,6 +521,7 @@ class AccountInstaller:
 
     def ensure_agent(self, *, role: str, name: str, instructions: str, existing_id: str = "") -> tuple[str, Callable[[], None] | None]:
         if existing_id:
+            self._scope_api(existing_id)
             current = self._get_agent(existing_id)
             if self._verified_qwen(current):
                 self._smoke_agent(existing_id)
@@ -511,8 +541,10 @@ class AccountInstaller:
         agent_id = self._agent_id(response)
         if not agent_id:
             raise AccountInstallError(f"agent create returned no id: {role}")
+        self._scope_api(agent_id)
 
         def undo() -> None:
+            self._scope_api(agent_id)
             result = self.api.post("/api/agent/delete", {"agent_id": agent_id})
             if not _response_success(result):
                 raise AccountInstallError("agent rollback delete failed")
@@ -560,6 +592,7 @@ class AccountInstaller:
             self.transaction.run(f"agent:{role}", action)
             resolved[role] = holder["id"]
         self.agent_id = resolved["wizard"]
+        self._scope_api(self.agent_id)
         payload = {
             "schemaVersion": 1,
             "releaseVersion": self.release_version,
@@ -732,6 +765,12 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
     """
 
     state = json.loads(state_file.read_text(encoding="utf-8"))
+    for raw in state.get("changes") or []:
+        if isinstance(raw, dict) and raw.get("kind") == "agent":
+            identity = str(raw.get("identity") or "")
+            if SAFE_AGENT_ID.fullmatch(identity):
+                scope_api_to_agent(api, identity)
+                break
     steps: list[dict[str, Any]] = []
     failed = False
     action_required = False

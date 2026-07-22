@@ -14,12 +14,11 @@ def p2d5_negotiate(disputed_json: str = "", counterparty_reply: str = "", round_
     from pathlib import Path
 
     # секреты — из config.json (не хардкод), честный fail при отсутствии
-    cfg = {}
-    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
-    cf = wizard_root / "app" / "config.json"
-    if cf.exists():
-        try: cfg = json.loads(cf.read_text(encoding="utf-8"))
-        except Exception: cfg = {}
+    try:
+        from extella_expert_bridge import account_config
+        cfg = account_config()
+    except Exception:
+        cfg = {}
     token = cfg.get("auth_token", "")
     agent_id = cfg.get("llm_agent_id") or cfg.get("agent_id", "")   # Qwen клиента; НИКОГДА Claude
     api = (cfg.get("api_base") or "https://api.extella.ai").rstrip("/")

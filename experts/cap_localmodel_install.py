@@ -22,7 +22,12 @@ def cap_localmodel_install(model="") -> str:
     except Exception: lst = ""
     if model in lst or model.split(":")[0] in lst:
         return json.dumps({"status":"already","model":model}, ensure_ascii=False)
-    d = os.path.expanduser("~/.extella_cli"); os.makedirs(d, exist_ok=True)
+    try:
+        from extella_expert_bridge import locations
+        d = os.path.join(locations()["logs_root"], "model-downloads")
+    except Exception:
+        return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
+    os.makedirs(d, exist_ok=True)
     logf = os.path.join(d, "pull_" + re.sub(r'[^A-Za-z0-9]+','_',model)[:40] + ".log")
     try:
         lg = open(logf, "w")

@@ -24,7 +24,14 @@ def p2d4_generate_document_package(input_path: str = "", output_dir: str = "") -
     if not records:
         return {"status": "error", "message": "во входе нет записей с анализом"}
 
-    out = Path(str(output_dir) or "/tmp/p2d4_docs").expanduser()
+    if str(output_dir):
+        out = Path(str(output_dir)).expanduser()
+    else:
+        try:
+            from extella_expert_bridge import locations
+            out = Path(locations()["user_files_root"]) / "contract-analysis"
+        except Exception:
+            return {"status": "error", "message": "Системный runtime Extella не установлен"}
     out.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y-%m-%d")
 

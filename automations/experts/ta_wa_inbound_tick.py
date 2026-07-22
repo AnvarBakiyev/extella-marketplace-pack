@@ -5,7 +5,8 @@ def ta_wa_inbound_tick(max_msgs=10, simulate_from="", simulate_text="", start_ph
     import json, os, ssl, ast, time, urllib.request, urllib.parse
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     tok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")

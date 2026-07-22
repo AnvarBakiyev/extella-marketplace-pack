@@ -1,70 +1,108 @@
 # expert: app_uninstall
-# description: Удаляет установленное приложение: останавливает запущенный процесс (по порту из лога/реестра), сносит папку ~/extella-apps/<app_id>, убирает реестр плагина. Возвращает {status, app_id, freed_mb}.
+# description: Безопасно удаляет стороннее приложение: останавливает только подтверждённый процесс Extella, проверяет освобождение порта, затем удаляет каталог и локальную запись реестра.
+
 def app_uninstall(app_id="", root=""):
-    import os, json, re, shutil, subprocess
-    def out(**k): k.setdefault("app_id", app_id); return json.dumps(k, ensure_ascii=False)
-    root = os.path.expanduser(root or ("~/extella-apps/" + (app_id or "")))
-    if not app_id and not os.path.isdir(root):
-        return out(status="error", message="не указан app_id")
-    if not os.path.isdir(root):
-        return out(status="success", message="уже удалено", removed=False)
+    import json, os, re, shutil
+    from pathlib import Path
 
-    # размер до удаления (для отчёта)
-    freed_mb = 0
+    def out(**values):
+        values.setdefault("app_id", app_id)
+        return json.dumps(values, ensure_ascii=False)
+
     try:
-        tot = 0
-        for dp, _, fs in os.walk(root):
-            for f in fs:
-                try: tot += os.path.getsize(os.path.join(dp, f))
-                except Exception: pass
-        freed_mb = round(tot / 1048576)
-    except Exception: pass
+        from extella_expert_bridge import locations, path_or_error, service_control
+        native = locations()
+    except Exception:
+        return out(status="error", error_class="client_runtime_missing",
+                   message="Системный runtime Extella не установлен. Запустите Repair Extella Client.")
 
-    # 1. остановить запущенный процесс: порт из server.log (или реестра) → убить слушателя
-    ports = set()
+    apps_root = Path(native["apps_root"]).resolve()
+    target = Path(root).expanduser().resolve() if root else (apps_root / str(app_id)).resolve()
     try:
-        log = os.path.join(root, "server.log")
-        if os.path.isfile(log):
-            txt = open(log, encoding="utf-8", errors="ignore").read()
-            for p in re.findall(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt):
-                ports.add(int(p))
-    except Exception: pass
-    registry_root = os.environ.get("EXTELLA_PLUGIN_REGISTRY") or os.path.join(
-        os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins"), "_registry"
-    )
-    reg_candidates = [
-        os.path.join(registry_root, app_id + ".json"),
-        os.path.join(registry_root, app_id.replace("/", "_") + ".json"),
-        os.path.join(registry_root, re.sub(r"[^a-zA-Z0-9]", "_", app_id) + ".json"),
-        os.path.join(registry_root, app_id.split("/")[-1] + ".json"),
-    ]
-    for reg in reg_candidates:
-        try:
-            if os.path.isfile(reg):
-                man = json.load(open(reg, encoding="utf-8"))
-                pr = (man.get("ui") or {}).get("port")
-                if pr: ports.add(int(pr))
-        except Exception: pass
-    for pr in ports:
-        try:
-            pids = subprocess.run(["lsof", "-ti", "tcp:%d" % pr], capture_output=True, text=True, timeout=10).stdout.split()
-            for pid in pids:
-                try: subprocess.run(["kill", "-9", pid], timeout=5)
-                except Exception: pass
-        except Exception: pass
-    # плюс best-effort: процессы, запущенные ИЗ папки приложения
-    try: subprocess.run("pkill -9 -f " + re.escape(root), shell=True, timeout=10)
-    except Exception: pass
+        relative = target.relative_to(apps_root)
+    except ValueError:
+        return out(status="error", error_class="path_outside_extella",
+                   message="Удаление разрешено только в каталоге приложений Extella.")
+    if not app_id:
+        app_id = relative.as_posix()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,119}", str(app_id)) or ".." in Path(str(app_id)).parts:
+        return out(status="error", error_class="invalid_app_id", message="Некорректный app_id.")
 
-    # 2. снести папку приложения
-    shutil.rmtree(root, ignore_errors=True)
-
-    # 3. убрать реестр плагина
-    for reg in reg_candidates:
+    registry_root = Path(native["plugin_registry"])
+    candidates = {
+        registry_root / (str(app_id) + ".json"),
+        registry_root / (str(app_id).replace("/", "_") + ".json"),
+        registry_root / (re.sub(r"[^a-zA-Z0-9]", "_", str(app_id)) + ".json"),
+        registry_root / (str(app_id).split("/")[-1] + ".json"),
+    }
+    record = {}
+    for candidate in candidates:
         try:
-            if os.path.isfile(reg): os.remove(reg)
-        except Exception: pass
+            if candidate.is_file():
+                record = json.loads(candidate.read_text(encoding="utf-8"))
+                break
+        except Exception:
+            continue
 
-    ok = not os.path.isdir(root)
-    return out(status="success" if ok else "error", removed=ok,
-               freed_mb=freed_mb, message=("удалено, освобождено ~%d МБ" % freed_mb) if ok else "не удалось полностью удалить")
+    runtime = record.get("runtime") if isinstance(record, dict) else None
+    if not isinstance(runtime, dict):
+        port = (record.get("ui") or {}).get("port") if isinstance(record, dict) else None
+        if port:
+            python, state = path_or_error("python", repair=False)
+            if not python:
+                return out(status="error", error_class="dependency_missing",
+                           message=state.get("message") or "Python недоступен для проверки процесса.")
+            runtime = {
+                "id": "third-party." + re.sub(r"[^a-z0-9._-]+", "_", str(app_id).lower()).strip("_")[:60],
+                "argv": [python], "cwd": str(target), "port": int(port),
+                "healthUrl": "http://127.0.0.1:%d/" % int(port),
+                "owner": "extella_third_party_app", "autostart": "disabled",
+            }
+
+    if isinstance(runtime, dict):
+        try:
+            kwargs = {
+                "runtime_id": runtime["id"], "name": str(app_id), "argv": list(runtime["argv"]),
+                "cwd": runtime["cwd"], "port": int(runtime["port"]),
+                "health_url": runtime["healthUrl"], "owner": runtime.get("owner") or "extella_third_party_app",
+                "autostart": runtime.get("autostart") or "disabled",
+            }
+            before = service_control("status", **kwargs)
+            if before.get("errorClass") == "port_occupied_by_unowned_process":
+                return out(status="error", error_class="unowned_process",
+                           message="Порт занят процессом, которым Extella не владеет; удаление остановлено.")
+            after = service_control("stop", **kwargs)
+            if after.get("status") != "stopped":
+                return out(status="error", error_class="service_stop_failed",
+                           message="Подтверждённый процесс не остановился; файлы сохранены.")
+        except Exception:
+            return out(status="error", error_class="service_stop_failed",
+                       message="Не удалось безопасно подтвердить остановку процесса; файлы сохранены.")
+
+    if not target.exists():
+        for candidate in candidates:
+            try:
+                candidate.unlink(missing_ok=True)
+            except OSError:
+                pass
+        return out(status="success", removed=False, message="уже удалено")
+
+    total = 0
+    for directory, _, files in os.walk(target):
+        for name in files:
+            try:
+                total += os.path.getsize(os.path.join(directory, name))
+            except OSError:
+                pass
+    try:
+        shutil.rmtree(target)
+    except OSError:
+        return out(status="error", error_class="file_remove_failed",
+                   message="Не удалось полностью удалить файлы приложения.")
+    for candidate in candidates:
+        try:
+            candidate.unlink(missing_ok=True)
+        except OSError:
+            pass
+    return out(status="success", removed=True, freed_mb=round(total / 1048576),
+               message="приложение и подтверждённый runtime удалены")

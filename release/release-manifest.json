@@ -59,6 +59,12 @@
       "resolver": "ensure_tool"
     },
     {
+      "name": "gh",
+      "requiredForCore": false,
+      "minimumVersion": "2.0",
+      "resolver": "ensure_tool"
+    },
+    {
       "name": "brew",
       "requiredForCore": false,
       "minimumVersion": null,

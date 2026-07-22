@@ -6,12 +6,17 @@ def kp_ingest(name="", folder="") -> str:
     if not name or name.startswith("{{"): return json.dumps({"status":"error","message":"нужно имя базы"}, ensure_ascii=False)
     folder = os.path.expanduser(folder or "")
     if not folder or not os.path.isdir(folder): return json.dumps({"status":"error","message":"нужна существующая папка"}, ensure_ascii=False)
+    try:
+        from extella_expert_bridge import locations, path_or_error
+        ollama, ollama_state = path_or_error("ollama", repair=False)
+        pdftotext, _pdf_state = path_or_error("pdftotext", repair=False)
+    except Exception:
+        return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
     def serve():
         try: urllib.request.urlopen("http://localhost:11434/api/version", timeout=3); return True
         except Exception: pass
-        for ob in ["/usr/local/bin/ollama","/opt/homebrew/bin/ollama"]:
-            if os.path.exists(ob):
-                subprocess.Popen([ob,"serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); break
+        if ollama:
+            subprocess.Popen([ollama,"serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(3)
         try: urllib.request.urlopen("http://localhost:11434/api/version", timeout=5); return True
         except Exception: return False
@@ -25,10 +30,9 @@ def kp_ingest(name="", folder="") -> str:
             try: return open(fp, encoding="utf-8", errors="ignore").read()
             except Exception: return ""
         if e==".pdf":
-            for pb in ["/opt/homebrew/bin/pdftotext","/usr/local/bin/pdftotext"]:
-                if os.path.exists(pb):
-                    try: return subprocess.run([pb, fp, "-"], capture_output=True, text=True, timeout=60).stdout or ""
-                    except Exception: return ""
+            if pdftotext:
+                try: return subprocess.run([pdftotext, fp, "-"], capture_output=True, text=True, timeout=60).stdout or ""
+                except Exception: return ""
         return ""
     def chunks(txt, size=1200, ov=150):
         txt=re.sub(r"\s+"," ",txt).strip(); out=[]
@@ -58,7 +62,7 @@ def kp_ingest(name="", folder="") -> str:
                 if j < len(embs) and embs[j]: store.append({"text":part[j][0],"src":part[j][1],"emb":embs[j]})
         except Exception as e: last_err=str(e)[:110]
     if not store: return json.dumps({"status":"error","message":"файлы найдены ("+str(len(files))+"), но эмбеддинг не сработал: "+(last_err or "нет ответа от Ollama")}, ensure_ascii=False)
-    d=os.path.expanduser("~/.extella_kp"); os.makedirs(d, exist_ok=True)
+    d=locations()["knowledge_root"]; os.makedirs(d, exist_ok=True)
     safe=re.sub(r"[^a-zA-Z0-9_]","_",name)
     json.dump({"name":name,"count":len(store),"chunks":store}, open(os.path.join(d,safe+".json"),"w"), ensure_ascii=False)
     return json.dumps({"status":"success","name":name,"chunks":len(store),"files":len(files)}, ensure_ascii=False)

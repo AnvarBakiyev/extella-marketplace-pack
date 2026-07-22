@@ -1,32 +1,31 @@
 # expert: _etb_srv_extella_contracts
-# description: Start expert for Extella Contract Agent onboarding bridge: launches local server.py on 127.0.0.1:8767 if not already running (toolbar plugin convention _etb_srv_*).
-import json, os, subprocess, urllib.request
+# description: Запускает сторонний Contract Agent bridge через общий диспетчер Extella с подтверждённым PID, портом и HTTP health-check.
+import json, os
 
-def _alive():
-    try:
-        urllib.request.urlopen("http://127.0.0.1:8767/x/status", timeout=3)
-        return True
-    except Exception:
-        return False
-
-if _alive():
-    result = json.dumps({"status": "success", "note": "already running", "url": "http://127.0.0.1:8767/"})
-else:
-    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
-    path = os.path.join(plugin_root, "extella_contract_agent", "server.py")
-    if not os.path.exists(path):
-        result = json.dumps({"status": "error", "error": "server.py not found: " + path})
+try:
+    from extella_expert_bridge import locations, path_or_error, service_control
+    native = locations()
+    python, state = path_or_error("python", repair=False)
+    path = os.path.join(native["plugins_root"], "extella_contract_agent", "server.py")
+    if not python:
+        result = json.dumps({"status":"error", "error_class":"dependency_missing",
+                             "message":state.get("message") or "Python недоступен"}, ensure_ascii=False)
+    elif not os.path.isfile(path):
+        result = json.dumps({"status":"error", "error_class":"plugin_incomplete",
+                             "message":"Contract Agent server.py не установлен"}, ensure_ascii=False)
     else:
-        subprocess.Popen(["nohup", "python3", path], stdout=open("/tmp/extella_contracts.log", "a"),
-                         stderr=subprocess.STDOUT, start_new_session=True)
-        import time
-        ok = False
-        for _ in range(10):
-            time.sleep(1)
-            if _alive():
-                ok = True
-                break
-        result = json.dumps({"status": "success" if ok else "error",
-                             "note": "started" if ok else "did not come up, see /tmp/extella_contracts.log",
-                             "url": "http://127.0.0.1:8767/"})
+        running = service_control(
+            "start", runtime_id="extella_contract_agent", name="Contract Agent",
+            argv=[python, path], cwd=os.path.dirname(path), port=8767,
+            health_url="http://127.0.0.1:8767/x/status", owner="extella_contract_agent",
+            autostart="disabled", timeout=30,
+        )
+        result = json.dumps({"status":"success" if running.get("status") == "running" else "error",
+                             "pid":running.get("pid"), "port":8767,
+                             "ready":bool(running.get("healthy")),
+                             "url":"http://127.0.0.1:8767/"}, ensure_ascii=False)
+except Exception:
+    result = json.dumps({"status":"error", "error_class":"service_control_failed",
+                         "message":"Contract Agent runtime не прошёл проверку владельца и health-check"},
+                        ensure_ascii=False)
 result

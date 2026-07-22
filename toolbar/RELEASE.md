@@ -1,12 +1,15 @@
-# Как это устроено и как обновлять
+# Extella Client release entrypoints
 
-`install-all.sh` — **единственная команда доставки** Extella коллеге (тулбар + эксперты + мост).
+The only supported native bootstraps are:
 
-Полный процесс «как мёржить всё и всё вести» (три репо, каноны веток, чеклист релиза, аудит
-«работает у всех») — в репо визарда: **`docs/RELEASE_AND_MERGE.md`**
-(https://github.com/AnvarBakiyev/extella-adoption-wizard/blob/main/docs/RELEASE_AND_MERGE.md).
+- `install-all.sh` — macOS x86_64 and arm64
+- `install-all.ps1` — Windows 11 x64
 
-Команда для коллеги:
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar/install-all.sh)
-```
+Both require an exact versioned bundle URL/path, SHA-256, and byte size. They
+reject unsupported platforms before mutation and never fetch executable code
+from an unpinned `main` branch.
+
+The release itself is built and gated from the separate integration repository.
+See the repository `README.md`, `release/release-manifest.json`, and
+`release/EXTERNAL_MATRIX.md` for the build, verification, clean-machine matrix,
+and approval sequence.

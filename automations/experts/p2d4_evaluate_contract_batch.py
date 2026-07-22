@@ -8,7 +8,7 @@ def p2d4_evaluate_contract_batch(input_path: str = "", output_path: str = "") ->
     """Настоящий ИИ-анализ договоров: на КАЖДЫЙ договор зовёт платформенную Qwen (config.agent_id)
     и просит разбор по 10-пунктному чек-листу с ДОСЛОВНЫМИ цитатами, отклонениями от стандартных
     условий, уровнем риска и предлагаемыми правками. Параллельно (concurrent.futures), cspl=fython
-    (без parallel_task-обработчика). Секреты — из ~/extella_wizard/app/config.json (не хардкод).
+    (без parallel_task-обработчика). Секреты — из the current device's platform-native Extella account config (не хардкод).
     Вход: JSON-список записей договоров (или {records:[...]}). Выход: JSON {summary, records:[... + ai_analysis]}."""
     import json, re, os, urllib.request, concurrent.futures
     from pathlib import Path
@@ -26,12 +26,11 @@ def p2d4_evaluate_contract_batch(input_path: str = "", output_path: str = "") ->
         return {"status": "error", "message": "нет записей договоров во входе"}
 
     # 2) токен + Qwen-агент из конфига (секреты не хардкодим; честный fail при отсутствии)
-    cfg = {}
-    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
-    cf = wizard_root / "app" / "config.json"
-    if cf.exists():
-        try: cfg = json.loads(cf.read_text(encoding="utf-8"))
-        except Exception: cfg = {}
+    try:
+        from extella_expert_bridge import account_config
+        cfg = account_config()
+    except Exception:
+        cfg = {}
     token = cfg.get("auth_token", "")
     agent_id = cfg.get("llm_agent_id") or cfg.get("agent_id", "")   # Qwen клиента; НИКОГДА Claude
     api_base = (cfg.get("api_base") or "https://api.extella.ai").rstrip("/")

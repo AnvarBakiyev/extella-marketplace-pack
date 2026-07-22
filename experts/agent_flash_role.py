@@ -11,9 +11,11 @@ def agent_flash_role(agent_id="", role_id="") -> str:
     SERVICES = ["svc_currency", "svc_crypto", "svc_weather", "svc_translate", "svc_wiki", "svc_worldbank", "svc_holidays", "svc_github", "svc_hackernews", "svc_books", "svc_ipgeo", "svc_postal", "svc_qr"]
     r = ROLES.get(role_id)
     if not r: return err("\u043d\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043d\u0430\u044f \u0440\u043e\u043b\u044c: "+role_id)
-    tok = ""
-    try: tok = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"))).get("auth_token","")
-    except Exception: pass
+    try:
+        from extella_expert_bridge import account_config
+        tok = account_config().get("auth_token", "")
+    except Exception:
+        tok = ""
     if not tok: return err("\u043d\u0435\u0442 \u0442\u043e\u043a\u0435\u043d\u0430 (config.json)")
     ctx = ssl.create_default_context()
     def api(path, payload, aid):
@@ -25,12 +27,12 @@ def agent_flash_role(agent_id="", role_id="") -> str:
             return {"_http": he.code}
         except Exception as e:
             return {"_err": str(e)[:100]}
-    upd = api("/api/agent/update", {"agent_id":agent_id,"instructions":r["instruction"]}, "agent_extella_default")
+    upd = api("/api/agent/update", {"agent_id":agent_id,"instructions":r["instruction"]}, "__EXTELLA_AGENT__")
     if isinstance(upd,dict) and upd.get("_http")==404: return err("\u0430\u0433\u0435\u043d\u0442 \u0441 \u0442\u0430\u043a\u0438\u043c ID \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d \u2014 \u043f\u0440\u043e\u0432\u0435\u0440\u044c\u0442\u0435 ID \u043a\u043e\u043f\u0438\u0438 \u0430\u0433\u0435\u043d\u0442\u0430")
     if isinstance(upd,dict) and (upd.get("_err") or upd.get("_http")): return err("\u043d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u043e\u0448\u0438\u0442\u044c \u0440\u043e\u043b\u044c ("+str(upd.get("_err") or upd.get("_http"))+")")
     prov = 0
     for nm in SERVICES:
-        g = api("/api/expert/get", {"name":nm}, "agent_extella_default")
+        g = api("/api/expert/get", {"name":nm}, "__EXTELLA_AGENT__")
         code = g.get("expert_code") if isinstance(g,dict) else None
         if not code: continue
         sv = api("/api/expert/save", {"name":nm,"description":g.get("expert_description",nm),"code":code,"kwargs":{},"cspl":"fython"}, agent_id)

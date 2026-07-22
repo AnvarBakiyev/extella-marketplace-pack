@@ -6,7 +6,8 @@ def ta_lead_upsert(phone="", fio="", channel="", answers_json="{}", status="", n
 
     tok = api_token if api_token and not str(api_token).startswith("{{") else ""
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     if not tok:

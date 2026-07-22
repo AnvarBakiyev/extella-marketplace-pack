@@ -26,6 +26,7 @@ class VerifiedBundle:
     files: int
     bytes: int
     source_repositories: tuple[dict[str, str], ...]
+    packaging_repository_revision: str
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -73,6 +74,9 @@ def verify_bundle(root: Path) -> VerifiedBundle:
         })
     if {source["id"] for source in sources} != {"marketplace", "toolbar", "wizard"}:
         raise BundleVerificationError("bundle must identify marketplace, toolbar, and wizard sources")
+    packaging_revision = str(manifest.get("packagingRepositoryRevision") or "")
+    if not SHA40.fullmatch(packaging_revision):
+        raise BundleVerificationError("bundle packaging repository revision is not a full Git SHA")
 
     records = manifest.get("files")
     if not isinstance(records, list) or not records:
@@ -112,4 +116,10 @@ def verify_bundle(root: Path) -> VerifiedBundle:
         extra = sorted(actual - expected)
         detail = f"missing={missing[:3]} extra={extra[:3]}"
         raise BundleVerificationError(f"bundle inventory is not exact: {detail}")
-    return VerifiedBundle(release_version, len(records), total_bytes, tuple(sources))
+    return VerifiedBundle(
+        release_version,
+        len(records),
+        total_bytes,
+        tuple(sources),
+        packaging_revision,
+    )

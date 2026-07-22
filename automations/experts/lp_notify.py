@@ -1,11 +1,12 @@
 # expert: lp_notify
-# description: Contract-agent pack: notify the manager/head in Telegram (contract review summary ready, negotiation draft awaiting approval). Params: text, chat_id, bot_token (fallback: telegram_chat_id/telegram_bot_token in ~/extella_wizard/app/config.json).
+# description: Contract-agent pack: notify the manager/head in Telegram (contract review summary ready, negotiation draft awaiting approval). Params: text, chat_id, bot_token (fallback: telegram_chat_id/telegram_bot_token in the current device's platform-native Extella account config).
 
 def lp_notify(text="", chat_id="", bot_token="") -> str:
     import json, os, ssl, urllib.request
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     tok = bot_token if bot_token and not str(bot_token).startswith("{{") else cfg.get("telegram_bot_token", "")

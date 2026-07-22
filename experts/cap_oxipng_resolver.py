@@ -2,7 +2,7 @@
 # description: Установка и проверка инструмента «oxipng (сжать PNG без потерь)» (brew). Зови ПЕРЕД первым использованием этой способности.
 
 def cap_oxipng_resolver(confirm_install="no") -> str:
-    import json, os
+    import json
     try:
         from extella_expert_bridge import ensure
     except Exception:
@@ -10,12 +10,6 @@ def cap_oxipng_resolver(confirm_install="no") -> str:
     repair = bool(confirm_install) and not str(confirm_install).startswith("{{") and str(confirm_install).lower() == "yes"
     result = ensure("oxipng", repair=repair)
     if result.get("ready") and result.get("path"):
-        directory = os.path.expanduser("~/.extella_cli")
-        os.makedirs(directory, exist_ok=True)
-        marker = os.path.join(directory, "oxipng")
-        temporary = marker + ".tmp"
-        open(temporary, "w", encoding="utf-8").write(result["path"])
-        os.replace(temporary, marker)
         result["bin_path"] = result["path"]
         result["source"] = "extella_runtime"
         result["status"] = "installed" if result.get("changed") else "already"

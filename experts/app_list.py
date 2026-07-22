@@ -1,9 +1,13 @@
 # name: app_list
-# description: Возвращает список реально установленных приложений (рецепты Pinokio) из ~/extella-apps: {app_id, root, can_start}. Для кнопки «Открыть» в витрине. Сканирует папки с рецептом (start.js/pinokio.js), глубина до 2 (владелец/приложение). БЕЗ LLM.
+# description: Возвращает список реально установленных сторонних приложений из платформенного каталога Extella: {app_id, can_start}. Для кнопки «Открыть» в витрине. БЕЗ LLM.
 import os, json
 
 def app_list():
-    base = os.path.expanduser("~/extella-apps")
+    try:
+        from extella_expert_bridge import locations
+        base = locations()["apps_root"]
+    except Exception:
+        return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
     out = []
     if not os.path.isdir(base):
         return json.dumps({"status": "success", "apps": []}, ensure_ascii=False)
@@ -23,14 +27,14 @@ def app_list():
         if not os.path.isdir(d) or name.startswith("."):
             continue
         if is_app(d):
-            out.append({"app_id": name, "root": d, "can_start": can_start(d)})
+            out.append({"app_id": name, "can_start": can_start(d)})
             continue
         # глубина 2: владелец/приложение (напр. cocktailpeanut/fluxgym)
         try:
             for sub in sorted(os.listdir(d)):
                 sd = os.path.join(d, sub)
                 if os.path.isdir(sd) and is_app(sd):
-                    out.append({"app_id": name + "/" + sub, "root": sd, "can_start": can_start(sd)})
+                    out.append({"app_id": name + "/" + sub, "can_start": can_start(sd)})
         except Exception:
             pass
 

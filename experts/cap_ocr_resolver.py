@@ -2,7 +2,7 @@
 # description: Установка и проверка инструмента «OCR (поиск по сканам)» (brew). Зови ПЕРЕД первым использованием этой способности.
 
 def cap_ocr_resolver(confirm_install="no") -> str:
-    import json, os
+    import json
     try:
         from extella_expert_bridge import ensure
     except Exception:
@@ -13,12 +13,6 @@ def cap_ocr_resolver(confirm_install="no") -> str:
     ready = all(result.get("ready") and result.get("path") for result in results.values())
     if ready:
         path = results["ocrmypdf"]["path"]
-        directory = os.path.expanduser("~/.extella_cli")
-        os.makedirs(directory, exist_ok=True)
-        marker = os.path.join(directory, "ocr")
-        temporary = marker + ".tmp"
-        open(temporary, "w", encoding="utf-8").write(path)
-        os.replace(temporary, marker)
         return json.dumps({
             "status": "installed" if any(item.get("changed") for item in results.values()) else "already",
             "bin_path": path,

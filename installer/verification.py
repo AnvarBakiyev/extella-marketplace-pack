@@ -20,6 +20,7 @@ from installer.account import (
     ExtellaAPI,
     _normalise_expert,
     _response_success,
+    scope_api_to_agent,
 )
 from runtime.extella_runtime.paths import ClientPaths, client_paths
 from runtime.extella_runtime.platforms import PlatformInfo, detect_platform
@@ -297,6 +298,11 @@ def verify_installed_client(
     if doctor.get("status") != "ready":
         raise ClientVerificationError("Computer Doctor report is not ready")
     api = account_api or ExtellaAPI(token, api_base=api_base)
+    wizard_config = _read_json_object(paths.wizard_root / "config.json", "Wizard config")
+    wizard_agent = str(wizard_config.get("agent_id") or "")
+    if not SAFE_AGENT_ID.fullmatch(wizard_agent):
+        raise ClientVerificationError("Wizard config has no current-account agent")
+    scope_api_to_agent(api, wizard_agent)
     local = _verify_local_files(paths, platform_info)
     services = _verify_services(http_get or _default_http_get)
     account = _verify_account(api, account_state, release_version=release_version)

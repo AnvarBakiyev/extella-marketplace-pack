@@ -5,7 +5,8 @@ def ta_passport_extract(image_path="", mrz_text="", api_token="") -> str:
     import json, os, re, ssl, subprocess, time, urllib.request
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     tok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")
@@ -22,11 +23,18 @@ def ta_passport_extract(image_path="", mrz_text="", api_token="") -> str:
         path = os.path.expanduser(image_path) if image_path and not str(image_path).startswith("{{") else ""
         if not path or not os.path.exists(path):
             return json.dumps({"status": "error", "error": "image_path not found and no mrz_text given"}, ensure_ascii=False)
-        tess = next((t for t in ("/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract", "/usr/bin/tesseract") if os.path.exists(t)), "tesseract")
+        try:
+            from extella_expert_bridge import path_or_error
+            tess, runtime = path_or_error("tesseract", repair=False)
+        except Exception:
+            tess, runtime = None, {"message": "Системный runtime Extella не установлен"}
+        if not tess:
+            return json.dumps({"status": "error", "error": runtime.get("message") or "tesseract unavailable",
+                               "hint": "передайте mrz_text напрямую или установите tesseract"}, ensure_ascii=False)
         try:
             out = subprocess.run([tess, path, "stdout", "--psm", "6"], capture_output=True, text=True, timeout=60)
             raw = out.stdout or ""
-            ocr_used = tess
+            ocr_used = "tesseract"
         except Exception as e:
             return json.dumps({"status": "error", "error": "tesseract failed: " + str(e)[:150],
                                "hint": "передайте mrz_text напрямую или установите tesseract"}, ensure_ascii=False)

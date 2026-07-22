@@ -5,7 +5,8 @@ def ta_contract_generate(doc_no="", tour_json="{}", draft_phone="", out_dir="", 
     import json, os, ssl, time, urllib.request
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     tok = api_token if api_token and not str(api_token).startswith("{{") else cfg.get("auth_token", "")
@@ -92,7 +93,11 @@ table{width:100%%;border-collapse:collapse;margin:8px 0}td{border:1px solid #bbb
 </body></html>""" % (num, num, today, agency, fio, table(rows_client), table(rows_tour),
                      ta_conf.get("manager_name", agency), fio, today)
 
-    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
+    try:
+        from extella_expert_bridge import locations
+        plugin_root = locations()["plugins_root"]
+    except Exception:
+        return json.dumps({"status": "error", "error": "client_runtime_missing"}, ensure_ascii=False)
     od = os.path.expanduser(out_dir) if out_dir and not str(out_dir).startswith("{{") else os.path.join(plugin_root, "extella_travel_agency", "contracts")
     os.makedirs(od, exist_ok=True)
     fname = "contract_%s.html" % num

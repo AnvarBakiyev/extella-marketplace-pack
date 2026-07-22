@@ -55,6 +55,10 @@ TOOL_SPECS: dict[str, ToolSpec] = {
         "git", ("git",), ("git.exe",), brew_formula="git", winget_id="Git.Git",
         minimum_version=(2, 30)
     ),
+    "gh": ToolSpec(
+        "gh", ("gh",), ("gh.exe",), brew_formula="gh", winget_id="GitHub.cli",
+        minimum_version=(2, 0)
+    ),
     "ffmpeg": ToolSpec(
         "ffmpeg", ("ffmpeg",), ("ffmpeg.exe",), brew_formula="ffmpeg",
         winget_id="Gyan.FFmpeg"
@@ -115,14 +119,19 @@ TOOL_SPECS: dict[str, ToolSpec] = {
         "ocrmypdf", ("ocrmypdf",), ("ocrmypdf.exe",), brew_formula="ocrmypdf"
     ),
     "tesseract": ToolSpec(
-        "tesseract", ("tesseract",), ("tesseract.exe",), brew_formula="tesseract"
+        "tesseract", ("tesseract",), ("tesseract.exe",), brew_formula="tesseract",
+        winget_id="UB-Mannheim.TesseractOCR"
     ),
     "oxipng": ToolSpec(
         "oxipng", ("oxipng",), ("oxipng.exe",), brew_formula="oxipng"
     ),
     "pdftotext": ToolSpec(
         "pdftotext", ("pdftotext",), ("pdftotext.exe",), version_args=("-v",),
-        brew_formula="poppler"
+        brew_formula="poppler", winget_id="oschwartz10612.Poppler"
+    ),
+    "pdftoppm": ToolSpec(
+        "pdftoppm", ("pdftoppm",), ("pdftoppm.exe",), version_args=("-v",),
+        brew_formula="poppler", winget_id="oschwartz10612.Poppler"
     ),
     "pngquant": ToolSpec(
         "pngquant", ("pngquant",), ("pngquant.exe",), brew_formula="pngquant"

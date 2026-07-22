@@ -5,7 +5,8 @@ def lp_assistant(question: str = "", history: str = "") -> str:
     import json, os, urllib.request
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     token = cfg.get("auth_token", "")

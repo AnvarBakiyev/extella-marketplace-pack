@@ -17,9 +17,9 @@ OK, BAD = "✅", "❌"
 
 def _title(t): print("\n== %s ==" % t)
 
-# ---- Модели: каждый HF-спейс должен ставиться (gradio нативно ИЛИ встройка) ----
+# ---- Модели: временная доступность сторонних HF endpoints (не release guarantee) ----
 def verify_models():
-    _title("Модели (HF)")
+    _title("Сторонние модели (HF, доступность сейчас)")
     mc = os.path.join(HERE, "models_catalog.json")
     if not os.path.exists(mc):
         print("  нет models_catalog.json"); return (0, 0, [])
@@ -65,7 +65,7 @@ def verify_models():
     unk  = [h for h, c in res.items() if c == "unknown"]
     good = len(grad) + len(emb)
     # красное ТОЛЬКО если есть реально-мёртвые; unknown (сеть/троттлинг) — предупреждение
-    print("  %s ставится: %d / %d (gradio %d, встройка %d)%s%s" % (
+    print("  %s endpoints доступны: %d / %d (gradio %d, встройка %d)%s%s" % (
         OK if not dead else BAD, good, len(ids), len(grad), len(emb),
         ("  ⚠️ не проверено (сеть/лимит HF): %d — перезапусти" % len(unk)) if unk else "",
         ("  ❌ мёртвых: %d" % len(dead)) if dead else ""))
@@ -116,25 +116,21 @@ def verify_services(token, agent):
     return (good, len(svcs), [n for n, c in res.items() if c != "ok"])
 
 
-# ---- CLI: у каждого резолвера должен быть headless-путь (прямая скачка), не только brew ----
+# ---- CLI: каждый resolver обязан использовать единый ensure_tool bridge ----
 def verify_cli():
-    # Решение Анвара: CLI ставятся через РАЗОВЫЙ Homebrew (поддерживаемый путь установщика).
-    # Значит brew-резолвер = ОК; красное только если у резолвера НЕТ пути установки вообще.
-    _title("CLI-инструменты (Homebrew — разовый шаг установщика)")
+    _title("CLI-инструменты (единый ensure_tool)")
     resolvers = glob.glob(os.path.join(HERE, "experts", "cap_*_resolver.py"))
-    direct = 0; viabrew = 0; nomethod = []
+    shared = 0; private = []
     for f in resolvers:
         code = open(f, encoding="utf-8").read()
-        has_direct = bool(re.search(r"urlretrieve|ditto|tar |curl |urlopen|download", code))
-        has_brew = "brew" in code and "install" in code
-        if has_direct: direct += 1
-        elif has_brew: viabrew += 1
-        else: nomethod.append(os.path.basename(f)[:-3])
-    good = direct + viabrew
-    print("  %s ставятся: %d / %d (headless %d, через Homebrew %d)" % (
-        OK if not nomethod else BAD, good, len(resolvers), direct, viabrew))
-    for r in nomethod: print("    %s нет пути установки: %s" % (BAD, r))
-    return (good, len(resolvers), nomethod)
+        if "extella_expert_bridge import" in code and ("ensure" in code or "path_or_error" in code):
+            shared += 1
+        else:
+            private.append(os.path.basename(f)[:-3])
+    print("  %s через общий runtime: %d / %d" % (
+        OK if not private else BAD, shared, len(resolvers)))
+    for resolver in private: print("    %s частный resolver: %s" % (BAD, resolver))
+    return (shared, len(resolvers), private)
 
 # ---- Знания: внешние источники паков (adilet/wikipedia) должны быть живы ----
 def verify_knowledge():
@@ -223,11 +219,13 @@ def main():
     args = [a.lower() for a in sys.argv[1:]]
     want = lambda k: (not args) or (k in args)
     tok = agent = ""
-    cfg = os.path.expanduser("~/extella_wizard/app/config.json")
-    if os.path.exists(cfg):
-        try:
-            d = json.load(open(cfg)); tok = d.get("auth_token", ""); agent = d.get("agent_id", "")
-        except Exception: pass
+    try:
+        from runtime.extella_expert_bridge import account_config
+        d = account_config()
+        tok = str(d.get("auth_token") or "")
+        agent = str(d.get("agent_id") or "")
+    except Exception:
+        pass
     print("PRE-FLIGHT VERIFY — пак Extella")
     summary = []
     if want("models"):    g, t, _ = verify_models();   summary.append(("Модели", g, t))

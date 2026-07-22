@@ -1,36 +1,31 @@
 # expert: _etb_srv_extella_travel_agency
-# description: Start expert for Travel Agency onboarding bridge: launches local server.py on 127.0.0.1:8766 if not already running (toolbar plugin convention _etb_srv_*).
-import json, os, subprocess, socket
+# description: Запускает сторонний Travel Agency bridge через общий диспетчер Extella с подтверждённым PID, портом и HTTP health-check.
+import json, os
 
-def _alive():
-    # «Сервер поднялся» = порт слушается. Раньше health бил в /x/status, а тот
-    # делает ЖИВЫЕ вызовы к Tourvisor/WhatsApp (до 60с) — при протухшем JWT висит,
-    # 3-сек таймаут срабатывал на ЖИВОМ сервере, эксперт решал «не поднялся» и
-    # плодил второй процесс на 8766. TCP-connect не зависит от JWT/внешних вызовов.
-    try:
-        with socket.create_connection(("127.0.0.1", 8766), timeout=1.5):
-            return True
-    except Exception:
-        return False
-
-if _alive():
-    result = json.dumps({"status": "success", "note": "already running", "url": "http://127.0.0.1:8766/"})
-else:
-    plugin_root = os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins")
-    path = os.path.join(plugin_root, "extella_travel_agency", "server.py")
-    if not os.path.exists(path):
-        result = json.dumps({"status": "error", "error": "server.py not found: " + path})
+try:
+    from extella_expert_bridge import locations, path_or_error, service_control
+    native = locations()
+    python, state = path_or_error("python", repair=False)
+    path = os.path.join(native["plugins_root"], "extella_travel_agency", "server.py")
+    if not python:
+        result = json.dumps({"status":"error", "error_class":"dependency_missing",
+                             "message":state.get("message") or "Python недоступен"}, ensure_ascii=False)
+    elif not os.path.isfile(path):
+        result = json.dumps({"status":"error", "error_class":"plugin_incomplete",
+                             "message":"Travel Agency server.py не установлен"}, ensure_ascii=False)
     else:
-        subprocess.Popen(["nohup", "python3", path], stdout=open("/tmp/ta_onboarding.log", "a"),
-                         stderr=subprocess.STDOUT, start_new_session=True)
-        import time
-        ok = False
-        for _ in range(10):
-            time.sleep(1)
-            if _alive():
-                ok = True
-                break
-        result = json.dumps({"status": "success" if ok else "error",
-                             "note": "started" if ok else "did not come up, see /tmp/ta_onboarding.log",
-                             "url": "http://127.0.0.1:8766/"})
+        running = service_control(
+            "start", runtime_id="extella_travel_agency", name="Travel Agency",
+            argv=[python, path], cwd=os.path.dirname(path), port=8766,
+            health_url="http://127.0.0.1:8766/", owner="extella_travel_agency",
+            autostart="disabled", timeout=30,
+        )
+        result = json.dumps({"status":"success" if running.get("status") == "running" else "error",
+                             "pid":running.get("pid"), "port":8766,
+                             "ready":bool(running.get("healthy")),
+                             "url":"http://127.0.0.1:8766/"}, ensure_ascii=False)
+except Exception:
+    result = json.dumps({"status":"error", "error_class":"service_control_failed",
+                         "message":"Travel Agency runtime не прошёл проверку владельца и health-check"},
+                        ensure_ascii=False)
 result

@@ -2,7 +2,7 @@
 """Сторож каталогов Extella.
 
 Зачем: часть каталогов витрины НЕ имеет харвестера и живёт «статикой» — их
-засевает только install.py пака. Если такой ключ пропадает из KV (как случилось
+засевает версионированный установщик. Если такой ключ пропадает из KV
 с _mkt_apps 16.07), вернуть его некому: раздел витрины просто пустеет молча.
 
 Что делает: раз в сутки проверяет, что охраняемые ключи на месте и не пустые.
@@ -16,10 +16,13 @@ import time
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-TOKEN = open(os.path.expanduser("~/freshfeed/.token")).read().strip()
+TOKEN = os.environ.get("EXTELLA_TOKEN", "").strip()
+AGENT = os.environ.get("EXTELLA_SCOPE_AGENT", "").strip()
+if not TOKEN or not AGENT.startswith("agent_"):
+    raise SystemExit("EXTELLA_TOKEN and the current account EXTELLA_SCOPE_AGENT are required")
 H = {"Content-Type": "application/json", "X-Auth-Token": TOKEN,
-     "X-Profile-Id": "default", "X-Agent-Id": "agent_extella_default"}
-BASE = "https://api.extella.ai"
+     "X-Profile-Id": "default", "X-Agent-Id": AGENT}
+BASE = os.environ.get("EXTELLA_API_BASE", "https://api.extella.ai").rstrip("/")
 
 # ключ-эталон: пак-файл вида {"_mkt_x": {...}, "_mkt_x_2": {...}}
 GUARDED = {

@@ -175,6 +175,7 @@ def _copy_runtime(transaction: InstallTransaction, bundle_root: Path, paths: Cli
     for item in sorted((source / "extella_runtime").glob("*.py")):
         transaction.atomic_copy(item, paths.runtime_root / "extella_runtime" / item.name)
     transaction.atomic_copy(source / "extella_expert_bridge.py", paths.runtime_root / "extella_expert_bridge.py")
+    transaction.atomic_copy(source / "pinokio_recipe_resolver.js", paths.runtime_root / "pinokio_recipe_resolver.js")
     return "shared runtime installed"
 
 
@@ -291,6 +292,8 @@ def _install_local_payload(
     transaction.atomic_copy(marketplace / "toolbar/toolbar.js", paths.toolbar_root / "toolbar.js")
     if not _tree_same(transaction, wizard / "ui", paths.wizard_root):
         transaction.atomic_tree(wizard / "ui", paths.wizard_root)
+    if not _tree_same(transaction, wizard / "dist/workspace", paths.wizard_root / "workspace"):
+        transaction.atomic_tree(wizard / "dist/workspace", paths.wizard_root / "workspace")
     transaction.atomic_copy(wizard / "catalog/catalog.json", paths.data_root / "wizard/catalog/catalog.json")
     transaction.atomic_copy(wizard / "catalog/catalog.json", paths.wizard_root / "catalog.json")
     for plugin_id in ("extella_travel_agency", "extella_contract_agent"):
@@ -313,7 +316,7 @@ def _install_local_payload(
             paths.plugins_root / "_registry" / f"{plugin_id}.json",
             mode=0o600,
         )
-    return "toolbar, wizard, plugin UIs, and registries installed"
+    return "toolbar, wizard workspace, plugin UIs, and registries installed"
 
 
 def prepare_local_client(

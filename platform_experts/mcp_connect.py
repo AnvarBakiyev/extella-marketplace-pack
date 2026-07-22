@@ -8,6 +8,12 @@ def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
     if pkg_type not in ("npm","pypi"): return err("поддерживаются только npm/pypi пакеты (получено: "+pkg_type+")")
     if not pkg: return err("нужен идентификатор пакета (pkg)")
 
+    try:
+        from extella_expert_bridge import locations
+        native = locations()
+    except Exception:
+        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.")
+
     def _abs(cmd0):
         try:
             from extella_expert_bridge import path_or_error
@@ -70,7 +76,7 @@ def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
     finally:
         try: p.terminate()
         except Exception: pass
-    d = os.path.expanduser("~/.extella_mcp"); os.makedirs(d, exist_ok=True)
+    d = native["mcp_root"]; os.makedirs(d, exist_ok=True)
     fp = os.path.join(d, "allowlist.json")
     try: allow = json.load(open(fp))
     except Exception: allow = {}

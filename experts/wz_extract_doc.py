@@ -2,21 +2,18 @@
 # description: Извлекает текст из одного файла по пути (PDF/Word/txt). Возвращает {status,name,text}.
 
 def wz_extract_doc(path=""):
-    import os, subprocess, json, shutil
+    import os, subprocess, json
     p = (path or "").strip()
     if not p or p.startswith("{{") or not os.path.isfile(p):
         return json.dumps({"status": "error", "message": "файл не найден: " + p}, ensure_ascii=False)
     ext = os.path.splitext(p)[1].lower()
     def which(x):
-        w = shutil.which(x)
-        if w: return w
-        c = os.path.expanduser("~/.extella_cli/" + x)
-        if os.path.exists(c):
-            try:
-                pth = open(c).read().strip()
-                if pth and os.path.exists(pth): return pth
-            except Exception: pass
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error(x, repair=False)
+            return path
+        except Exception:
+            return None
     LIM = 200000
     try:
         if ext == ".pdf":

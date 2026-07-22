@@ -18,15 +18,12 @@ def wz_extract_doc_b64(b64="", name="doc"):
     p = os.path.join(d, "in" + ext)
     open(p, "wb").write(raw)
     def which(x):
-        w = shutil.which(x)
-        if w: return w
-        c = os.path.expanduser("~/.extella_cli/" + x)
-        if os.path.exists(c):
-            try:
-                pth = open(c).read().strip()
-                if pth and os.path.exists(pth): return pth
-            except Exception: pass
-        return None
+        try:
+            from extella_expert_bridge import path_or_error
+            path, _state = path_or_error(x, repair=False)
+            return path
+        except Exception:
+            return None
     def pdf_py(path):
         # чистый python, без системного pdftotext
         try:

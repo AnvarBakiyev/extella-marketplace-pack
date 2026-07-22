@@ -1,5 +1,5 @@
 # expert: lp_email_send
-# description: Contract agent: send an email via SMTP on the user's behalf (negotiation letters, summaries). Config (~/extella_wizard/app/config.json): smtp_host, smtp_port, smtp_user, smtp_pass, email_from. Params: to, subject, body, cc. Human-triggered from the panel.
+# description: Contract agent: send an email via SMTP on the user's behalf (negotiation letters, summaries). Config (the current device's platform-native Extella account config): smtp_host, smtp_port, smtp_user, smtp_pass, email_from. Params: to, subject, body, cc. Human-triggered from the panel.
 
 def lp_email_send(to="", subject="", body="", cc="") -> str:
     import json, os, smtplib, ssl
@@ -7,7 +7,8 @@ def lp_email_send(to="", subject="", body="", cc="") -> str:
     from email.utils import formataddr, make_msgid
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
 

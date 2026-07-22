@@ -2,14 +2,16 @@
 # description: Проверяет локальную версию Extella и объясняет безопасный путь обновления. Никогда не скачивает raw main и не меняет клиент без проверенного release bundle.
 def wz_self_update(what="all"):
     import json
-    import os
     from pathlib import Path
 
     del what
-    data_root = Path(
-        os.environ.get("EXTELLA_DATA_ROOT")
-        or (Path.home() / "Library" / "Application Support" / "Extella")
-    )
+    try:
+        from extella_expert_bridge import locations
+        data_root = Path(locations()["data_root"])
+    except Exception:
+        return json.dumps({"status":"error", "errorClass":"client_runtime_missing",
+                           "message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."},
+                          ensure_ascii=False)
     state_file = data_root / "state" / "client" / "install-state.json"
     version = "unknown"
     try:

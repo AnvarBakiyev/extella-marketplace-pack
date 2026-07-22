@@ -97,6 +97,12 @@ class PluginManifestTests(unittest.TestCase):
         issues = release_gate.validate_plugin(self.write(plugin))
         self.assertIn("security.agent_id", {issue.code for issue in issues})
 
+    def test_legacy_global_agent_scope_is_rejected(self):
+        plugin = valid_plugin()
+        plugin["source"]["revision"] = "agent_extella_alibaba_default"
+        issues = release_gate.validate_plugin(self.write(plugin))
+        self.assertIn("security.static_agent_scope", {issue.code for issue in issues})
+
 
 class ToolbarSourceGateTests(unittest.TestCase):
     def _fixture(self, root: Path, *, canonical: bytes, distributed: bytes):
@@ -161,6 +167,234 @@ class CapDependencyGateTests(unittest.TestCase):
         self.assertIn("dependency.cap_bridge", codes)
         self.assertIn("dependency.direct_which", codes)
         self.assertIn("dependency.fixed_homebrew_path", codes)
+
+
+class ShippedExpertPortabilityTests(unittest.TestCase):
+    def fixture(self):
+        directory = tempfile.TemporaryDirectory()
+        root = Path(directory.name) / "marketplace"
+        wizard = Path(directory.name) / "wizard"
+        for path in (root / "experts", root / "platform_experts", root / "automations/experts", wizard / "experts"):
+            path.mkdir(parents=True)
+        return directory, root, wizard
+
+    def test_platform_native_bridge_passes(self):
+        directory, root, wizard = self.fixture()
+        try:
+            (root / "experts/example.py").write_text(
+                "def example():\n    from extella_expert_bridge import locations\n    return locations()['apps_root']\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], release_gate.validate_shipped_expert_portability(root, wizard))
+        finally:
+            directory.cleanup()
+
+    def test_legacy_path_and_unowned_shell_are_rejected(self):
+        directory, root, wizard = self.fixture()
+        try:
+            (root / "experts/example.py").write_text(
+                "def example():\n"
+                "    import os, subprocess\n"
+                "    return subprocess.run('x', shell=True, cwd=os.path.expanduser('~/extella-apps'))\n",
+                encoding="utf-8",
+            )
+            issues = release_gate.validate_shipped_expert_portability(root, wizard)
+        finally:
+            directory.cleanup()
+        codes = {issue.code for issue in issues}
+        self.assertIn("portability.legacy_home_path", codes)
+        self.assertIn("runtime.unowned_shell", codes)
+
+
+class ShippedRuntimeSecurityTests(unittest.TestCase):
+    def fixture(self):
+        directory = tempfile.TemporaryDirectory()
+        root = Path(directory.name) / "marketplace"
+        wizard = Path(directory.name) / "wizard"
+        (root / "automations/ui/example").mkdir(parents=True)
+        (root / "toolbar").mkdir(parents=True)
+        (wizard / "ui").mkdir(parents=True)
+        return directory, root, wizard
+
+    def test_safety_prompt_text_is_not_mistaken_for_executable_shell(self):
+        directory, root, wizard = self.fixture()
+        try:
+            (wizard / "ui/prompt.py").write_text(
+                "RULE = 'Never use shell=True or ssl.CERT_NONE'\n",
+                encoding="utf-8",
+            )
+            self.assertEqual([], release_gate.validate_shipped_runtime_security(root, wizard))
+        finally:
+            directory.cleanup()
+
+    def test_actual_unverified_tls_shell_and_static_agent_are_rejected(self):
+        directory, root, wizard = self.fixture()
+        try:
+            (root / "automations/ui/example/server.py").write_text(
+                "import ssl, subprocess\n"
+                "CTX = ssl.create_default_context()\n"
+                "CTX.check_hostname = False\n"
+                "CTX.verify_mode = ssl.CERT_NONE\n"
+                "subprocess.run(['tool'], shell=True)\n",
+                encoding="utf-8",
+            )
+            (root / "toolbar/toolbar.js").write_text(
+                "const agent = 'agent_extella_default';\n",
+                encoding="utf-8",
+            )
+            issues = release_gate.validate_shipped_runtime_security(root, wizard)
+        finally:
+            directory.cleanup()
+        codes = {issue.code for issue in issues}
+        self.assertIn("security.tls_verification_disabled", codes)
+        self.assertIn("runtime.unowned_shell", codes)
+        self.assertIn("security.static_agent_scope", codes)
+
+
+class CatalogPolicyTests(unittest.TestCase):
+    def fixture(self):
+        directory = tempfile.TemporaryDirectory()
+        root = Path(directory.name) / "marketplace"
+        wizard = Path(directory.name) / "wizard"
+        (root / "release").mkdir(parents=True)
+        (root / "experts").mkdir()
+        (wizard / "experts").mkdir(parents=True)
+        (root / "experts/example.py").write_text("def example():\n    return {}\n", encoding="utf-8")
+        (root / "release/catalog-policy.json").write_text(
+            json.dumps({
+                "schemaVersion": 1,
+                "defaultClassification": "third_party_unverified",
+                "supportedOnDemand": [],
+                "sources": {
+                    key: {"classification": "third_party_unverified", "advertisedAsGuaranteed": False}
+                    for key in ("_mkt_apps", "_mkt_loc", "_mkt_mcp", "_mkt_models", "_mkt_programs")
+                },
+                "visibility": {"hideField": "hidden", "hideWhenTrue": True},
+            }),
+            encoding="utf-8",
+        )
+        for filename in ("models_catalog.json", "apps_catalog.json", "mcp_catalog.json"):
+            (root / filename).write_text(
+                json.dumps({"catalog": {"shelf": [{
+                    "id": "example/source",
+                    "classification": "third_party_unverified",
+                    "hidden": False,
+                    "label": "Third-party · unverified",
+                }]}}),
+                encoding="utf-8",
+            )
+        (root / "composer_catalog.json").write_text(
+            json.dumps({"blocks": [{"id": "example", "params": {}}]}), encoding="utf-8"
+        )
+        return directory, root, wizard
+
+    def test_explicit_unverified_catalogs_and_real_composer_expert_pass(self):
+        directory, root, wizard = self.fixture()
+        try:
+            self.assertEqual([], release_gate.validate_catalog_policy(root, wizard))
+        finally:
+            directory.cleanup()
+
+    def test_guaranteed_label_and_missing_composer_expert_fail(self):
+        directory, root, wizard = self.fixture()
+        try:
+            models = root / "models_catalog.json"
+            models.write_text(json.dumps({"catalog": {"shelf": [{
+                "id": "example/source", "label": "Работает", "hidden": False,
+            }]}}), encoding="utf-8")
+            (root / "composer_catalog.json").write_text(
+                json.dumps({"blocks": [{"id": "missing", "defaults": {"folder": "~/private"}}]}),
+                encoding="utf-8",
+            )
+            issues = release_gate.validate_catalog_policy(root, wizard)
+        finally:
+            directory.cleanup()
+        codes = {issue.code for issue in issues}
+        self.assertIn("catalog.item_classification", codes)
+        self.assertIn("catalog.item_advertisement", codes)
+        self.assertIn("catalog.composer_expert", codes)
+        self.assertIn("catalog.composer_path", codes)
+
+
+class LifecycleEntrypointTests(unittest.TestCase):
+    def test_stale_component_installer_and_raw_branch_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            required = {
+                "install.py": "legacy_installer_retired",
+                "install_toolbar.sh": "toolbar/install-all.sh",
+                "toolbar/install.sh": "install-all.sh",
+                "toolbar/install.ps1": "install-all.ps1",
+                "toolbar/Install-Extella.command": "install-all.sh",
+                "toolbar/Install-Extella.bat": "install-all.ps1",
+                "device/activity-center/install.py": "standalone_component_installer_retired",
+                "device/activity-center/uninstall.py": "standalone_component_uninstaller_retired",
+            }
+            for relative, marker in required.items():
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(marker, encoding="utf-8")
+            (root / "toolbar/install.sh").write_text(
+                "install-all.sh raw.githubusercontent.com/example/project/main/file", encoding="utf-8"
+            )
+            (root / "device/boot").mkdir(parents=True)
+            (root / "device/boot/restart_local_servers.py").write_text("legacy", encoding="utf-8")
+            (root / "toolbar/version.json").write_text(
+                json.dumps({"updatesEnabled": True}), encoding="utf-8"
+            )
+            issues = release_gate.validate_lifecycle_entrypoints(root)
+        codes = {issue.code for issue in issues}
+        self.assertIn("security.mutable_source", codes)
+        self.assertIn("lifecycle.stale_copy", codes)
+        self.assertIn("lifecycle.update_policy", codes)
+
+    def test_wizard_standalone_lifecycle_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            wizard = Path(directory)
+            (wizard / "docs").mkdir()
+            (wizard / "scripts").mkdir()
+            (wizard / "install.py").write_text("print('legacy')", encoding="utf-8")
+            (wizard / "extella-update.sh").write_text(
+                "curl https://raw.githubusercontent.com/example/wizard/main/install.py | python3",
+                encoding="utf-8",
+            )
+            (wizard / "extella-plugin.json").write_text("{}", encoding="utf-8")
+            retired_scripts = {
+                "release.sh": "legacy_wizard_release_script_retired",
+                "deploy.sh": "legacy_wizard_live_deploy_retired",
+                "qa_delta_update.sh": "legacy_wizard_delta_updater_retired",
+                "publish_release.py": "legacy_wizard_kv_publisher_retired",
+                "register_app_cards.py": "legacy_wizard_registry_writer_retired",
+            }
+            for name, marker in retired_scripts.items():
+                (wizard / "scripts" / name).write_text(marker, encoding="utf-8")
+            for relative in ("README.md", "INSTALL.md", "UPDATE_FOR_COLLEAGUES.md", "docs/RELEASE_AND_MERGE.md"):
+                (wizard / relative).write_text("verified release", encoding="utf-8")
+            issues = release_gate.validate_wizard_lifecycle(wizard)
+        codes = {issue.code for issue in issues}
+        self.assertIn("lifecycle.wizard_stale_entrypoint", codes)
+        self.assertIn("lifecycle.wizard_stale_manifest", codes)
+        self.assertIn("security.mutable_source", codes)
+
+    def test_retired_wizard_lifecycle_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            wizard = Path(directory)
+            (wizard / "docs").mkdir()
+            (wizard / "scripts").mkdir()
+            (wizard / "install.py").write_text("legacy_wizard_installer_retired", encoding="utf-8")
+            (wizard / "extella-update.sh").write_text("legacy_wizard_updater_retired", encoding="utf-8")
+            retired_scripts = {
+                "release.sh": "legacy_wizard_release_script_retired",
+                "deploy.sh": "legacy_wizard_live_deploy_retired",
+                "qa_delta_update.sh": "legacy_wizard_delta_updater_retired",
+                "publish_release.py": "legacy_wizard_kv_publisher_retired",
+                "register_app_cards.py": "legacy_wizard_registry_writer_retired",
+            }
+            for name, marker in retired_scripts.items():
+                (wizard / "scripts" / name).write_text(marker, encoding="utf-8")
+            for relative in ("README.md", "INSTALL.md", "UPDATE_FOR_COLLEAGUES.md", "docs/RELEASE_AND_MERGE.md"):
+                (wizard / relative).write_text("verified immutable release", encoding="utf-8")
+            self.assertEqual([], release_gate.validate_wizard_lifecycle(wizard))
 
 
 if __name__ == "__main__":

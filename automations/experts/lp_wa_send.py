@@ -5,7 +5,8 @@ def lp_wa_send(phone="", text="", id_instance="", api_token_instance="") -> str:
     import json, os, ssl, urllib.request
 
     try:
-        cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+        from extella_expert_bridge import account_config
+        cfg = account_config()
     except Exception:
         cfg = {}
     iid = id_instance if id_instance and not str(id_instance).startswith("{{") else cfg.get("greenapi_id", "")

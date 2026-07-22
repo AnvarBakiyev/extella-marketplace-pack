@@ -22,6 +22,7 @@ class BundleVerificationTests(unittest.TestCase):
                 {"id": "toolbar", "revision": "2" * 40},
                 {"id": "wizard", "revision": "3" * 40},
             ],
+            "packagingRepositoryRevision": "4" * 40,
             "files": [
                 {
                     "path": "payload/file.txt",
@@ -39,6 +40,18 @@ class BundleVerificationTests(unittest.TestCase):
             result = verify_bundle(root)
             self.assertEqual(result.files, 1)
             self.assertEqual(result.bytes, 4)
+            self.assertEqual(result.packaging_repository_revision, "4" * 40)
+
+    def test_packaging_revision_is_required(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._bundle(root)
+            manifest_path = root / "bundle-manifest.json"
+            manifest = json.loads(manifest_path.read_text())
+            manifest.pop("packagingRepositoryRevision")
+            manifest_path.write_text(json.dumps(manifest))
+            with self.assertRaises(BundleVerificationError):
+                verify_bundle(root)
 
     def test_modified_or_extra_file_fails_closed(self):
         with tempfile.TemporaryDirectory() as directory:

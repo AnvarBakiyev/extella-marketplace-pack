@@ -2,16 +2,16 @@
 """Deep-verify: РЕАЛЬНО ставит курируемое подмножество приложений на этой ОС,
 пробует запустить → метит карточку compat.verified=true/false + reason.
 Отделяет 'по рецепту должно' от 'проверено вживую' (как модели 197/197)."""
-import re, json, time, os, socket, urllib.request
+import json, time, os, urllib.request
 
 TOK = os.environ.get("EXTELLA_TOKEN", "").strip()
-if not TOK:
-    raise SystemExit("EXTELLA_TOKEN is required")
-H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": os.environ.get("EXTELLA_SCOPE_AGENT", "agent_extella_default"), "Content-Type": "application/json"}
+AGENT = os.environ.get("EXTELLA_SCOPE_AGENT", "").strip()
+if not TOK or not AGENT.startswith("agent_"):
+    raise SystemExit("EXTELLA_TOKEN and the current account EXTELLA_SCOPE_AGENT are required")
+H = {"X-Auth-Token": TOK, "X-Profile-Id": "default", "X-Agent-Id": AGENT, "Content-Type": "application/json"}
 
-# загрузить эксперты локально (быстрее, чем через API-мост)
-NS_I = {}; exec(open('/tmp/app_install.py').read(), NS_I)
-NS_S = {}; exec(open('/tmp/app_start.py').read(), NS_S)
+from experts.app_install import app_install
+from experts.app_start import app_start
 
 def kv(k, v=None):
     p = {"key": k, "global": True}
@@ -26,23 +26,20 @@ TARGETS = ["cocktailpeanut/cropper", "cocktailpeanut/mirror", "pinokiofactory/bo
            "pinokiofactory/openui", "cocktailpeanut/axios-inspector", "cocktailpeanut/deus"]
 
 def verify_one(app_id, repo):
-    root = os.path.expanduser("~/extella-apps/" + app_id)
     try:
-        r = json.loads(NS_I['app_install'](repo=repo, app_id=app_id))
+        r = json.loads(app_install(repo=repo, app_id=app_id))
     except Exception as e:
         return False, "install-исключение: " + str(e)[:80]
     if r.get("status") != "success":
         return False, "install: " + str(r.get("message"))[:90]
     # попробовать запуск (если есть start.js)
-    if os.path.exists(os.path.join(root, "start.js")):
-        try:
-            s = json.loads(NS_S['app_start'](app_id=app_id, root=root))
-            if s.get("ready"):
-                return True, "установлено+запущено на порту %s" % s.get("port")
-            return True, "установлено; старт: %s" % str(s.get("message"))[:60]
-        except Exception as e:
-            return True, "установлено; старт-исключение: " + str(e)[:60]
-    return True, "установлено (%d шагов, без start.js)" % r.get("install_steps", 0)
+    try:
+        s = json.loads(app_start(app_id=app_id))
+        if s.get("ready"):
+            return True, "установлено+запущено на порту %s" % s.get("port")
+        return True, "установлено; старт: %s" % str(s.get("message"))[:60]
+    except Exception as e:
+        return True, "установлено; старт-исключение: " + str(e)[:60]
 
 def main():
     # индекс id → (shard_key, idx)

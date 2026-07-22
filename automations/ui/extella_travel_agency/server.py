@@ -2,37 +2,48 @@
 """Travel Agency pack — onboarding bridge (localhost:8766).
 
 Маршруты: / и /onboarding.html — страница онбординга; /x/* — JSON API.
-Секреты живут в ~/extella_wizard/app/config.json (auth_token, tourvisor_jwt, greenapi_id, greenapi_token).
+Секреты живут в защищённом platform-native конфиге Extella Client.
 Сервер локальный (127.0.0.1), наружу ничего не открывает."""
-import json, os, ssl, time, csv, io, base64, urllib.request, urllib.error
+import json, os, ssl, time, csv, io, base64, re, tempfile, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from extella_expert_bridge import account_config, locations, path_or_error
 
 PORT = 8766
 HERE = os.path.dirname(os.path.abspath(__file__))
-WIZARD_ROOT = os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard")
-CFG_PATH = os.path.join(WIZARD_ROOT, "app", "config.json")
-CTX = ssl.create_default_context(); CTX.check_hostname = False; CTX.verify_mode = ssl.CERT_NONE
+LOCATIONS = locations()
+CFG_PATH = LOCATIONS["account_config"]
+CTX = ssl.create_default_context()
 
 
 def cfg():
-    try:
-        return json.load(open(CFG_PATH, encoding="utf-8"))
-    except Exception:
-        return {}
+    return account_config()
 
 
 def cfg_save(patch):
     c = cfg(); c.update(patch)
-    json.dump(c, open(CFG_PATH, "w", encoding="utf-8"), ensure_ascii=False)
+    os.makedirs(os.path.dirname(CFG_PATH), exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".config.", dir=os.path.dirname(CFG_PATH))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(c, handle, ensure_ascii=False)
+            handle.flush(); os.fsync(handle.fileno())
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, CFG_PATH)
+    finally:
+        if os.path.exists(temporary): os.unlink(temporary)
     return c
 
 
 def xapi(path, payload, timeout=120):
     c = cfg()
-    req = urllib.request.Request("https://api.extella.ai" + path, data=json.dumps(payload).encode("utf-8"),
+    agent_id = str(c.get("agent_id") or "")
+    if not re.fullmatch(r"agent_[A-Za-z0-9_-]{6,128}", agent_id):
+        raise RuntimeError("Current-account Extella agent is not configured")
+    api_base = str(c.get("api_base") or "https://api.extella.ai").rstrip("/")
+    req = urllib.request.Request(api_base + path, data=json.dumps(payload).encode("utf-8"),
                                  headers={"X-Auth-Token": c.get("auth_token", ""), "Content-Type": "application/json",
                                           "X-Profile-Id": "default",
-                                          "X-Agent-Id": c.get("agent_id", "agent_extella_alibaba_default")}, method="POST")
+                                          "X-Agent-Id": agent_id}, method="POST")
     with urllib.request.urlopen(req, timeout=timeout, context=CTX) as r:
         return json.loads(r.read().decode("utf-8"))
 
@@ -252,8 +263,9 @@ def h_save_telegram(body):
 def local_ocr(path):
     """OCR на этом устройстве (у моста есть tesseract) — не зависим от того, куда платформа роутит эксперт."""
     import subprocess
-    tess = next((t for t in ("/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract", "/usr/bin/tesseract")
-                 if os.path.exists(t)), "tesseract")
+    tess, state = path_or_error("tesseract", repair=True)
+    if not tess:
+        return "__OCR_ERR__" + str(state.get("message") or "tesseract unavailable")[:120]
     try:
         out = subprocess.run([tess, path, "stdout", "--psm", "6"], capture_output=True, text=True, timeout=60)
         return out.stdout or ""

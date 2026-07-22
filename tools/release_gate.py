@@ -10,6 +10,7 @@ invariants that JSON Schema cannot express by itself.
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import re
@@ -42,7 +43,7 @@ PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
 PERSONAL_PATH = re.compile(
-    r"(?:/Users/[^/$\s]+|/home/(?:ubuntu|anvarbakiyev)(?:/|$)|[A-Za-z]:\\Users\\[^\\$\s]+)",
+    r"(?:/Users/[A-Za-z0-9._-]+(?:/|$)|/home/(?:ubuntu|anvarbakiyev)(?:/|$)|[A-Za-z]:\\Users\\[A-Za-z0-9._-]+(?:\\|$))",
     re.IGNORECASE,
 )
 AGENT_ID = re.compile(r"\bagent_[A-Za-z0-9_-]{8,}\b")
@@ -51,10 +52,12 @@ DEVICE_ID = re.compile(
     re.IGNORECASE,
 )
 ALLOWED_AGENT_IDS = {
-    "agent_extella_alibaba_default",
-    "agent_extella_default",
     "agent_XXXXXXXX",
 }
+STATIC_AGENT_SCOPE = re.compile(r"\bagent_extella_(?:default|alibaba_default)\b")
+SECRET_ASSIGNMENT = re.compile(
+    r"(?i)(?:auth[_-]?token|api[_-]?key|secret|password)\s*[:=]\s*['\"][A-Za-z0-9_./+\-=]{16,}['\"]"
+)
 FORBIDDEN_SOURCE = {
     "security.tls_verification_disabled": re.compile(
         r"check_hostname\s*=\s*False|CERT_NONE"
@@ -69,6 +72,19 @@ CAP_LEGACY_DEPENDENCY_SOURCE = {
     "dependency.direct_brew": re.compile(r"subprocess\.(?:run|Popen)\s*\(\s*\[\s*brew\b"),
     "dependency.direct_pip_install": re.compile(
         r"(?:pip[\"']\s*,\s*[\"']install|[\"']-m[\"']\s*,\s*[\"']pip[\"']\s*,\s*[\"']install)"
+    ),
+}
+SHIPPED_EXPERT_PORTABILITY_SOURCE = {
+    "portability.legacy_home_path": re.compile(r"~/|Path\.home\s*\("),
+    "portability.legacy_extella_env": re.compile(r"EXTELLA_(?:WIZARD|PLUGIN)_ROOT"),
+    "portability.temporary_runtime_path": re.compile(r"/(?:var/)?tmp/"),
+    "dependency.fixed_tool_path": re.compile(r"/(?:opt/homebrew|usr/local|usr/bin)/"),
+    "dependency.direct_which": re.compile(r"shutil\.which\s*\("),
+    "dependency.current_interpreter": re.compile(r"sys\.executable"),
+    "runtime.unowned_shell": re.compile(r"shell\s*=\s*True"),
+    "runtime.unsafe_kill": re.compile(r"(?:pkill\b|kill\s+-9|os\.kill\s*\()"),
+    "runtime.static_ready": re.compile(
+        r'["\']service["\']\s*:\s*\{[^}]*["\']ready["\']\s*:\s*True', re.DOTALL
     ),
 }
 
@@ -191,6 +207,8 @@ def validate_plugin(path: Path) -> list[Issue]:
             issues.append(Issue("security.personal_path", str(path), f"personal path at {location}"))
         if DEVICE_ID.search(text):
             issues.append(Issue("security.device_id", str(path), f"device id at {location}"))
+        if STATIC_AGENT_SCOPE.search(text):
+            issues.append(Issue("security.static_agent_scope", str(path), f"static agent scope at {location}"))
         for match in AGENT_ID.findall(text):
             if match not in ALLOWED_AGENT_IDS and _looks_account_specific_agent(match):
                 issues.append(Issue("security.agent_id", str(path), f"account-specific agent id at {location}"))
@@ -309,6 +327,111 @@ def validate_cap_dependency_contract(root: Path) -> list[Issue]:
     return issues
 
 
+def validate_shipped_expert_portability(root: Path, wizard_root: Path) -> list[Issue]:
+    """Reject device-specific paths and private process control in every shipped expert."""
+
+    issues: list[Issue] = []
+    paths = [
+        *root.glob("experts/*.py"),
+        *root.glob("platform_experts/*.py"),
+        *root.glob("automations/experts/*.py"),
+        *wizard_root.glob("experts/*.py"),
+    ]
+    for path in sorted(set(paths), key=lambda item: item.as_posix()):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if PERSONAL_PATH.search(text):
+            issues.append(Issue("security.personal_path", str(path), "personal path in shipped expert"))
+        if STATIC_AGENT_SCOPE.search(text):
+            issues.append(Issue("security.static_agent_scope", str(path), "static account scope in shipped expert"))
+        for code, pattern in SHIPPED_EXPERT_PORTABILITY_SOURCE.items():
+            if pattern.search(text):
+                issues.append(Issue(code, str(path), "non-portable runtime behavior in shipped expert"))
+    return issues
+
+
+def _shipped_runtime_files(root: Path, wizard_root: Path) -> list[Path]:
+    patterns = (
+        "installer/**/*.py",
+        "runtime/**/*.py",
+        "device/activity-center/bridge/*.py",
+        "device/activity-center/instrumentation/*.py",
+        "automations/ui/**/*.py",
+        "toolbar/toolbar.js",
+    )
+    wizard_patterns = (
+        "ui/*.py",
+        "dist/workspace/*.py",
+        "agents/*.instructions.md",
+        "rules/*.md",
+        "concepts/*.md",
+    )
+    files = [path for pattern in patterns for path in root.glob(pattern) if path.is_file()]
+    files.extend(
+        path for pattern in wizard_patterns for path in wizard_root.glob(pattern) if path.is_file()
+    )
+    return sorted(set(files), key=lambda path: path.as_posix())
+
+
+def _actual_python_security_issues(path: Path, text: str) -> list[Issue]:
+    """AST checks avoid mistaking safety prompts/linter markers for executable behavior."""
+
+    try:
+        tree = ast.parse(text, filename=str(path))
+    except SyntaxError as error:
+        return [Issue("runtime.python_syntax", str(path), str(error))]
+    issues: list[Issue] = []
+    seen: set[str] = set()
+
+    def emit(code: str, message: str) -> None:
+        if code not in seen:
+            seen.add(code)
+            issues.append(Issue(code, str(path), message))
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Attribute) and node.attr == "CERT_NONE":
+            emit("security.tls_verification_disabled", "runtime selects ssl.CERT_NONE")
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            value = node.value
+            if (
+                isinstance(value, ast.Constant)
+                and value.value is False
+                and any(isinstance(target, ast.Attribute) and target.attr == "check_hostname" for target in targets)
+            ):
+                emit("security.tls_verification_disabled", "runtime disables TLS hostname verification")
+        if isinstance(node, ast.Call):
+            if (
+                isinstance(node.func, ast.Attribute)
+                and node.func.attr == "_create_unverified_context"
+            ):
+                emit("security.tls_verification_disabled", "runtime creates an unverified TLS context")
+            if any(
+                keyword.arg == "shell"
+                and isinstance(keyword.value, ast.Constant)
+                and keyword.value.value is True
+                for keyword in node.keywords
+            ):
+                emit("runtime.unowned_shell", "runtime executes a subprocess with shell=True")
+    return issues
+
+
+def validate_shipped_runtime_security(root: Path, wizard_root: Path) -> list[Issue]:
+    """Validate every Python/JS/document source that enters the client bundle."""
+
+    issues: list[Issue] = []
+    for path in _shipped_runtime_files(root, wizard_root):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if PERSONAL_PATH.search(text):
+            issues.append(Issue("security.personal_path", str(path), "personal path in shipped runtime"))
+        if STATIC_AGENT_SCOPE.search(text):
+            issues.append(Issue("security.static_agent_scope", str(path), "static account scope in shipped runtime"))
+        if SECRET_ASSIGNMENT.search(text):
+            issues.append(Issue("security.literal_secret", str(path), "possible literal secret in shipped runtime"))
+        if path.suffix == ".py":
+            issues.extend(_actual_python_security_issues(path, text))
+    return issues
+
+
 def validate_evidence(root: Path, release: dict[str, Any]) -> list[Issue]:
     path = root / "release/verification-evidence.json"
     try:
@@ -390,7 +513,7 @@ def validate_evidence(root: Path, release: dict[str, Any]) -> list[Issue]:
     return issues
 
 
-def validate_catalog_policy(root: Path) -> list[Issue]:
+def validate_catalog_policy(root: Path, wizard_root: Path | None = None) -> list[Issue]:
     path = root / "release/catalog-policy.json"
     try:
         policy = _read_json(path)
@@ -411,6 +534,214 @@ def validate_catalog_policy(root: Path) -> list[Issue]:
     visibility = policy.get("visibility") if isinstance(policy.get("visibility"), dict) else {}
     if visibility.get("hideField") != "hidden" or visibility.get("hideWhenTrue") is not True:
         issues.append(Issue("catalog.visibility", str(path), "stale-item hiding contract is missing"))
+
+    for filename in ("models_catalog.json", "apps_catalog.json", "mcp_catalog.json"):
+        catalog_path = root / filename
+        try:
+            catalog = _read_json(catalog_path)
+        except (OSError, json.JSONDecodeError) as exc:
+            issues.append(Issue("catalog.invalid", str(catalog_path), str(exc)))
+            continue
+        if not isinstance(catalog, dict):
+            issues.append(Issue("catalog.root", str(catalog_path), "catalog must be a mapping"))
+            continue
+        cards = [
+            card
+            for shard in catalog.values()
+            if isinstance(shard, dict)
+            for key in ("heroes", "shelf", "items")
+            for card in (shard.get(key) or [])
+            if isinstance(card, dict)
+        ]
+        if not cards:
+            issues.append(Issue("catalog.empty", str(catalog_path), "catalog has no classified cards"))
+        for index, card in enumerate(cards):
+            if card.get("classification") != "third_party_unverified":
+                issues.append(
+                    Issue(
+                        "catalog.item_classification",
+                        str(catalog_path),
+                        f"card {index} is not explicitly third-party unverified",
+                    )
+                )
+            if not isinstance(card.get("hidden"), bool):
+                issues.append(
+                    Issue(
+                        "catalog.item_visibility",
+                        str(catalog_path),
+                        f"card {index} has no boolean hidden control",
+                    )
+                )
+            label = str(card.get("label") or "").casefold()
+            claims_verified = (
+                "работает" in label
+                or "проверено extella" in label
+                or (re.search(r"\bverified\b", label) is not None and "unverified" not in label)
+            )
+            if claims_verified:
+                issues.append(
+                    Issue(
+                        "catalog.item_advertisement",
+                        str(catalog_path),
+                        f"card {index} is advertised as verified",
+                    )
+                )
+
+    composer_path = root / "composer_catalog.json"
+    try:
+        composer = _read_json(composer_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        issues.append(Issue("catalog.composer", str(composer_path), str(exc)))
+        return issues
+    blocks = composer.get("blocks") if isinstance(composer, dict) else None
+    if not isinstance(blocks, list) or not blocks:
+        issues.append(Issue("catalog.composer", str(composer_path), "composer catalog has no blocks"))
+        return issues
+    expert_roots = [root / "experts", root / "platform_experts", root / "automations/experts"]
+    if wizard_root is not None:
+        expert_roots.append(wizard_root / "experts")
+    expert_names = {item.stem for directory in expert_roots for item in directory.glob("*.py")}
+    for index, block in enumerate(blocks):
+        block_id = str(block.get("id") or "") if isinstance(block, dict) else ""
+        if block_id not in expert_names:
+            issues.append(
+                Issue(
+                    "catalog.composer_expert",
+                    str(composer_path),
+                    f"block {index} references missing expert {block_id or '<empty>'}",
+                )
+            )
+        for location, value in _walk_strings(block, f"$.blocks[{index}]"):
+            if "~/" in value or PERSONAL_PATH.search(value):
+                issues.append(
+                    Issue(
+                        "catalog.composer_path",
+                        str(composer_path),
+                        f"block uses a non-native path at {location}",
+                    )
+                )
+    return issues
+
+
+def validate_lifecycle_entrypoints(root: Path) -> list[Issue]:
+    """Reject stale installers and independently mutating component entrypoints."""
+
+    issues: list[Issue] = []
+    required_markers = {
+        root / "install.py": "legacy_installer_retired",
+        root / "install_toolbar.sh": "toolbar/install-all.sh",
+        root / "toolbar/install.sh": "install-all.sh",
+        root / "toolbar/install.ps1": "install-all.ps1",
+        root / "toolbar/Install-Extella.command": "install-all.sh",
+        root / "toolbar/Install-Extella.bat": "install-all.ps1",
+        root / "device/activity-center/install.py": "standalone_component_installer_retired",
+        root / "device/activity-center/uninstall.py": "standalone_component_uninstaller_retired",
+    }
+    for path, marker in required_markers.items():
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(Issue("lifecycle.entrypoint", str(path), str(exc)))
+            continue
+        if marker not in source:
+            issues.append(
+                Issue(
+                    "lifecycle.stale_entrypoint",
+                    str(path),
+                    "legacy entrypoint does not delegate to or fail closed for the unified installer",
+                )
+            )
+        if re.search(r"raw\.githubusercontent\.com/.*/(?:main|master)", source):
+            issues.append(Issue("security.mutable_source", str(path), "installer fetches a raw branch"))
+
+    forbidden_paths = (
+        root / "toolbar/Install-Extella-mac.zip",
+        root / "device/boot/restart_local_servers.py",
+        root / "automations/registries/extella_contract_agent.json",
+        root / "automations/registries/extella_travel_agency.json",
+    )
+    for path in forbidden_paths:
+        if path.exists():
+            issues.append(
+                Issue(
+                    "lifecycle.stale_copy",
+                    str(path),
+                    "obsolete installer/runtime copy must not coexist with the unified lifecycle",
+                )
+            )
+
+    version_path = root / "toolbar/version.json"
+    try:
+        version = _read_json(version_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        issues.append(Issue("lifecycle.update_policy", str(version_path), str(exc)))
+    else:
+        if not isinstance(version, dict) or version.get("updatesEnabled") is not False:
+            issues.append(
+                Issue(
+                    "lifecycle.update_policy",
+                    str(version_path),
+                    "raw toolbar auto-update must remain disabled",
+                )
+            )
+    return issues
+
+
+def validate_wizard_lifecycle(wizard_root: Path) -> list[Issue]:
+    """Ensure Wizard cannot bypass the verified client lifecycle."""
+
+    issues: list[Issue] = []
+    retired = {
+        wizard_root / "install.py": "legacy_wizard_installer_retired",
+        wizard_root / "extella-update.sh": "legacy_wizard_updater_retired",
+        wizard_root / "scripts/release.sh": "legacy_wizard_release_script_retired",
+        wizard_root / "scripts/deploy.sh": "legacy_wizard_live_deploy_retired",
+        wizard_root / "scripts/qa_delta_update.sh": "legacy_wizard_delta_updater_retired",
+        wizard_root / "scripts/publish_release.py": "legacy_wizard_kv_publisher_retired",
+        wizard_root / "scripts/register_app_cards.py": "legacy_wizard_registry_writer_retired",
+    }
+    for path, marker in retired.items():
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(Issue("lifecycle.wizard_entrypoint", str(path), str(exc)))
+            continue
+        if marker not in source:
+            issues.append(
+                Issue(
+                    "lifecycle.wizard_stale_entrypoint",
+                    str(path),
+                    "Wizard entrypoint must fail closed for the unified installer",
+                )
+            )
+        if re.search(r"raw\.githubusercontent\.com/.*/(?:main|master)", source):
+            issues.append(Issue("security.mutable_source", str(path), "Wizard entrypoint fetches a raw branch"))
+
+    obsolete_manifest = wizard_root / "extella-plugin.json"
+    if obsolete_manifest.exists():
+        issues.append(
+            Issue(
+                "lifecycle.wizard_stale_manifest",
+                str(obsolete_manifest),
+                "standalone Wizard manifest conflicts with the unified plugin contract",
+            )
+        )
+
+    for relative in ("README.md", "INSTALL.md", "UPDATE_FOR_COLLEAGUES.md", "docs/RELEASE_AND_MERGE.md"):
+        path = wizard_root / relative
+        try:
+            source = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(Issue("lifecycle.wizard_documentation", str(path), str(exc)))
+            continue
+        if re.search(r"raw\.githubusercontent\.com/.*/(?:main|master)", source):
+            issues.append(
+                Issue(
+                    "security.mutable_source",
+                    str(path),
+                    "Wizard lifecycle documentation directs users to a mutable branch",
+                )
+            )
     return issues
 
 
@@ -587,6 +918,52 @@ def validate_release(
                 }
                 if release_sources != bundle_sources:
                     issues.append(Issue("distribution.sources", str(bundle_path), "bundle source SHAs differ from release manifest"))
+                packaging_revision = str(bundled.get("packagingRepositoryRevision") or "")
+                if not SHA40.fullmatch(packaging_revision):
+                    issues.append(
+                        Issue(
+                            "distribution.packaging_revision",
+                            str(bundle_path),
+                            "bundle must record the exact packaging repository revision",
+                        )
+                    )
+                elif (root / ".git").exists():
+                    try:
+                        head = subprocess.run(
+                            ("git", "rev-parse", "HEAD"), cwd=root, capture_output=True,
+                            text=True, timeout=10, check=False, shell=False,
+                        ).stdout.strip()
+                        ancestor = subprocess.run(
+                            ("git", "merge-base", "--is-ancestor", packaging_revision, head),
+                            cwd=root, capture_output=True, text=True, timeout=10,
+                            check=False, shell=False,
+                        )
+                        changed = subprocess.run(
+                            ("git", "diff", "--name-only", f"{packaging_revision}..{head}"),
+                            cwd=root, capture_output=True, text=True, timeout=10,
+                            check=False, shell=False,
+                        )
+                        allowed_after_packaging = {
+                            "release/release-manifest.json",
+                            "release/verification-evidence.json",
+                        }
+                        changed_paths = {value for value in changed.stdout.splitlines() if value}
+                        if ancestor.returncode != 0 or changed.returncode != 0 or not changed_paths.issubset(allowed_after_packaging):
+                            issues.append(
+                                Issue(
+                                    "distribution.packaging_drift",
+                                    str(bundle_path),
+                                    "packaging checkout changed outside approved post-build evidence files",
+                                )
+                            )
+                    except (OSError, subprocess.SubprocessError):
+                        issues.append(
+                            Issue(
+                                "distribution.packaging_revision",
+                                str(bundle_path),
+                                "could not verify packaging repository revision",
+                            )
+                        )
                 if bundled.get("releaseVersion") != data.get("version"):
                     issues.append(Issue("distribution.version", str(bundle_path), "bundle version differs from release manifest"))
             except (OSError, KeyError, ValueError, zipfile.BadZipFile) as exc:
@@ -595,7 +972,7 @@ def validate_release(
     dependencies = data.get("dependencies") or []
     dependency_names = [item.get("name") for item in dependencies if isinstance(item, dict)]
     required_dependencies = {
-        "python", "uv", "node", "npm", "npx", "uvx", "git", "brew", "winget",
+        "python", "uv", "node", "npm", "npx", "uvx", "git", "gh", "brew", "winget",
         "ffmpeg", "ghostscript", "imagemagick", "pandoc", "ollama",
     }
     if set(dependency_names) != required_dependencies or len(dependency_names) != len(set(dependency_names)):
@@ -732,9 +1109,13 @@ def validate_release(
         issues.append(Issue("expert.wizard_root", str(wizard), "wizard source root is required"))
     else:
         issues.extend(validate_expert_contract(root, wizard))
+        issues.extend(validate_shipped_expert_portability(root, wizard))
+        issues.extend(validate_shipped_runtime_security(root, wizard))
+        issues.extend(validate_wizard_lifecycle(wizard))
     issues.extend(validate_cap_dependency_contract(root))
     issues.extend(validate_evidence(root, data))
-    issues.extend(validate_catalog_policy(root))
+    issues.extend(validate_catalog_policy(root, wizard))
+    issues.extend(validate_lifecycle_entrypoints(root))
     if distribution.get("status") in {"candidate", "released"}:
         issues.extend(validate_toolbar_source(root, toolbar_root, data))
 

@@ -1,77 +1,89 @@
-# Extella Marketplace — пакет способностей
+# Extella Client release package
 
-Самоустанавливающийся пакет для платформы **Extella**. Направь Extella на этот репозиторий — ассистент прочитает файлы и **сам зарегистрирует** в твой аккаунт все способности: сервисы живых данных, базы знаний, CLI-инструменты и готовые роли агентов. Витрина (тулбар) — отдельный шаг ниже.
+This repository is the canonical packaging source for the versioned Extella
+Client distribution. The supported client includes the toolbar, Activity
+Center, Adoption Wizard, bundled experts, account KV objects, local services,
+and the shared dependency/runtime layer.
 
-Всё работает на платформенной модели **Qwen** (канон Extella). Секретов в репозитории нет — токен каждый эксперт берёт из локального `~/extella_wizard/app/config.json` в момент запуска.
+## Supported platforms
 
-## Что внутри
+Only these targets are in the release contract:
 
-| Папка | Содержимое |
-|---|---|
-| `experts/` | 87 экспертов: `svc_*` (13 сервисов), `cap_*` (68 CLI-способностей + резолверы), `kp_*` (4 базы знаний), `agent_flash_role`, `wz_pick_path` |
-| `concepts/` | Документация способностей для семантического поиска (сервисы, базы знаний, агенты) |
-| `rules/` | Правила поведения агента (протокол сервисов + канон Qwen) |
-| `agents/` | 14 готовых бизнес-ролей (системные инструкции) + индекс |
+- macOS x86_64 (Intel)
+- macOS arm64 (Apple Silicon)
+- Windows 11 x64
 
----
+Linux, Windows 10, and Windows ARM are intentionally unsupported. Native
+bootstraps reject them before creating temporary directories, downloading a
+bundle, or changing client files.
 
-## Установка способностей
+## Install a published release
 
-### Рекомендуемый путь — прямой скрипт (один прогон)
+Never install from a raw `main` branch. Take the bundle URL, SHA-256, and exact
+byte size from one published Extella Client release.
 
-```sh
-python3 install.py     # регистрирует ВСЕ 87 экспертов + концепты + правила напрямую
-```
-
-Скрипт ставит всё за один прогон через API (эксперты `global`, `cspl=fython`). **Не используй для этого кнопку «Add GitHub Resource» в витрине** — она ставит репо агентом по шагам и на большом пакете (87 экспертов) упирается в лимit 50 итераций (`GRAPH_RECURSION_LIMIT`) и падает. `install.py` агента не задействует — лимита нет. Токен берётся из `~/extella_wizard/app/config.json`; если файла нет — скрипт спросит токен и создаст его.
-
-Затем — витрина: `./install_toolbar.sh` (см. ниже).
-
-### Альтернатива — вручную ассистентом (инструкция)
-
-Если ставишь через ассистента, а не скриптом — выполни по шагам. Всё идемпотентно.
-
-**1. Эксперты.** Для каждого файла `experts/*.py`: имя — из строки `# expert:`, описание — из `# description:`, код — весь файл. Зарегистрируй через `save_expert(name, description, code, cspl="fython")`.
-   - Чтобы способность мог вызывать КОНКРЕТНЫЙ агент (Дверь 2), сохраняй эксперт в его скоупе — с заголовком `X-Agent-Id = <id агента>`. Иначе родной `run_expert` агента её не найдёт.
-
-**2. Концепты.** Для каждого `concepts/*.md` — `concept_add(text=<содержимое файла>)`. Это делает способности находимыми через `concept_search`.
-
-**3. Правила.** Из `rules/marketplace_rules.md` возьми каждый блок `## rule:` и добавь через `rules_add(rule=<текст блока>)`.
-
-**4. Агенты (роли).** Полное API-создание агента невозможно (платформенный ключ Qwen наследуется только UI-копией — канон). Поэтому:
-   - Пользователь делает **копию базового агента** в Extella (2 клика) и берёт её `agent_id`.
-   - Прошей роль: `agent_flash_role(agent_id, role_id)` — впишет системную инструкцию из `agents/<role_id>.md` (роль + протокол сервисов) и провижинит сервисы `svc_*` в скоуп этого агента.
-   - `role_id` — имя файла в `agents/` (sdr, account, smm, …). Инструкции читаемы и в самих файлах.
-
----
-
-## Витрина (тулбар)
-
-Графический магазин способностей — отдельный файл-оверрайд `toolbar.js` для Extella Desktop. Установка:
+macOS:
 
 ```sh
-# из репозитория тулбара
-./install.sh          # соберёт и положит toolbar.js в Extella Desktop
+./toolbar/install-all.sh \
+  --url "https://RELEASE-URL/extella-client-VERSION.zip" \
+  --sha256 "64_HEX_CHARACTERS" \
+  --bytes "EXACT_BYTE_SIZE"
 ```
 
-После установки перезапусти Extella — сверху появится витрина (Программы · Модели · Навыки · Инструменты · Знания · Агенты · Сервисы). Кнопки «Установить/Запустить/Прошить» вызывают экспертов из этого пакета.
+Windows 11 x64 (PowerShell):
 
----
+```powershell
+.\toolbar\install-all.ps1 `
+  -BundleUrl "https://RELEASE-URL/extella-client-VERSION.zip" `
+  -BundleSha256 "64_HEX_CHARACTERS" `
+  -BundleBytes EXACT_BYTE_SIZE
+```
 
-## Самовосстановление
+For an offline/local candidate, use `--bundle` on macOS or `-BundlePath` on
+Windows with the same hash and size checks. `--verify-only`/`-VerifyOnly`
+validates the bootstrap, managed Python, and bundle without installing.
 
-Пакет умеет чинить окружение сам:
-- **CLI-инструменты** (`cap_*`): у каждого есть `cap_<tool>_resolver` — при первом запуске ставит нужный бинарь (Homebrew) и запоминает путь. Если инструмент «не найден» — вызови резолвер.
-- **Базы знаний** (`kp_*`): `kp_resolver` ставит движок (Ollama + модель эмбеддингов). Вызывается автоматически перед первой сборкой базы.
-- **Зависимости Python**: эксперты подтягивают библиотеки через `include("import X", ["extella-pip install X"])` — на чистой среде ставятся сами.
-- **Если эксперт падает** из-за изменившегося внешнего API: попроси ассистента прочитать код эксперта, поправить и пересохранить через `save_expert` — способность обновится на лету.
+The legacy `install.py`, standalone Activity Center installers, and raw toolbar
+updaters are retired and fail without mutation. `install_toolbar.sh`,
+`toolbar/install.sh`, and their Windows counterparts are compatibility wrappers
+around the unified native bootstraps.
 
-## Совместимость с «Визардом внедрения»
-Этот пакет и `extella-adoption-wizard` **не конфликтуют** — разные имена экспертов (`svc_*/cap_*/kp_*` против `wz_*`), разные цели установки (витрина пишет `toolbar.js`; Визард — плагин в `~/extella-plugins/_registry/` + UI на порту 8765). Ставятся в любом сочетании.
-- **Рекомендуемый порядок — сначала Визард, потом этот пакет:** Визард создаёт `~/extella_wizard/app/config.json` с токеном, который нужен двум экспертам отсюда (`kp_ask` — ответы по базе знаний, `agent_flash_role` — прошивка ролей).
-- **Только этот пакет (без Визарда):** витрина, живые сервисы и CLI работают сразу; для `kp_ask` и `agent_flash_role` `install_toolbar.sh` заводит `config.json` с токеном (спросит при установке, только если файла ещё нет — Визард не затирается).
+## Release contract
 
-## Канон (не нарушать)
-- Все клиентские агенты — платформенный **Qwen** (provider `alibaba`, model `qwen3.7-max`). BYOK/чужие ключи запрещены.
-- Один инструмент за ход; цитировать фактический результат; внешние действия — только черновик.
-- `kp_*` и `cap_*` выполняются НА УСТРОЙСТВЕ (Ollama/файлы) — через мост тулбара, не с облачного run_expert. `svc_*` — server-side, их агент вызывает напрямую.
+- `release/release-manifest.json` is the single versioned release contract.
+- `release/plugins/*.json` contains schema-validated bundled plugin contracts.
+- `release/expert-classification.json` classifies every shipped expert.
+- `release/catalog-policy.json` marks external catalogs as third-party and
+  unverified; the supported on-demand catalog is empty until an item passes the
+  complete release gate.
+- `runtime/extella_runtime/ensure_tool.py` is the shared dependency resolver.
+- `installer/client_install.py` and `installer/client_uninstall.py` are the only
+  supported lifecycle entrypoints inside a verified bundle.
+
+Builds are allowlisted and deterministic:
+
+```sh
+python3 tools/build_client_bundle.py \
+  --toolbar-root ../toolbar \
+  --wizard-root ../wizard \
+  --output artifacts/extella-client-VERSION.zip
+```
+
+The builder refuses dirty source repositories and records the exact marketplace,
+toolbar, and wizard Git SHAs in `bundle-manifest.json`.
+
+Run the local gate with the exact candidate:
+
+```sh
+python3 tools/release_gate.py \
+  --root . \
+  --toolbar-root ../toolbar \
+  --wizard-root ../wizard \
+  --bundle artifacts/extella-client-VERSION.zip
+```
+
+Local green checks are not permission to publish. Clean-account and clean-OS
+matrix evidence is required from macOS Intel, macOS Apple Silicon, and Windows
+11 x64. Publishing, merging to primary repositories, and enabling updates happen
+only after explicit owner approval.

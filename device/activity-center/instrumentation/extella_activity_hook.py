@@ -17,12 +17,19 @@ from pathlib import Path
 from typing import Any, TextIO
 
 
-EVENT_FILE = Path(
-    os.environ.get(
-        "EXTELLA_ACTIVITY_FILE",
-        str(Path.home() / ".extella" / "activity-center" / "events.jsonl"),
-    )
-)
+def _native_event_file() -> Path:
+    override = os.environ.get("EXTELLA_ACTIVITY_FILE")
+    if override:
+        return Path(override)
+    home = Path(os.environ.get("USERPROFILE") or os.environ.get("HOME") or Path.home())
+    if sys.platform == "darwin":
+        data_root = home / "Library" / "Application Support" / "Extella"
+    else:
+        data_root = Path(os.environ.get("LOCALAPPDATA") or home / "AppData" / "Local") / "Extella"
+    return data_root / "state" / "activity" / "events.jsonl"
+
+
+EVENT_FILE = _native_event_file()
 
 _UUID = r"[0-9a-fA-F-]{36}"
 _RECEIVED_RE = re.compile(rf"Got task:\s*({_UUID})")

@@ -7,14 +7,12 @@ import os
 import re
 from pathlib import Path
 from typing import Iterable
+from extella_runtime.paths import client_paths
 
 
-STATE_FILE = Path(
-    os.environ.get(
-        "EXTELLA_TASK_STATE",
-        str(Path.home() / ".extella" / "activity-center" / "tasks.json"),
-    )
-)
+STATE_FILE = Path(os.environ.get("EXTELLA_TASK_STATE") or (
+    client_paths().state_root / "activity" / "tasks.json"
+))
 _TASK_ID = re.compile(r"^[A-Za-z0-9_.-]{1,160}$")
 
 

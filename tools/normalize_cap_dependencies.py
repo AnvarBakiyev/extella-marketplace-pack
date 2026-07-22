@@ -77,7 +77,7 @@ def _simple_resolver(path: Path, tool: str, marker: str) -> str:
 {description}
 
 def {function}(confirm_install="no") -> str:
-    import json, os
+    import json
     try:
         from extella_expert_bridge import ensure
     except Exception:
@@ -85,12 +85,6 @@ def {function}(confirm_install="no") -> str:
     repair = bool(confirm_install) and not str(confirm_install).startswith("{{{{") and str(confirm_install).lower() == "yes"
     result = ensure("{tool}", repair=repair)
     if result.get("ready") and result.get("path"):
-        directory = os.path.expanduser("~/.extella_cli")
-        os.makedirs(directory, exist_ok=True)
-        marker = os.path.join(directory, "{marker}")
-        temporary = marker + ".tmp"
-        open(temporary, "w", encoding="utf-8").write(result["path"])
-        os.replace(temporary, marker)
         result["bin_path"] = result["path"]
         result["source"] = "extella_runtime"
         result["status"] = "installed" if result.get("changed") else "already"
@@ -108,7 +102,7 @@ def _composite_resolver(path: Path, dependencies: tuple[str, ...], primary: str,
 {description}
 
 def {function}(confirm_install="no") -> str:
-    import json, os
+    import json
     try:
         from extella_expert_bridge import ensure
     except Exception:
@@ -119,12 +113,6 @@ def {function}(confirm_install="no") -> str:
     ready = all(result.get("ready") and result.get("path") for result in results.values())
     if ready:
         path = results["{primary}"]["path"]
-        directory = os.path.expanduser("~/.extella_cli")
-        os.makedirs(directory, exist_ok=True)
-        marker = os.path.join(directory, "{marker}")
-        temporary = marker + ".tmp"
-        open(temporary, "w", encoding="utf-8").write(path)
-        os.replace(temporary, marker)
         return json.dumps({{
             "status": "installed" if any(item.get("changed") for item in results.values()) else "already",
             "bin_path": path,

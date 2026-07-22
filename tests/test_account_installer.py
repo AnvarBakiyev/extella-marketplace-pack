@@ -6,8 +6,10 @@ from pathlib import Path
 
 from installer.account import (
     APIError,
+    BOOTSTRAP_AGENT_SCOPE,
     AccountInstallError,
     AccountInstaller,
+    ExtellaAPI,
     ExpertSource,
     KVArtifact,
     INSTALL_SMOKE_MARKER,
@@ -27,6 +29,12 @@ class FakeAPI:
         self.calls = []
         self.agents = {}
         self.next_agent = 1
+        self.agent_scope = ""
+        self.scope_history = []
+
+    def set_agent_scope(self, agent_id):
+        self.agent_scope = agent_id
+        self.scope_history.append(agent_id)
 
     def post(self, endpoint, payload, *, timeout=90):
         self.calls.append((endpoint, dict(payload)))
@@ -103,6 +111,14 @@ def expert(name, code=None):
 
 
 class AccountInstallerTests(unittest.TestCase):
+    def test_api_starts_with_non_real_bootstrap_scope_and_accepts_current_account_agent(self):
+        api = ExtellaAPI("t" * 24)
+        self.assertEqual(api.agent_scope, BOOTSTRAP_AGENT_SCOPE)
+        api.set_agent_scope("agent_user_Qwen123")
+        self.assertEqual(api.agent_scope, "agent_user_Qwen123")
+        with self.assertRaises(AccountInstallError):
+            api.set_agent_scope(BOOTSTRAP_AGENT_SCOPE)
+
     def test_instrumented_python_expert_delegates_and_has_safe_probe(self):
         source = expert(
             "greeting",
@@ -249,6 +265,8 @@ class AccountInstallerTests(unittest.TestCase):
             ownership = json.loads(api.kv["extella:client:agents:v1"])
             self.assertIn(ownership["wizard"], api.agents)
             self.assertIn(ownership["builder"], api.agents)
+            self.assertEqual(api.agent_scope, ownership["wizard"])
+            self.assertEqual(api.scope_history[-1], ownership["wizard"])
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()

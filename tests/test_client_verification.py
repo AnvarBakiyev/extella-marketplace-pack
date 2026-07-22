@@ -80,6 +80,9 @@ class ClientVerificationTests(unittest.TestCase):
         for path in required:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("fixture", encoding="utf-8")
+        (data / "wizard/app/config.json").write_text(
+            json.dumps({"agent_id": "agent_user_Qwen123"}), encoding="utf-8"
+        )
         (data / "wizard/app/config.json").chmod(0o600)
         registry = data / "plugins/_registry"
         registry.mkdir(parents=True)

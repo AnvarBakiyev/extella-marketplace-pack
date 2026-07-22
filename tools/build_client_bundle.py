@@ -24,7 +24,8 @@ DEVICE_ID = re.compile(
     re.IGNORECASE,
 )
 ACCOUNT_AGENT = re.compile(r"\bagent_[A-Za-z0-9_-]{8,}\b")
-ALLOWED_AGENTS = {"agent_extella_default", "agent_extella_alibaba_default", "agent_XXXXXXXX"}
+ALLOWED_AGENTS = {"agent_XXXXXXXX"}
+STATIC_AGENT_SCOPE = re.compile(r"\bagent_extella_(?:default|alibaba_default)\b")
 SECRET_ASSIGNMENT = re.compile(
     r"(?i)(?:auth[_-]?token|api[_-]?key|secret|password)\s*[:=]\s*['\"][A-Za-z0-9_./+\-=]{16,}['\"]"
 )
@@ -83,6 +84,47 @@ def _require_clean(root: Path) -> str:
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise SystemExit(f"invalid source revision: {root}")
     return revision
+
+
+def _declared_source_revisions(release: dict) -> dict[str, str]:
+    declared: dict[str, str] = {}
+    for item in release.get("sourceRepositories") or []:
+        if not isinstance(item, dict):
+            continue
+        source_id = item.get("id")
+        revision = item.get("revision")
+        if isinstance(source_id, str) and re.fullmatch(r"[0-9a-f]{40}", str(revision or "")):
+            declared[source_id] = str(revision)
+    if set(declared) != {"marketplace", "toolbar", "wizard"}:
+        raise SystemExit("release manifest must declare exact marketplace, toolbar, and wizard revisions")
+    return declared
+
+
+def _require_declared_checkout(root: Path, source_id: str, revision: str, actual: str) -> None:
+    if source_id != "marketplace":
+        if actual != revision:
+            raise SystemExit(f"{source_id} checkout differs from declared release revision")
+        return
+
+    ancestor = subprocess.run(
+        ("git", "-C", str(root), "merge-base", "--is-ancestor", revision, actual),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if ancestor.returncode != 0:
+        raise SystemExit("declared marketplace source revision is not an ancestor of packaging HEAD")
+    changed = [
+        value
+        for value in _git(root, "diff", "--name-only", f"{revision}..{actual}").splitlines()
+        if value
+    ]
+    forbidden = [value for value in changed if not value.startswith("release/")]
+    if forbidden:
+        raise SystemExit(
+            "marketplace changed after its declared source revision outside release metadata: "
+            + ", ".join(forbidden[:8])
+        )
 
 
 def _files(root: Path, patterns: tuple[str, ...]) -> list[Path]:
@@ -164,6 +206,8 @@ def _scan(path: Path, relative: str) -> None:
         raise SystemExit(f"personal path found in bundle source: {relative}")
     if DEVICE_ID.search(text):
         raise SystemExit(f"device id found in bundle source: {relative}")
+    if STATIC_AGENT_SCOPE.search(text):
+        raise SystemExit(f"static account agent scope found in bundle source: {relative}")
     for value in ACCOUNT_AGENT.findall(text):
         suffix = value.removeprefix("agent_")
         looks_like_identity = any(character.isupper() or character.isdigit() or character == "-" for character in suffix)
@@ -241,13 +285,19 @@ def build(
     marketplace_root = marketplace_root.resolve()
     toolbar_root = toolbar_root.resolve()
     wizard_root = wizard_root.resolve()
+    marketplace_head = _require_clean(marketplace_root)
+    toolbar_head = _require_clean(toolbar_root)
+    wizard_head = _require_clean(wizard_root)
+    release = json.loads((marketplace_root / "release/release-manifest.json").read_text(encoding="utf-8"))
+    declared = _declared_source_revisions(release)
+    _require_declared_checkout(marketplace_root, "marketplace", declared["marketplace"], marketplace_head)
+    _require_declared_checkout(toolbar_root, "toolbar", declared["toolbar"], toolbar_head)
+    _require_declared_checkout(wizard_root, "wizard", declared["wizard"], wizard_head)
     source_repositories = [
-        {"id": "marketplace", "revision": _require_clean(marketplace_root)},
-        {"id": "toolbar", "revision": _require_clean(toolbar_root)},
-        {"id": "wizard", "revision": _require_clean(wizard_root)},
+        {"id": source_id, "revision": declared[source_id]}
+        for source_id in ("marketplace", "toolbar", "wizard")
     ]
     expert_classification = _validate_expert_classification(marketplace_root, wizard_root)
-    release = json.loads((marketplace_root / "release/release-manifest.json").read_text(encoding="utf-8"))
     with tempfile.TemporaryDirectory(prefix="extella-bundle-") as directory:
         stage = Path(directory)
         records = _copy_sources(
@@ -261,6 +311,7 @@ def build(
             "releaseVersion": release["version"],
             "supportedPlatforms": release["supportedPlatforms"],
             "sourceRepositories": source_repositories,
+            "packagingRepositoryRevision": marketplace_head,
             "expertClassification": expert_classification,
             "files": records,
         }
@@ -274,6 +325,7 @@ def build(
         "sha256": _sha256(output),
         "files": len(records),
         "sourceRepositories": source_repositories,
+        "packagingRepositoryRevision": marketplace_head,
     }
 
 

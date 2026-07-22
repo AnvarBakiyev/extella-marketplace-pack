@@ -1,5 +1,5 @@
 # expert: ta_tv_get
-# description: Travel Agency pack: low-level GET to Tourvisor Search API (api.tourvisor.ru/search/api/v1). Params: path (e.g. /departures), query_json (dict as JSON), jwt (optional; fallback to ~/extella_wizard/app/config.json key tourvisor_jwt), timeout.
+# description: Travel Agency pack: low-level GET to Tourvisor Search API (api.tourvisor.ru/search/api/v1). Params: path (e.g. /departures), query_json (dict as JSON), jwt (optional; fallback to the current device's platform-native Extella account config key tourvisor_jwt), timeout.
 
 def ta_tv_get(path="/departures", query_json="{}", jwt="", timeout=25) -> str:
     import json, os, ssl, urllib.request, urllib.parse
@@ -16,7 +16,8 @@ def ta_tv_get(path="/departures", query_json="{}", jwt="", timeout=25) -> str:
     token = jwt if jwt and not str(jwt).startswith("{{") else ""
     if not token:
         try:
-            cfg = json.load(open(os.path.join(os.environ.get("EXTELLA_WIZARD_ROOT") or os.path.expanduser("~/extella_wizard"), "app", "config.json"), encoding="utf-8"))
+            from extella_expert_bridge import account_config
+            cfg = account_config()
             token = cfg.get("tourvisor_jwt", "")
         except Exception:
             token = ""

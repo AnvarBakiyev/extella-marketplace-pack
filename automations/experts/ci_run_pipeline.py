@@ -15,22 +15,26 @@ def ci_run_pipeline(repos="", feeds="", subreddits="", agent_id="", positioning=
 
     if _blank(api_base):
         api_base = "https://api.extella.ai"
-    # Synthesis runs on the shared Qwen fine-tune "Extella Qwen fine-tuned" (keyless, MCP tools, fully capable).
-    # __EXTELLA_AGENT__ = paid Claude Sonnet — canon forbids it for clients, so we do NOT default to it.
+    # The installer replaces the placeholder with the Qwen agent owned by the current account.
     if _blank(agent_id):
         agent_id = "__EXTELLA_AGENT__"
     if _blank(api_token):
-        _wizard_root = Path(__import__("os").environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
-        _cfg = _wizard_root / "app" / "config.json"
         try:
-            api_token = json.loads(_cfg.read_text(encoding="utf-8")).get("auth_token", "") if _cfg.exists() else ""
+            from extella_expert_bridge import account_config
+            api_token = account_config().get("auth_token", "")
         except Exception:
             api_token = ""
     if not api_token:
         return {"status": "error", "message": "no api_token and no device bridge config"}
 
-    _wizard_root = Path(__import__("os").environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
-    wd = Path(work_dir) if not _blank(work_dir) else (_wizard_root / "ci_work")
+    if not _blank(work_dir):
+        wd = Path(work_dir).expanduser()
+    else:
+        try:
+            from extella_expert_bridge import locations
+            wd = Path(locations()["data_root"]) / "ci-work"
+        except Exception:
+            return {"status": "error", "message": "device bridge unavailable"}
     wd.mkdir(parents=True, exist_ok=True)
     headers = {"X-Auth-Token": api_token, "Content-Type": "application/json",
                "X-Profile-Id": "default", "X-Agent-Id": agent_id or "__EXTELLA_AGENT__"}
@@ -121,7 +125,7 @@ def ci_run_pipeline(repos="", feeds="", subreddits="", agent_id="", positioning=
 
     # 3. COMPOSE — Qwen fine-tune synthesis (tool_choice=none, plain-text with ===GAPS===).
     digest_md = ""; gaps = []; digest_source = "raw"
-    qwen_ok = bool(agent_id) and agent_id != "__EXTELLA_AGENT__"
+    qwen_ok = bool(agent_id)
     if qwen_ok:
         msg = ("You are a competitor intelligence analyst. Work ONLY from the data below — do NOT call any tools, "
                "do NOT browse, do NOT create experts.\nOUR POSITIONING:\n" + positioning + "\n\n"
@@ -174,7 +178,7 @@ def ci_run_pipeline(repos="", feeds="", subreddits="", agent_id="", positioning=
 
     if not qwen_ok:
         lines = ["# Competitor Intelligence — raw findings", "",
-                 "> Qwen synthesis skipped (no valid agent_id). __EXTELLA_AGENT__ is not used — that is paid Claude.", ""]
+                 "> Qwen synthesis skipped because the current-account agent was unavailable.", ""]
         for it in findings:
             lines.append("- **[%s]** %s%s" % (it.get("source", "?"), (it.get("title") or "")[:120],
                                               ("  —  " + it["url"]) if it.get("url") else ""))

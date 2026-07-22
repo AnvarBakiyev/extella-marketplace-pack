@@ -6,17 +6,17 @@ def p2d4_run_pipeline(input_path: str = "", output_dir: str = "") -> dict:
     """Оркестратор разбора договоров: p2d4_evaluate_contract_batch (ИИ-анализ по чек-листу + стандарты + Гражданский
     кодекс) → p2d4_generate_document_package (Реестр рисков xlsx + Протокол разногласий docx + Сводка руководителю).
     Вход: JSON-файл со списком договоров. Выход: пути к документам, счётчики риска и СПОРНЫЕ ПУНКТЫ (deviations)
-    для передачи в согласование (p2d5_negotiate). Секреты — из ~/extella_wizard/app/config.json."""
+    для передачи в согласование (p2d5_negotiate). Секреты — из the current device's platform-native Extella account config."""
     import json, os, urllib.request
     from pathlib import Path
 
-    cfg = {}
-    wizard_root = Path(os.environ.get("EXTELLA_WIZARD_ROOT") or (Path.home() / "extella_wizard"))
-    plugins_root = Path(os.environ.get("EXTELLA_PLUGIN_ROOT") or (Path.home() / "extella-plugins"))
-    cf = wizard_root / "app" / "config.json"
-    if cf.exists():
-        try: cfg = json.loads(cf.read_text(encoding="utf-8"))
-        except Exception: cfg = {}
+    try:
+        from extella_expert_bridge import account_config, locations
+        cfg = account_config()
+        plugins_root = Path(locations()["plugins_root"])
+    except Exception:
+        cfg = {}
+        return {"status": "error", "message": "Системный runtime Extella не установлен. Запустите Repair Extella Client."}
     token = cfg.get("auth_token", "")
     api = (cfg.get("api_base") or "https://api.extella.ai").rstrip("/")
     agent_id = cfg.get("agent_id", "__EXTELLA_AGENT__")

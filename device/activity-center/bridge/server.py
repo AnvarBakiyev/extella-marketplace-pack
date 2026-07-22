@@ -32,16 +32,14 @@ from service_manager import (
     start_desired_services,
 )
 from task_state import dismiss_tasks, read_dismissed
+from extella_runtime.paths import client_paths
 
 
 HOST = os.environ.get("EXTELLA_ACTIVITY_HOST", "127.0.0.1")
 PORT = int(os.environ.get("EXTELLA_ACTIVITY_PORT", "8799"))
-EVENT_FILE = Path(
-    os.environ.get(
-        "EXTELLA_ACTIVITY_FILE",
-        str(Path.home() / ".extella" / "activity-center" / "events.jsonl"),
-    )
-)
+EVENT_FILE = Path(os.environ.get("EXTELLA_ACTIVITY_FILE") or (
+    client_paths().state_root / "activity" / "events.jsonl"
+))
 ALLOWED_ORIGINS = {
     "https://prod.extella.ai",
     "https://api.extella.ai",
@@ -135,7 +133,8 @@ def ensure_hooks_installed() -> int:
     source = Path(__file__).with_name("extella_activity_hook.py")
     if not source.exists():
         return 0
-    archives = [Path.home() / ".cache" / "uv" / "archive-v0"]
+    home = Path(os.environ.get("USERPROFILE") or os.environ.get("HOME") or Path.home())
+    archives = [home / ".cache" / "uv" / "archive-v0"]
     if os.environ.get("LOCALAPPDATA"):
         archives.append(Path(os.environ["LOCALAPPDATA"]) / "uv" / "cache" / "archive-v0")
     if os.environ.get("UV_CACHE_DIR"):

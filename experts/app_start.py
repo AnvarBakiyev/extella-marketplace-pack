@@ -1,116 +1,156 @@
 # expert: app_start
-# description: Запускает установленное приложение по рецепту (start.js): резолвит через Node, гонит команду старта detached в venv, определяет порт (из команды/дефолтов), ждёт готовности, пишет порт в реестр. Возвращает {status, port, url}.
+# description: Безопасно запускает установленное стороннее приложение через общий диспетчер Extella: один владелец, подтверждённый PID, порт и HTTP health-check.
+
 def app_start(app_id="", root="", entry="start.js"):
-    import os, json, subprocess, sys, base64, re, socket, time, shutil
-    def err(m): return json.dumps({"status":"error","message":m,"app_id":app_id}, ensure_ascii=False)
-    root = os.path.expanduser(root or ("~/extella-apps/"+app_id))
-    if not os.path.isdir(root): return err("приложение не установлено: "+root)
+    import json, os, re, shlex
+    from pathlib import Path
+
+    def err(message, error_class="third_party_recipe"):
+        return json.dumps({"status":"error", "error_class":error_class,
+                           "message":message, "app_id":app_id}, ensure_ascii=False)
+
     try:
-        from extella_expert_bridge import path_or_error
+        from extella_expert_bridge import locations, path_or_error, resolve_pinokio_recipe, service_control
+        native = locations()
     except Exception:
-        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.")
-    node, node_state = path_or_error("node", repair=False)
-    if not node: return err(node_state.get("message") or "Node.js недоступен")
-    # найти стартовый скрипт
-    for cand in (entry, "start.js", "run.js", "pinokio.js"):
-        if os.path.exists(os.path.join(root, cand)): entry = cand; break
-    else: return err("нет start.js/run.js в приложении")
-    # резолв
-    rjs = os.path.join(root, ".extella_resolve.js")
-    open(rjs,"wb").write(base64.b64decode("""Ly8g0KDQtdC30L7Qu9Cy0LXRgCBQaW5va2lvLdGA0LXRhtC10L/RgtC+0LIg4oaSINC/0LvQvtGB0LrQuNC1IHNoZWxsLnJ1biDRiNCw0LPQuCArINC/0L7RgNGCICjQtNC10YLQtdGA0LzQuNC90LjRgNC+0LLQsNC90L3Qviwg0YHQstC+0Lkg0LzQuNC90Lgta2VybmVsKS4KLy8gbm9kZSByZWNpcGVfcmVzb2x2ZS5qcyA8YXBwX2Rpcj4gPGVudHJ5LmpzPiBbZ3B1XSBbcGxhdGZvcm1dIFtmaXhlZF9wb3J0XQpjb25zdCBwYXRoID0gcmVxdWlyZSgncGF0aCcpOwpjb25zdCBvcyA9IHJlcXVpcmUoJ29zJyk7CmNvbnN0IG5ldCA9IHJlcXVpcmUoJ25ldCcpOwpjb25zdCBjcCA9IHJlcXVpcmUoJ2NoaWxkX3Byb2Nlc3MnKTsKY29uc3QgZnMgPSByZXF1aXJlKCdmcycpOwpjb25zdCB2bSA9IHJlcXVpcmUoJ3ZtJyk7CgovLyDilIDilIAg0J/QldCh0J7Qp9Cd0JjQptCQIOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgOKUgAovLyDQoNC10YbQtdC/0YLRiyDigJQg0YfRg9C20L7QuSBKUyDQuNC3INGB0LrQu9C+0L3QuNGA0L7QstCw0L3QvdC+0LPQviDRgNC10L/Qvi4g0J3QldCb0KzQl9CvINC40YHQv9C+0LvQvdGP0YLRjCDQtdCz0L4g0YEg0L/QvtC70L3Ri9C80LgKLy8g0L/RgNCw0LLQsNC80LggTm9kZSAoZnMvY2hpbGRfcHJvY2Vzcy/RgdC10YLRjC9wcm9jZXNzLmVudi3RgdC10LrRgNC10YLRiykuINCT0YDRg9C30LjQvCDRgNC10YbQtdC/0YIg0LIKLy8gdm0t0LrQvtC90YLQtdC60YHRgjog0LTQvtGB0YLRg9C/0L3RiyDRgtC+0LvRjNC60L4gbW9kdWxlL2V4cG9ydHMsINCx0LXQt9Cy0YDQtdC00L3Ri9C1IHBhdGh8b3MsINC4IHJlcXVpcmUKLy8g0YHQvtGB0LXQtNC90LjRhSAuanMg0YDQtdGG0LXQv9GC0L7QsiAo0YLQvtC20LUg0LIg0L/QtdGB0L7Rh9C90LjRhtC1KS4g0JLRgdGRINC+0YHRgtCw0LvRjNC90L7QtSAoZnMsIGNoaWxkX3Byb2Nlc3MsCi8vIG5ldCwgaHR0cOKApikg4oCUINC30LDQsdC70L7QutC40YDQvtCy0LDQvdC+LiDQntC/0LDRgdC90YvQtSDQvtC/0LXRgNCw0YbQuNC4ICh3aGljaC9leGlzdHMpINC00LXQu9Cw0LXRgiDQndCQ0KgKLy8ga2VybmVsLCDQsCDQvdC1INGA0LXRhtC10L/Rgi4KY29uc3QgU0FGRV9NT0RVTEVTID0geyBwYXRoOiBwYXRoLCBvczogeyBwbGF0Zm9ybTooKT0+cHJvY2Vzcy5wbGF0Zm9ybSwgYXJjaDooKT0+b3MuYXJjaCgpLCBob21lZGlyOigpPT5vcy5ob21lZGlyKCksIGNwdXM6KCk9Pm9zLmNwdXMoKSwgdG90YWxtZW06KCk9Pm9zLnRvdGFsbWVtKCksIHR5cGU6KCk9Pm9zLnR5cGUoKSB9IH07CmZ1bmN0aW9uIG1ha2VTYW5kYm94UmVxdWlyZShiYXNlRGlyLCBrZXJuZWwsIHNlZW4pewogIHJldHVybiBmdW5jdGlvbiBzYW5kYm94UmVxdWlyZShzcGVjKXsKICAgIGlmKFNBRkVfTU9EVUxFU1tzcGVjXSkgcmV0dXJuIFNBRkVfTU9EVUxFU1tzcGVjXTsKICAgIGlmKC9eXC5cLj9cLy8udGVzdChzcGVjKSl7ICAgICAgICAgICAgICAgICAgICAgICAgIC8vINGB0L7RgdC10LTQvdC40Lkg0YTQsNC50Lst0YDQtdGG0LXQv9GCCiAgICAgIGxldCBmID0gcGF0aC5yZXNvbHZlKGJhc2VEaXIsIHNwZWMpOwogICAgICBpZighL1wuanMob24pPyQvLnRlc3QoZikgJiYgZnMuZXhpc3RzU3luYyhmKycuanMnKSkgZj1mKycuanMnOwogICAgICBpZihmLmVuZHNXaXRoKCcuanNvbicpKXsgdHJ5eyByZXR1cm4gSlNPTi5wYXJzZShmcy5yZWFkRmlsZVN5bmMoZiwndXRmOCcpKTsgfWNhdGNoKGUpeyByZXR1cm4ge307IH0gfQogICAgICBpZighZi5zdGFydHNXaXRoKGtlcm5lbC5fcm9vdCkpIHRocm93IG5ldyBFcnJvcignc2FuZGJveDog0L/Rg9GC0Ywg0LLQvdC1INC/0YDQuNC70L7QttC10L3QuNGPOiAnK3NwZWMpOwogICAgICBpZihzZWVuLmhhcyhmKSkgcmV0dXJuIHt9OyAgICAgICAgICAgICAgICAgICAgICAgIC8vINC30LDRidC40YLQsCDQvtGCINGG0LjQutC70L7QsgogICAgICBzZWVuLmFkZChmKTsKICAgICAgcmV0dXJuIHJ1bkluU2FuZGJveChmLCBrZXJuZWwsIHNlZW4pOwogICAgfQogICAgdGhyb3cgbmV3IEVycm9yKCdzYW5kYm94OiDQvNC+0LTRg9C70Ywg0LfQsNC/0YDQtdGJ0ZHQvTogJytzcGVjKTsgLy8gZnMvY2hpbGRfcHJvY2Vzcy9uZXQvaHR0cC/igKYKICB9Owp9CmZ1bmN0aW9uIHJ1bkluU2FuZGJveChmaWxlLCBrZXJuZWwsIHNlZW4pewogIGNvbnN0IGNvZGUgPSBmcy5yZWFkRmlsZVN5bmMoZmlsZSwgJ3V0ZjgnKTsKICBjb25zdCBzYW5kYm94ID0gewogICAgbW9kdWxlOntleHBvcnRzOnt9fSwgZXhwb3J0czp7fSwKICAgIHJlcXVpcmU6IG1ha2VTYW5kYm94UmVxdWlyZShwYXRoLmRpcm5hbWUoZmlsZSksIGtlcm5lbCwgc2VlbiksCiAgICBjb25zb2xlOiB7IGxvZzooKT0+e30sIGVycm9yOigpPT57fSwgd2FybjooKT0+e30gfSwKICAgIC8vINCx0LXQt9Cy0YDQtdC00L3Ri9C5IHByb2Nlc3M6INGC0L7Qu9GM0LrQviDQv9C70LDRgtGE0L7RgNC80LAv0LDRgNGFLCDQkdCV0JcgZW52L2V4aXQvY3dkLdC30LDQv9C40YHQuC9hcmd2CiAgICBwcm9jZXNzOiB7IHBsYXRmb3JtOnByb2Nlc3MucGxhdGZvcm0sIGFyY2g6b3MuYXJjaCgpLCBlbnY6e30sIHZlcnNpb246cHJvY2Vzcy52ZXJzaW9uIH0sCiAgICBCdWZmZXI6IEJ1ZmZlciwgc2V0VGltZW91dDooKT0+e30sIGNsZWFyVGltZW91dDooKT0+e30sIF9fZGlybmFtZTpwYXRoLmRpcm5hbWUoZmlsZSksIF9fZmlsZW5hbWU6ZmlsZSwKICB9OwogIHNhbmRib3guZ2xvYmFsID0gc2FuZGJveDsgc2FuZGJveC5nbG9iYWxUaGlzID0gc2FuZGJveDsKICB2bS5jcmVhdGVDb250ZXh0KHNhbmRib3gpOwogIHZtLnJ1bkluQ29udGV4dChjb2RlLCBzYW5kYm94LCB7IGZpbGVuYW1lOmZpbGUsIHRpbWVvdXQ6NTAwMCB9KTsgICAvLyA10YEg0L/QvtGC0L7Qu9C+0Log0L3QsCDQt9Cw0LPRgNGD0LfQutGDCiAgY29uc3QgbWUgPSBzYW5kYm94Lm1vZHVsZS5leHBvcnRzOyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAvLyDRhNGD0L3QutGG0LjRjyDQmNCb0Jgg0L3QtdC/0YPRgdGC0L7QuSDQvtCx0YrQtdC60YIg4oaSINGN0YLQviDQuCDQtdGB0YLRjCDRgNC10YbQtdC/0YIKICBpZih0eXBlb2YgbWU9PT0nZnVuY3Rpb24nIHx8IChtZSAmJiBPYmplY3Qua2V5cyhtZSkubGVuZ3RoKSkgcmV0dXJuIG1lOwogIHJldHVybiBzYW5kYm94LmV4cG9ydHM7Cn0KCmZ1bmN0aW9uIGRldGVjdEdwdSgpeyBpZihwcm9jZXNzLnBsYXRmb3JtPT09J2RhcndpbicpIHJldHVybiBvcy5hcmNoKCk9PT0nYXJtNjQnPydhcHBsZSc6J2NwdSc7CiAgdHJ5eyBjcC5leGVjU3luYygnbnZpZGlhLXNtaScse3N0ZGlvOidpZ25vcmUnfSk7IHJldHVybiAnbnZpZGlhJzsgfWNhdGNoKGUpe30gcmV0dXJuICdjcHUnOyB9CmZ1bmN0aW9uIGZyZWVQb3J0U3luYyhwcmVmKXsKICBpZihwcmVmKSByZXR1cm4gcHJlZjsKICB0cnl7IGNvbnN0IHM9bmV0LmNyZWF0ZVNlcnZlcigpOyByZXR1cm4gbmV3IFByb21pc2UocmVzPT57IHMubGlzdGVuKDAsKCk9Pntjb25zdCBwPXMuYWRkcmVzcygpLnBvcnQ7IHMuY2xvc2UoKCk9PnJlcyhwKSk7fSk7IH0pOyB9CiAgY2F0Y2goZSl7IHJldHVybiA3ODYwOyB9Cn0KCi8vINCc0LjQvdC4LWtlcm5lbCAo0YLQviwg0YfRgtC+INGA0LXRhtC10L/RgtGLINC20LTRg9GCINC+0YIgUGlub2tpbykKZnVuY3Rpb24gbWFrZUtlcm5lbChyb290LCBmb3JjZWRQb3J0KXsKICBjb25zdCBncHUgPSBwcm9jZXNzLmVudi5SRUNfR1BVIHx8IGRldGVjdEdwdSgpOwogIGNvbnN0IHBsYXRmb3JtID0gcHJvY2Vzcy5lbnYuUkVDX1BMQVRGT1JNIHx8IHByb2Nlc3MucGxhdGZvcm07CiAgbGV0IF9wb3J0ID0gZm9yY2VkUG9ydCB8fCBudWxsOwogIHJldHVybiB7CiAgICBfcm9vdDogcGF0aC5yZXNvbHZlKHJvb3QpLAogICAgZ3B1LCBwbGF0Zm9ybSwgYXJjaDogb3MuYXJjaCgpLCBob21lZGlyOiBvcy5ob21lZGlyKCksCiAgICBwb3J0OiBhc3luYyAoKSA9PiB7IGlmKCFfcG9ydCl7IF9wb3J0ID0gYXdhaXQgZnJlZVBvcnRTeW5jKG51bGwpOyB9IHJldHVybiBfcG9ydDsgfSwKICAgIHBhdGg6ICguLi5hKSA9PiBwYXRoLnJlc29sdmUocm9vdCwgLi4uYSksCiAgICB3aGljaDogKGMpID0+IHsgdHJ5eyByZXR1cm4gY3AuZXhlY1N5bmMoKHByb2Nlc3MucGxhdGZvcm09PT0nd2luMzInPyd3aGVyZSAnOid3aGljaCAnKStjKS50b1N0cmluZygpLnRyaW0oKS5zcGxpdCgnXG4nKVswXTsgfWNhdGNoKGUpeyByZXR1cm4gbnVsbDsgfSB9LAogICAgZXhpc3RzOiAocCkgPT4gcmVxdWlyZSgnZnMnKS5leGlzdHNTeW5jKHBhdGgucmVzb2x2ZShyb290LHApKSwKICAgIGFwaToge30sIG1lbW9yeToge30sIGJpbjogeyBwYXRoOiAoKT0+cGF0aC5qb2luKG9zLmhvbWVkaXIoKSwncGlub2tpbycsJ2JpbicpIH0sCiAgICBfZ2V0UG9ydDogKCkgPT4gX3BvcnQsCiAgfTsKfQoKZnVuY3Rpb24gdG1wbCh2YWwsYyl7IGlmKHR5cGVvZiB2YWwhPT0nc3RyaW5nJ3x8IXZhbC5pbmNsdWRlcygne3snKSkgcmV0dXJuIHZhbDsKICByZXR1cm4gdmFsLnJlcGxhY2UoL1x7XHsoW1xzXFNdKj8pXH1cfS9nLChfLGUpPT57IHRyeXsgY29uc3QgZj1uZXcgRnVuY3Rpb24oJ2dwdScsJ3BsYXRmb3JtJywnYXJjaCcsJ2FyZ3MnLCdpbnB1dCcsJ2N3ZCcsJ3BvcnQnLCdleGlzdHMnLCd3aGljaCcsJ2tlcm5lbCcsJ3BhdGgnLCdyZXR1cm4gKCcrZSsnKScpOwogICAgY29uc3Qgcj1mKGMuZ3B1LGMucGxhdGZvcm0sYy5hcmNoLGMuYXJnc3x8e30sYy5pbnB1dHx8e30sYy5jd2QsYy5wb3J0LGMuZXhpc3RzLGMud2hpY2gsYy5rZXJuZWwscGF0aCk7IHJldHVybiAocj09bnVsbCk/Jyc6U3RyaW5nKHIpO31jYXRjaCh4KXtyZXR1cm4gJyc7fSB9KTsgfQpmdW5jdGlvbiB0bXBsRGVlcChvLGMpeyBpZihBcnJheS5pc0FycmF5KG8pKSByZXR1cm4gby5tYXAoeD0+dG1wbERlZXAoeCxjKSkuZmlsdGVyKHg9PnghPT0nJyYmeCE9PW51bGwpOwogIGlmKG8mJnR5cGVvZiBvPT09J29iamVjdCcpe2NvbnN0IHI9e307Zm9yKGNvbnN0IGsgaW4gbylyW2tdPXRtcGxEZWVwKG9ba10sYyk7cmV0dXJuIHI7fSByZXR1cm4gdG1wbChvLGMpOyB9CmZ1bmN0aW9uIGV2YWxXaGVuKHdoZW4sYyl7IGlmKCF3aGVuKSByZXR1cm4gdHJ1ZTsKICAvLyBleGlzdHMvd2hpY2gvcGF0aCDQvtCx0Y/Qt9Cw0L3RiyDQsdGL0YLRjCDQtNC+0YHRgtGD0L/QvdGLIOKAlCBSZWZlcmVuY2VFcnJvciDRgtC40YXQviDQtNCw0LLQsNC7IGZhbHNlINC4INGI0LDQs9C4INCy0YvQv9Cw0LTQsNC70LgKICB0cnl7IGNvbnN0IGV4cHI9U3RyaW5nKHdoZW4pLnJlcGxhY2UoL15ce1x7fFx9XH0kL2csJycpOyByZXR1cm4gISEobmV3IEZ1bmN0aW9uKCdncHUnLCdwbGF0Zm9ybScsJ2FyY2gnLCdhcmdzJywnZXhpc3RzJywnd2hpY2gnLCdrZXJuZWwnLCdwYXRoJywncmV0dXJuICgnK2V4cHIrJyknKShjLmdwdSxjLnBsYXRmb3JtLGMuYXJjaCxjLmFyZ3N8fHt9LGMuZXhpc3RzLGMud2hpY2gsYy5rZXJuZWwscGF0aCkpOyB9Y2F0Y2goZSl7IHJldHVybiBmYWxzZTsgfSB9Cgphc3luYyBmdW5jdGlvbiBsb2FkUmVjaXBlKGZpbGUsIGtlcm5lbCl7CiAgbGV0IG0gPSBydW5JblNhbmRib3goZmlsZSwga2VybmVsLCBuZXcgU2V0KFtwYXRoLnJlc29sdmUoZmlsZSldKSk7ICAvLyDQsiDQv9C10YHQvtGH0L3QuNGG0LUsINCR0JXQlyByZXF1aXJlKCkKICBpZih0eXBlb2YgbT09PSdmdW5jdGlvbicpeyBtID0gYXdhaXQgbShrZXJuZWwpOyB9ICAgLy8gYXN5bmMoa2VybmVsKT0+e30g0YLQvtC20LUKICByZXR1cm4gbTsKfQphc3luYyBmdW5jdGlvbiByZXNvbHZlKHJvb3QsIGVudHJ5LCBhcmdzLCBkZXB0aCwgb3V0LCBrZXJuZWwpewogIGlmKGRlcHRoPjYpIHJldHVybjsKICBjb25zdCBmaWxlPXBhdGgucmVzb2x2ZShyb290LGVudHJ5KTsKICBsZXQgcmVjOyB0cnl7IHJlYz1hd2FpdCBsb2FkUmVjaXBlKGZpbGUsa2VybmVsKTsgfWNhdGNoKGUpeyBvdXQubWV0YS5lcnJvcnMucHVzaChlbnRyeSsnOiAnK2UubWVzc2FnZSk7IHJldHVybjsgfQogIGlmKHJlYyAmJiByZWMuZGFlbW9uKSBvdXQubWV0YS5kYWVtb249dHJ1ZTsKICBjb25zdCBydW49KHJlYyYmcmVjLnJ1bil8fFtdOwogIGNvbnN0IGM9e2dwdTprZXJuZWwuZ3B1LHBsYXRmb3JtOmtlcm5lbC5wbGF0Zm9ybSxhcmNoOmtlcm5lbC5hcmNoLGFyZ3M6YXJnc3x8e30saW5wdXQ6e2V2ZW50OlsnJ119LGN3ZDpyb290LHBvcnQ6a2VybmVsLl9nZXRQb3J0KCksZXhpc3RzOihwKT0+a2VybmVsLmV4aXN0cyhwKSx3aGljaDooeCk9Pmtlcm5lbC53aGljaCh4KSxrZXJuZWw6a2VybmVsfTsKICBmb3IoY29uc3Qgc3RlcCBvZiBydW4pewogICAgaWYoIWV2YWxXaGVuKHN0ZXAud2hlbixjKSkgY29udGludWU7CiAgICBjb25zdCBtZXRob2Q9c3RlcC5tZXRob2R8fCcnOwogICAgY29uc3QgcD10bXBsRGVlcChzdGVwLnBhcmFtc3x8e30sey4uLmMscG9ydDprZXJuZWwuX2dldFBvcnQoKX0pOwogICAgaWYobWV0aG9kPT09J3NoZWxsLnJ1bicpewogICAgICBsZXQgbXNncz1wLm1lc3NhZ2U7IGlmKHR5cGVvZiBtc2dzPT09J3N0cmluZycpIG1zZ3M9W21zZ3NdOyBtc2dzPShtc2dzfHxbXSkuZmlsdGVyKG09Pm0mJlN0cmluZyhtKS50cmltKCkpOwogICAgICBpZihtc2dzLmxlbmd0aCkgb3V0LnN0ZXBzLnB1c2goe21ldGhvZDonc2hlbGwucnVuJyxwYXJhbXM6e3ZlbnY6cC52ZW52fHxudWxsLHBhdGg6cC5wYXRofHwnJyxlbnY6cC5lbnZ8fHt9LG1lc3NhZ2U6bXNnc319KTsKICAgIH0gZWxzZSBpZihtZXRob2Q9PT0nc2NyaXB0LnN0YXJ0J3x8bWV0aG9kPT09J3NjcmlwdC5ydW4nKXsKICAgICAgY29uc3QgdXJpPXAudXJpOyBjb25zdCBzdWI9KHN0ZXAucGFyYW1zJiZzdGVwLnBhcmFtcy5wYXJhbXMpfHx7fTsKICAgICAgaWYodXJpJiYvXC5qcyhvbik/JC8udGVzdCh1cmkpKSBhd2FpdCByZXNvbHZlKHJvb3QsdXJpLHN1YixkZXB0aCsxLG91dCxrZXJuZWwpOwogICAgfSBlbHNlIGlmKG1ldGhvZD09PSdmcy5kb3dubG9hZCd8fG1ldGhvZD09PSdmcy5saW5rJ3x8bWV0aG9kPT09J2ZzLmNvcHknKXsgb3V0LnN0ZXBzLnB1c2goe21ldGhvZCxwYXJhbXM6cH0pOyB9CiAgfQp9Cihhc3luYygpPT57CiAgY29uc3QgWywsYXBwRGlyLGVudHJ5LGdwdSxwbGF0Zm9ybSxmaXhlZFBvcnRdPXByb2Nlc3MuYXJndjsKICBpZihncHUpIHByb2Nlc3MuZW52LlJFQ19HUFU9Z3B1OyBpZihwbGF0Zm9ybSkgcHJvY2Vzcy5lbnYuUkVDX1BMQVRGT1JNPXBsYXRmb3JtOwogIGNvbnN0IGtlcm5lbD1tYWtlS2VybmVsKGFwcERpcnx8Jy4nLCBmaXhlZFBvcnQ/cGFyc2VJbnQoZml4ZWRQb3J0KTpudWxsKTsKICBhd2FpdCBrZXJuZWwucG9ydCgpOyAgLy8g0LfQsNGE0LjQutGB0LjRgNC+0LLQsNGC0Ywg0L/QvtGA0YIKICBjb25zdCBvdXQ9e3N0ZXBzOltdLG1ldGE6e2RhZW1vbjpmYWxzZSxlcnJvcnM6W119fTsKICBhd2FpdCByZXNvbHZlKGFwcERpcnx8Jy4nLCBlbnRyeXx8J2luc3RhbGwuanMnLCB7fSwgMCwgb3V0LCBrZXJuZWwpOwogIGNvbnNvbGUubG9nKEpTT04uc3RyaW5naWZ5KHtncHU6a2VybmVsLmdwdSxwbGF0Zm9ybTprZXJuZWwucGxhdGZvcm0scG9ydDprZXJuZWwuX2dldFBvcnQoKSxkYWVtb246b3V0Lm1ldGEuZGFlbW9uLGVycm9yczpvdXQubWV0YS5lcnJvcnMsc3RlcHM6b3V0LnN0ZXBzfSxudWxsLDIpKTsKfSkoKTsK"""))
-    rr = subprocess.run([node, rjs, root, entry], capture_output=True, text=True, timeout=90)
-    try: rjson = json.loads(rr.stdout); steps = rjson.get("steps", [])
-    except Exception: return err("резолв старта не удался: "+(rr.stderr or rr.stdout or "")[-120:])
-    shell_steps = [st for st in steps if st.get("method")=="shell.run"]
-    if not shell_steps: return err("в рецепте старта нет команды запуска")
-    # порт: из команды (--port N / --server-port / :PORT) или дефолты
-    port = rjson.get("port")
-    if not port:
-        allmsg = " ".join(m for st in shell_steps for m in (st.get("params",{}).get("message") or []))
-        mm = re.search(r"(?:--port|--server-port|-p)[= ](\d{2,5})", allmsg)
-        port = int(mm.group(1)) if mm else 7860
-    # запустить detached (venv)
-    def venv_env(vp):
-        env = dict(os.environ)
-        base = env.get("PATH","")
-        for extra in ("~/miniconda3/bin",):          # conda — БАЗОВЫЙ слой (позади venv)
-            p = os.path.expanduser(extra)
-            if os.path.isdir(p): base = p + os.pathsep + base
-        if vp:                                        # venv приложения — ПЕРВЫМ, иначе conda-python перекроет
-            vabs = os.path.normpath(os.path.join(root, vp))
-            env["VIRTUAL_ENV"] = vabs
-            base = os.path.join(vabs,"bin") + os.pathsep + base
-        env["PATH"] = base
-        return env
-    # ИДЕМПОТЕНТНОСТЬ: приложение уже поднято? (лог содержит URL и порт слушает) — не плодим копии, отдаём реальный порт
-    def _log_port():
-        try:
-            txt = open(os.path.join(root,"server.log"),encoding="utf-8",errors="ignore").read()
-            mm2 = re.findall(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt)
-            return int(mm2[-1]) if mm2 else None
-        except Exception: return None
-    lp = _log_port()
-    if lp:
-        try:
-            with socket.create_connection(("127.0.0.1", lp), timeout=1.5):
-                return json.dumps({"status":"success","app_id":app_id,"port":lp,"url":"http://localhost:%d"%lp,
-                                   "ready":True,"found_url":True,"message":"уже запущено на порту %d"%lp}, ensure_ascii=False)
-        except Exception: pass
-    for st in shell_steps:
-        p = st.get("params",{}); cwd = os.path.normpath(os.path.join(root, p.get("path","") or ""))
-        env = venv_env(p.get("venv"))
-        for k,v in (p.get("env") or {}).items(): env[str(k)] = str(v)
-        for msg in (p.get("message") or []):
-            uv_path, _uv_state = path_or_error("uv", repair=False)
-            msg2 = msg if uv_path else msg.replace("uv pip","pip")
-            subprocess.Popen(msg2, shell=True, cwd=cwd, env=env,
-                             stdout=open(os.path.join(root,"server.log"),"a"), stderr=subprocess.STDOUT)
-    # дождаться готовности: приложение печатает свой URL в лог (приём Pinokio on:event) — берём порт ОТТУДА
-    logf = os.path.join(root, "server.log")
-    up = False; found_url = False
-    # ML-приложения грузят модель на первом старте (минута+) → ждём ДОЛЬШЕ (до ~110с),
-    # и приоритет — поймать URL в логе (реальный порт), а не только сокет.
-    for _ in range(55):
-        time.sleep(2)
-        try:
-            txt = open(logf, encoding="utf-8", errors="ignore").read() if os.path.exists(logf) else ""
-            m = re.search(r"https?://(?:127\.0\.0\.1|localhost|0\.0\.0\.0):(\d{2,5})", txt)
-            if m: port = int(m.group(1)); found_url = True   # РЕАЛЬНЫЙ порт из лога
-            # честный ранний выход ТОЛЬКО при явной фатальной ошибке (не URL, не поднимется)
-            if not found_url and _ > 8 and re.search(r"ModuleNotFoundError|TypeError: unsupported operand|error while attempting to bind|Address already in use", txt):
-                fatal = re.search(r"(ModuleNotFoundError[^\n]*|TypeError: unsupported operand[^\n]*|Address already in use[^\n]*)", txt)
-                return json.dumps({"status":"error","app_id":app_id,
-                    "message":"приложение не поднялось: "+(fatal.group(1)[:80] if fatal else "ошибка среды")+" — стороннее ML-приложение несовместимо с этой машиной"}, ensure_ascii=False)
-        except Exception: pass
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=1.5): up = True; break
-        except Exception: pass
-    # записать порт в реестр
-    registry_root = os.environ.get("EXTELLA_PLUGIN_REGISTRY") or os.path.join(
-        os.environ.get("EXTELLA_PLUGIN_ROOT") or os.path.expanduser("~/extella-plugins"), "_registry"
-    )
-    reg = os.path.join(registry_root, re.sub(r"[^a-zA-Z0-9]", "_", app_id) + ".json")
-    _legacy = os.path.join(registry_root, app_id + ".json")
-    if _legacy!=reg and os.path.isfile(_legacy) and not os.path.isfile(reg):
-        try: os.replace(_legacy, reg)   # миграция старой вложенной записи
-        except Exception: pass
-    # В реестр пишем ТОЛЬКО РЕАЛЬНО подтверждённый порт (из лога приложения или
-    # ответивший на подключение). Догадка 7860 раньше уезжала в манифест как факт —
-    # тулбар потом открывал бы чужой/мёртвый порт, а карточка врала бы «запущено»
-    # (класс «правдоподобный ложный результат», находка Wizard-чата на MCP).
-    if os.path.exists(reg) and (up or found_url):
-        try:
-            man = json.load(open(reg)); man.setdefault("ui",{})["port"] = port; man["ui"]["type"]="local_server"
-            man["ui"]["url"] = "http://localhost:%d" % port; man["running"]=up
-            open(reg,"w",encoding="utf-8").write(json.dumps(man,ensure_ascii=False,indent=2))
-        except Exception: pass
-    # found_url=True → знаем реальный порт (можно встраивать); иначе порт неизвестен → UI попросит нажать ещё раз
-    out = {"status":"success" if up else "starting", "app_id":app_id,
-           "port": (port if (up or found_url) else None),   # порт не подтверждён → не выдаём догадку за факт
-           "ready":up, "found_url":found_url}
-    if up or found_url:
-        out["url"] = "http://localhost:%d" % port
-        out["message"] = ("запущено на порту %d"%port) if up else ("поднимается на порту %d — секунду"%port)
+        return err("Системный runtime Extella не установлен. Запустите Repair Extella Client.", "client_runtime_missing")
+
+    apps_root = Path(native["apps_root"]).resolve()
+    requested = Path(root).expanduser().resolve() if root else (apps_root / str(app_id)).resolve()
+    try:
+        relative = requested.relative_to(apps_root)
+    except ValueError:
+        return err("Запуск разрешён только из каталога приложений Extella.", "path_outside_extella")
+    if not app_id:
+        app_id = relative.as_posix()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,119}", str(app_id)) or ".." in Path(str(app_id)).parts:
+        return err("Некорректный app_id.", "invalid_app_id")
+    if not requested.is_dir():
+        return err("Приложение не установлено.", "not_installed")
+
+    entry = Path(str(entry or "start.js")).name
+    for candidate in (entry, "start.js", "run.js", "pinokio.js"):
+        if (requested / candidate).is_file():
+            entry = candidate
+            break
     else:
-        out["message"] = "приложение ещё стартует (грузит модель) — нажми ▶ Открыть ещё раз через минуту"
-    return json.dumps(out, ensure_ascii=False)
+        return err("В приложении нет поддерживаемого стартового рецепта.")
+
+    resolved = resolve_pinokio_recipe(str(requested), entry)
+    if resolved.get("status") == "error":
+        return err(resolved.get("message") or "Рецепт запуска не прошёл проверку.")
+    shell_steps = [item for item in (resolved.get("steps") or []) if item.get("method") == "shell.run"]
+    commands = []
+    command_step = None
+    for step in shell_steps:
+        for message in (step.get("params") or {}).get("message") or []:
+            if str(message).strip():
+                commands.append(str(message).strip())
+                command_step = step
+    if len(commands) != 1 or command_step is None:
+        return err("Рецепт должен содержать ровно одну команду сервиса; сложные сторонние рецепты не запускаются как гарантированные.")
+    command = commands[0]
+    if re.search(r"[;&|><`]", command):
+        return err("Командные цепочки и перенаправления в сервисном рецепте запрещены.", "unsafe_recipe")
+    try:
+        argv = shlex.split(command, posix=(os.name != "nt"))
+    except ValueError:
+        return err("Не удалось разобрать команду запуска.")
+    if not argv:
+        return err("Команда запуска пуста.")
+    if any(re.search(r"(?:token|secret|password|passwd|api[-_]?key)", item, re.I) for item in argv):
+        return err("Секреты запрещено передавать в аргументах процесса; используйте переменные окружения.", "secret_in_process_args")
+
+    params = command_step.get("params") or {}
+    cwd = (requested / str(params.get("path") or "")).resolve()
+    try:
+        cwd.relative_to(requested)
+    except ValueError:
+        return err("Рабочий каталог рецепта выходит за каталог приложения.", "path_outside_app")
+    if not cwd.is_dir():
+        return err("Рабочий каталог рецепта отсутствует.")
+
+    venv = str(params.get("venv") or "")
+    venv_root = (requested / venv).resolve() if venv else None
+    venv_bin = None
+    if venv_root:
+        try:
+            venv_root.relative_to(requested)
+        except ValueError:
+            return err("Каталог окружения выходит за каталог приложения.", "path_outside_app")
+        venv_bin = venv_root / ("Scripts" if os.name == "nt" else "bin")
+
+    executable = Path(argv[0])
+    if executable.is_absolute() and executable.is_file():
+        absolute = str(executable)
+    else:
+        aliases = {
+            "python": "python", "python3": "python", "python.exe": "python",
+            "node": "node", "node.exe": "node", "npm": "npm", "npm.cmd": "npm",
+            "npx": "npx", "npx.cmd": "npx", "uv": "uv", "uvx": "uvx",
+            "conda": "conda", "conda.exe": "conda", "pnpm": "pnpm", "yarn": "yarn",
+        }
+        local = (venv_bin / argv[0]) if venv_bin else None
+        if os.name == "nt" and local and not local.suffix:
+            local = local.with_suffix(".exe")
+        if local and local.is_file():
+            absolute = str(local)
+        else:
+            tool = aliases.get(argv[0].lower(), argv[0])
+            absolute, state = path_or_error(tool, repair=False)
+            if not absolute:
+                return err(state.get("message") or (argv[0] + " недоступен"), "dependency_missing")
+    argv[0] = absolute
+
+    port = resolved.get("port")
+    if not port:
+        match = re.search(r"(?:--port|--server-port|-p)[= ](\d{2,5})", command)
+        port = int(match.group(1)) if match else 7860
+    try:
+        port = int(port)
+    except (TypeError, ValueError):
+        return err("Рецепт вернул некорректный порт.")
+    if not 1024 <= port <= 65535:
+        return err("Порт сервиса вне разрешённого диапазона.")
+
+    environment = dict(os.environ)
+    if venv_root and venv_bin:
+        environment["VIRTUAL_ENV"] = str(venv_root)
+        environment["PATH"] = str(venv_bin) + os.pathsep + environment.get("PATH", "")
+    for key, value in (params.get("env") or {}).items():
+        environment[str(key)] = str(value)
+    runtime_id = "third-party." + re.sub(r"[^a-z0-9._-]+", "_", str(app_id).lower()).strip("_")[:60]
+    health_url = "http://127.0.0.1:%d/" % port
+    try:
+        state = service_control(
+            "start", runtime_id=runtime_id, name=str(app_id), argv=argv, cwd=str(cwd),
+            port=port, health_url=health_url, owner="extella_third_party_app",
+            autostart="disabled", timeout=180, environment=environment,
+        )
+    except Exception:
+        return err("Приложение не прошло проверку PID, владельца порта или HTTP health-check.", "service_health_failed")
+    if state.get("status") != "running" or not state.get("healthy") or not state.get("pid"):
+        return err("Приложение не подтвердило готовность.", "service_health_failed")
+
+    registry = Path(native["plugin_registry"])
+    registry.mkdir(parents=True, exist_ok=True)
+    record_path = registry / (re.sub(r"[^a-zA-Z0-9]", "_", str(app_id)) + ".json")
+    try:
+        record = json.loads(record_path.read_text(encoding="utf-8")) if record_path.is_file() else {}
+    except Exception:
+        record = {}
+    record.update({
+        "id": str(app_id), "name": record.get("name") or str(app_id), "type": "recipe",
+        "classification": "third_party_unverified", "installed": True,
+        "ui": {"type":"local_server", "port":port, "url":health_url,
+               "openInBrowser":False, "expectsHealth":True},
+        "runtime": {"id":runtime_id, "argv":argv, "cwd":str(cwd), "port":port,
+                    "healthUrl":health_url, "owner":"extella_third_party_app",
+                    "autostart":"disabled"},
+    })
+    temporary = record_path.with_suffix(record_path.suffix + ".tmp")
+    temporary.write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, record_path)
+    return json.dumps({"status":"success", "app_id":app_id, "ready":True,
+                       "pid":state["pid"], "port":port, "url":health_url,
+                       "message":"стороннее приложение запущено и прошло health-check"}, ensure_ascii=False)
