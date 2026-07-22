@@ -8,7 +8,7 @@
   "source": {
     "type": "repository",
     "locator": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-    "revision": "6bacb0442aca3c7d40162aa31abd887b2ffb544d"
+    "revision": "df4ed2b21e315edd404d995e185d27b5c1b70962"
   },
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {

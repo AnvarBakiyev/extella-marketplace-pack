@@ -172,25 +172,25 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "6bacb0442aca3c7d40162aa31abd887b2ffb544d"
+      "revision": "df4ed2b21e315edd404d995e185d27b5c1b70962"
     },
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "fd6e40761f58e7244c50e1520be3bee3435e80e7"
+      "revision": "45403e487ed1396edf39b8dd3e3c970bf4a42f45"
     },
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "4f95fc0343282ccb7a42cc2c1d591cf1c59e2ed0"
+      "revision": "90b7155615900d80277da87eb89cd9eb06825530"
     }
   ],
   "artifacts": [
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "c412f44840abd4edccd453676c301aff5677f8ce0eec99f39211b365d1b57d28",
-      "bytes": 5857403,
+      "sha256": "f94ba6e8b2eac054ce8fb9240a2911838a7ec64f4caf65ed0da3f0b1e1f2bf4c",
+      "bytes": 5766195,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -234,8 +234,8 @@
     {
       "id": "runtime-expert-bridge",
       "path": "runtime/extella_expert_bridge.py",
-      "sha256": "a04cc1fea07bad1a48376f76b9aeb7b92aa7924d2bab165b8d317a43fbe4401a",
-      "bytes": 873,
+      "sha256": "7a06b67c52bff7f02794c863f64d15071be72c6af3a0a4610c92806c1dc350af",
+      "bytes": 13042,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -270,8 +270,8 @@
     {
       "id": "runtime-ensure-tool",
       "path": "runtime/extella_runtime/ensure_tool.py",
-      "sha256": "4782ccfa1b8781ca933a7b4551ef9e4ee1c7b438a40f923e4051da021db79f80",
-      "bytes": 13123,
+      "sha256": "ea88fa1e260b83a2a031dd4340cc02c6e160467b5849e8d8e8b21ca3e55e14d5",
+      "bytes": 16530,
       "required": true,
       "platforms": [
         "macos-x86_64",
