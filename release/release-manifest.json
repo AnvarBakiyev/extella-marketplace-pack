@@ -161,7 +161,7 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "fd4be6c44f9926bf60063fd62fc81ee62b1c6b65"
+      "revision": "548d07972c4d0adc00de556aff3874bc5fb5e3ea"
     },
     {
       "id": "wizard",
@@ -350,8 +350,8 @@
     {
       "id": "external-matrix-runner",
       "path": "tools/external_matrix.py",
-      "sha256": "8b138bf5d4fc913cf5a387910a02a0d5c9e62a87b26adcbb7596c6e94005c35a",
-      "bytes": 18739,
+      "sha256": "cc37e1da1866b8080d91a5e88009f8af8d21f238cb7354b8191fbd6deac0921b",
+      "bytes": 21602,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -374,8 +374,8 @@
     {
       "id": "external-matrix-protocol",
       "path": "release/EXTERNAL_MATRIX.md",
-      "sha256": "1c3e933cb1cac138dae6e26ccbd06693ceb420b7df6fbf4d0be649a04931d91f",
-      "bytes": 7948,
+      "sha256": "fb82548d9e6220208d937f7d529062c10e9142efcba50db7235728192041fac2",
+      "bytes": 8584,
       "required": true,
       "platforms": [
         "macos-x86_64",
