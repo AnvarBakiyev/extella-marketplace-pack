@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 from dataclasses import asdict, dataclass
 import getpass
 import hashlib
@@ -407,6 +408,25 @@ def _canonical_expert_code(code: str) -> str:
     return code.replace("\r\n", "\n").rstrip("\n") + "\n"
 
 
+def _structured_result(value: Any) -> Any:
+    """Decode JSON or the literal dict representation returned by live fython runs."""
+
+    for _ in range(2):
+        if not isinstance(value, str):
+            return value
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            try:
+                parsed = ast.literal_eval(value)
+            except (SyntaxError, ValueError):
+                return value
+        if parsed == value:
+            return value
+        value = parsed
+    return value
+
+
 def instrument_expert_code(source: ExpertSource, agent_id: str) -> str:
     """Add one reserved, side-effect-free cloud execution probe.
 
@@ -748,12 +768,7 @@ class AccountInstaller:
         )
         if not _response_success(response):
             raise AccountInstallError(f"expert smoke was not acknowledged: {name}")
-        result: Any = response.get("result", response)
-        if isinstance(result, str):
-            try:
-                result = json.loads(result)
-            except json.JSONDecodeError:
-                pass
+        result: Any = _structured_result(response.get("result", response))
         if isinstance(result, dict):
             if result.get("ok") is False or str(result.get("status") or "").lower() in {"error", "failed"}:
                 raise AccountInstallError(f"expert smoke failed: {name}")

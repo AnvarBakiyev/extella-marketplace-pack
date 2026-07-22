@@ -21,6 +21,7 @@ from installer.account import (
     _normalise_expert,
     _canonical_expert_code,
     _response_success,
+    _structured_result,
     scope_api_to_agent,
 )
 from runtime.extella_runtime.paths import ClientPaths, client_paths
@@ -224,12 +225,7 @@ def _verify_account(
             },
             timeout=180,
         )
-        result: Any = smoke.get("result", smoke)
-        if isinstance(result, str):
-            try:
-                result = json.loads(result)
-            except json.JSONDecodeError:
-                result = None
+        result: Any = _structured_result(smoke.get("result", smoke))
         if (
             not _response_success(smoke)
             or not isinstance(result, dict)

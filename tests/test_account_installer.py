@@ -29,6 +29,7 @@ class FakeAPI:
         self.kv = {}
         self.fail_save = None
         self.strip_saved_newlines = set()
+        self.repr_install_smokes = set()
         self.calls = []
         self.default_agent_id = "agent_account_QwenBase"
         self.agents = {
@@ -79,15 +80,15 @@ class FakeAPI:
             return {"status": "success"}
         if endpoint == "/api/expert/run":
             if payload.get("params", {}).get(INSTALL_SMOKE_PARAM):
-                return {
+                result = {
                     "status": "success",
-                    "result": {
-                        "status": "success",
-                        "ok": True,
-                        "installSmoke": payload["expert_name"],
-                        "contract": INSTALL_SMOKE_MARKER,
-                    },
+                    "ok": True,
+                    "installSmoke": payload["expert_name"],
+                    "contract": INSTALL_SMOKE_MARKER,
                 }
+                if payload["expert_name"] in self.repr_install_smokes:
+                    result = repr(result)
+                return {"status": "success", "result": result}
             return {"status": "success", "result": json.dumps({"ok": True})}
         if endpoint == "/api/agent/create":
             agent_id = f"agent_user_Qwen{self.next_agent}"
@@ -373,6 +374,24 @@ class AccountInstallerTests(unittest.TestCase):
             )
         agent_runs = [endpoint for endpoint, _ in api.calls if endpoint == "/api/agent/run"]
         self.assertEqual(len(agent_runs), 3)
+
+    def test_live_fython_literal_result_is_accepted_without_eval(self):
+        api = FakeAPI()
+        api.repr_install_smokes.add("literal_smoke")
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            report = installer.install(
+                {"literal_smoke": expert("literal_smoke")},
+                required={"literal_smoke"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+        self.assertEqual(report["status"], "installed")
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()
