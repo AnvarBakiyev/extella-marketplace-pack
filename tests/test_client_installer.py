@@ -42,6 +42,22 @@ class ClientInstallerTests(unittest.TestCase):
         self.assertIn("Expert 7/60: safe_expert", rendered)
         self.assertNotIn("TOP_SECRET", rendered)
 
+    def test_console_progress_names_cloud_runtime_preflight(self):
+        output = io.StringIO()
+        with patch("installer.client_install.sys.stderr", output):
+            _console_progress(
+                {
+                    "phase": "account_runtime_preflight",
+                    "current": 0,
+                    "total": 1,
+                    "item": "",
+                }
+            )
+        self.assertEqual(
+            output.getvalue().strip(),
+            "[Account] Checking cloud expert execution…",
+        )
+
     def test_waits_for_launchagent_to_claim_one_activity_center_pid(self):
         class DelayedSupervisor:
             def __init__(self):

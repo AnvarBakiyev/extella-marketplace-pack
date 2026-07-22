@@ -11,11 +11,13 @@ from installer.account import (
     BOOTSTRAP_AGENT_SCOPE,
     AccountInstallError,
     AccountInstaller,
+    AccountRuntimeUnavailable,
     ExtellaAPI,
     ExpertSource,
     KVArtifact,
     INSTALL_SMOKE_MARKER,
     INSTALL_SMOKE_PARAM,
+    RUNTIME_PROBE_EXPERT,
     instrument_expert_code,
     load_expert_sources,
     _normalise_expert,
@@ -34,6 +36,7 @@ class FakeAPI:
         self.repr_install_smokes = set()
         self.nested_install_smokes = set()
         self.transient_api_failures = {}
+        self.expert_run_http_status = None
         self.calls = []
         self.default_agent_id = "agent_account_QwenBase"
         self.agents = {
@@ -91,6 +94,13 @@ class FakeAPI:
             self.experts.pop(payload["name"], None)
             return {"status": "success"}
         if endpoint == "/api/expert/run":
+            if self.expert_run_http_status is not None:
+                raise APIError(
+                    endpoint,
+                    "http_error",
+                    http_status=self.expert_run_http_status,
+                    code="cloud expert runner unavailable",
+                )
             if payload.get("params", {}).get(INSTALL_SMOKE_PARAM):
                 result = {
                     "status": "success",
@@ -396,16 +406,114 @@ class AccountInstallerTests(unittest.TestCase):
             [event["phase"] for event in events],
             [
                 "account_validation",
+                "account_runtime_preflight",
                 "expert",
                 "catalog_data",
                 "functional_smoke",
                 "account_complete",
             ],
         )
-        self.assertEqual(events[1]["item"], "safe_smoke")
+        self.assertEqual(events[2]["item"], "safe_smoke")
         serialized = json.dumps(events)
         self.assertNotIn("TOP_SECRET", serialized)
         self.assertNotIn("private:key", serialized)
+
+    def test_existing_system_probe_detects_cloud_outage_before_account_mutation(self):
+        api = FakeAPI()
+        source = expert(RUNTIME_PROBE_EXPERT)
+        api.experts[RUNTIME_PROBE_EXPERT] = {
+            "status": "success",
+            "name": RUNTIME_PROBE_EXPERT,
+            "expert_code": instrument_expert_code(source, "agent_user_Qwen123"),
+            "description": RUNTIME_PROBE_EXPERT,
+            "kwargs": {},
+            "cspl": "fython",
+            "global": True,
+        }
+        original = dict(api.experts[RUNTIME_PROBE_EXPERT])
+        api.expert_run_http_status = 500
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            with self.assertRaisesRegex(
+                AccountRuntimeUnavailable,
+                "cloud expert execution is unavailable.*HTTP 500",
+            ):
+                installer.install(
+                    {RUNTIME_PROBE_EXPERT: source},
+                    required={RUNTIME_PROBE_EXPERT},
+                    smokes=set(),
+                    kv_artifacts=[],
+                )
+            report = json.loads((root / "last-account-report.json").read_text())
+
+        self.assertEqual(api.experts[RUNTIME_PROBE_EXPERT], original)
+        self.assertEqual(report["status"], "rolled_back")
+        self.assertEqual(report["failedStep"], "expert-runtime-preflight")
+        self.assertEqual(
+            report["steps"][-1]["error_class"],
+            "AccountRuntimeUnavailable",
+        )
+        mutations = {
+            "/api/expert/save",
+            "/api/expert/delete",
+            "/api/kv/set",
+            "/api/kv/remove",
+            "/api/agent/create",
+            "/api/agent/delete",
+        }
+        self.assertFalse(any(endpoint in mutations for endpoint, _ in api.calls))
+        self.assertEqual(
+            sum(endpoint == "/api/expert/run" for endpoint, _ in api.calls),
+            2,
+        )
+
+    def test_clean_account_installs_minimal_probe_first_and_rolls_it_back_on_outage(self):
+        api = FakeAPI()
+        api.expert_run_http_status = 500
+        sources = {
+            "alpha": expert("alpha"),
+            RUNTIME_PROBE_EXPERT: expert(RUNTIME_PROBE_EXPERT),
+        }
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            with self.assertRaises(AccountRuntimeUnavailable):
+                installer.install(
+                    sources,
+                    required=set(sources),
+                    smokes=set(),
+                    kv_artifacts=[],
+                )
+            report = json.loads((root / "last-account-report.json").read_text())
+
+        self.assertEqual(api.experts, {})
+        saved = [
+            payload["name"]
+            for endpoint, payload in api.calls
+            if endpoint == "/api/expert/save"
+        ]
+        self.assertEqual(saved, [RUNTIME_PROBE_EXPERT])
+        self.assertNotIn("alpha", saved)
+        self.assertEqual(report["status"], "rolled_back")
+        self.assertEqual(
+            report["failedStep"],
+            f"install-smoke:{RUNTIME_PROBE_EXPERT}",
+        )
+        self.assertEqual(
+            sum(endpoint == "/api/expert/run" for endpoint, _ in api.calls),
+            6,
+        )
 
     def test_repair_replaces_stale_pro_agent_ownership_with_token_qwen(self):
         api = FakeAPI()

@@ -36,6 +36,8 @@ def _console_progress(event: dict) -> None:
         message = "[Account] Checking for an interrupted earlier installation…"
     elif phase == "account_validation":
         message = "[Account] Validating the Extella account…"
+    elif phase == "account_runtime_preflight":
+        message = "[Account] Checking cloud expert execution…"
     elif phase == "expert":
         suffix = f": {item}" if item else ""
         message = f"[Account] Expert {current}/{total}{suffix} — install and verification"

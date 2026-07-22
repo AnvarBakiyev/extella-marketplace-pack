@@ -26,10 +26,15 @@ QWEN_MODEL = "qwen3.7-max-2026-06-08"
 AGENTS_KV_KEY = "extella:client:agents:v1"
 INSTALL_SMOKE_PARAM = "__extella_install_smoke"
 INSTALL_SMOKE_MARKER = "extella-install-smoke-v1"
+RUNTIME_PROBE_EXPERT = "extella_system_install_smoke"
 
 
 class AccountInstallError(RuntimeError):
     pass
+
+
+class AccountRuntimeUnavailable(AccountInstallError):
+    """The account is valid, but the cloud expert runner is unavailable."""
 
 
 class APIError(AccountInstallError):
@@ -237,6 +242,8 @@ class AccountTransaction:
             step.error_class = type(error).__name__
             step.message = str(error)[:300]
             self.rollback(failed_step=name)
+            if isinstance(error, AccountRuntimeUnavailable):
+                raise
             raise AccountInstallError(f"account step failed: {name}") from error
 
     def _report(self, status: str, *, failed_step: str | None = None, rollback_errors: list[str] | None = None) -> dict[str, Any]:
@@ -456,7 +463,11 @@ def _canonical_expert_code(code: str) -> str:
     return code.replace("\r\n", "\n").rstrip("\n") + "\n"
 
 
-def _retry_transient_api(action: Callable[[], Any]) -> Any:
+def _retry_transient_api(
+    action: Callable[[], Any],
+    *,
+    delays: tuple[float, ...] = (0.0, 1.0, 3.0, 7.0, 15.0, 30.0),
+) -> Any:
     """Retry bounded, idempotent account mutations during rollback.
 
     The live account API can briefly throttle a long clean-account install.
@@ -468,7 +479,6 @@ def _retry_transient_api(action: Callable[[], Any]) -> Any:
     """
 
     last_error: APIError | None = None
-    delays = (0.0, 1.0, 3.0, 7.0, 15.0, 30.0)
     for attempt, delay in enumerate(delays, start=1):
         if delay:
             time.sleep(delay)
@@ -619,6 +629,67 @@ class AccountInstaller:
             if _missing(error):
                 return None
             raise
+
+    @staticmethod
+    def _runtime_unavailable(error: APIError) -> AccountRuntimeUnavailable:
+        if error.http_status is None:
+            reason = "network error"
+        else:
+            reason = f"HTTP {error.http_status}"
+        return AccountRuntimeUnavailable(
+            "Extella cloud expert execution is unavailable "
+            f"({reason}); installation cannot continue"
+        )
+
+    @staticmethod
+    def _is_runtime_outage(error: APIError) -> bool:
+        return (
+            error.http_status is None
+            or error.http_status in {408, 425, 429}
+            or error.http_status >= 500
+        )
+
+    def preflight_expert_runtime(self) -> tuple[str, None]:
+        """Probe a known installed smoke expert before mutating account resources.
+
+        A clean account has no probe yet, so its bundled minimal probe is
+        installed first by ``install`` and remains protected by the normal
+        transactional rollback.
+        """
+
+        current = self._get_expert(RUNTIME_PROBE_EXPERT)
+        if current is None:
+            return "cloud expert runtime preflight deferred to minimal system probe", None
+        code = str(current.get("code") or "")
+        if INSTALL_SMOKE_PARAM not in code or INSTALL_SMOKE_MARKER not in code:
+            return "cloud expert runtime preflight deferred until system probe refresh", None
+        try:
+            response = _retry_transient_api(
+                lambda: self.api.post(
+                    "/api/expert/run",
+                    {
+                        "expert_name": RUNTIME_PROBE_EXPERT,
+                        "params": {INSTALL_SMOKE_PARAM: True},
+                        "global": True,
+                    },
+                    timeout=90,
+                ),
+                delays=(0.0, 1.0),
+            )
+        except APIError as error:
+            if self._is_runtime_outage(error):
+                raise self._runtime_unavailable(error) from error
+            raise
+        if not _response_success(response):
+            return "cloud expert runtime responded; system probe refresh required", None
+        result: Any = _structured_result(response.get("result", response))
+        if (
+            not isinstance(result, dict)
+            or result.get("installSmoke") != RUNTIME_PROBE_EXPERT
+            or result.get("contract") != INSTALL_SMOKE_MARKER
+        ):
+            return "cloud expert runtime responded; system probe refresh required", None
+        return "cloud expert runtime preflight passed", None
 
     def _save_expert_payload(self, payload: Mapping[str, Any]) -> None:
         response = _retry_transient_api(
@@ -877,13 +948,22 @@ class AccountInstaller:
 
     def smoke_expert(self, name: str, *, install_contract: bool = False) -> tuple[str, None]:
         params = {INSTALL_SMOKE_PARAM: True} if install_contract else {}
-        response = _retry_transient_api(
-            lambda: self.api.post(
-                "/api/expert/run",
-                {"expert_name": name, "params": params, "global": True},
-                timeout=180,
+        try:
+            response = _retry_transient_api(
+                lambda: self.api.post(
+                    "/api/expert/run",
+                    {"expert_name": name, "params": params, "global": True},
+                    timeout=180,
+                )
             )
-        )
+        except APIError as error:
+            if (
+                install_contract
+                and name == RUNTIME_PROBE_EXPERT
+                and self._is_runtime_outage(error)
+            ):
+                raise self._runtime_unavailable(error) from error
+            raise
         if not _response_success(response):
             raise AccountInstallError(f"expert smoke was not acknowledged: {name}")
         result: Any = _structured_result(response.get("result", response))
@@ -932,6 +1012,8 @@ class AccountInstaller:
             raise AccountInstallError(f"required expert sources are missing: {', '.join(missing[:10])}")
         emit("account_validation", 0, 1)
         self.validate_token()
+        emit("account_runtime_preflight", 0, 1)
+        self.transaction.run("expert-runtime-preflight", self.preflight_expert_runtime)
         owned_agent_kv: list[KVArtifact] = []
         if agent_instructions is not None:
             _, owned_agent_kv = self.ensure_agents(agent_instructions)
@@ -941,7 +1023,10 @@ class AccountInstaller:
         # unverified experts. A base install owns only the explicit release
         # contract; merely being present in the source tree is never consent to
         # advertise or install an expert into every account.
-        expert_names = sorted(required | smokes)
+        expert_names = sorted(
+            required | smokes,
+            key=lambda name: (name != RUNTIME_PROBE_EXPERT, name),
+        )
         for index, name in enumerate(expert_names, start=1):
             emit("expert", index, len(expert_names), name)
             source = experts[name]
