@@ -30,6 +30,30 @@ class RequiredBundlePayloadTests(unittest.TestCase):
         )
 
 
+class BundledExpertContractTests(unittest.TestCase):
+    def test_oversized_bundled_expert_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "marketplace"
+            wizard = Path(directory) / "wizard"
+            (root / "release/plugins").mkdir(parents=True)
+            (root / "experts").mkdir()
+            wizard.mkdir()
+            (root / "experts/huge.py").write_text(
+                "def huge():\n    return True\n" + "#" * (release_gate.MAX_BUNDLED_EXPERT_BYTES + 1),
+                encoding="utf-8",
+            )
+            (root / "release/expert-classification.json").write_text(
+                json.dumps({"bundled": ["huge"], "supportedOnDemand": [], "thirdPartyUnverified": []}),
+                encoding="utf-8",
+            )
+            (root / "release/plugins/huge.json").write_text(
+                json.dumps({"classification": "bundled", "experts": {"required": ["huge"], "smoke": []}}),
+                encoding="utf-8",
+            )
+            issues = release_gate.validate_expert_contract(root, wizard)
+        self.assertIn("expert.source_size", {issue.code for issue in issues})
+
+
 def valid_plugin() -> dict:
     return {
         "schemaVersion": 1,

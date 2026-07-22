@@ -46,6 +46,7 @@ REQUIRED_BUNDLE_PAYLOAD = frozenset(
         "payload/marketplace/runtime/pinokio_recipe_resolver.js",
     }
 )
+MAX_BUNDLED_EXPERT_BYTES = 64 * 1024
 CLASSIFICATIONS = {"bundled", "supported_on_demand", "third_party_unverified"}
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$")
 PLUGIN_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,79}$")
@@ -350,6 +351,14 @@ def validate_expert_contract(root: Path, wizard_root: Path) -> list[Issue]:
         path = sources.get(name)
         if path is None:
             continue
+        if path.stat().st_size > MAX_BUNDLED_EXPERT_BYTES:
+            issues.append(
+                Issue(
+                    "expert.source_size",
+                    str(path),
+                    f"bundled expert {name} exceeds {MAX_BUNDLED_EXPERT_BYTES} bytes",
+                )
+            )
         text = path.read_text(encoding="utf-8", errors="replace")
         for code, pattern in FORBIDDEN_SOURCE.items():
             if pattern.search(text):
