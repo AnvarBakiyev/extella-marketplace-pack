@@ -127,7 +127,14 @@ class ToolbarSourceGateTests(unittest.TestCase):
         (toolbar / "toolbar/build").mkdir(parents=True)
         (toolbar / "toolbar/build/toolbar.js").write_bytes(canonical)
         (toolbar / "scripts").mkdir()
-        (toolbar / "scripts/check-reproducible-build.js").write_text("// fixture")
+        for name in (
+            "check-reproducible-build.js",
+            "check-account-scope.js",
+            "check-runtime-portability.js",
+            "check-catalog-contract.js",
+            "check-managed-runtime-lifecycle.js",
+        ):
+            (toolbar / f"scripts/{name}").write_text("// fixture")
         release = {
             "sourceRepositories": [{"id": "toolbar", "revision": "1" * 40}]
         }
@@ -135,7 +142,7 @@ class ToolbarSourceGateTests(unittest.TestCase):
 
     def _run(self, marketplace, toolbar, release):
         completed = [
-            subprocess.CompletedProcess([], 0, "passed", ""),
+            *(subprocess.CompletedProcess([], 0, "passed", "") for _ in range(5)),
             subprocess.CompletedProcess([], 0, "1" * 40 + "\n", ""),
         ]
         with patch.object(release_gate.subprocess, "run", side_effect=completed):
@@ -151,6 +158,19 @@ class ToolbarSourceGateTests(unittest.TestCase):
             fixture = self._fixture(Path(directory), canonical=b"canonical", distributed=b"stale")
             issues = self._run(*fixture)
         self.assertIn("toolbar.distribution_drift", {issue.code for issue in issues})
+
+    def test_managed_runtime_contract_failure_fails_candidate_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marketplace, toolbar, release = self._fixture(
+                Path(directory), canonical=b"same", distributed=b"same"
+            )
+            completed = [
+                *(subprocess.CompletedProcess([], 0, "passed", "") for _ in range(4)),
+                subprocess.CompletedProcess([], 1, "", "managed lifecycle failed"),
+            ]
+            with patch.object(release_gate.subprocess, "run", side_effect=completed):
+                issues = release_gate.validate_toolbar_source(marketplace, toolbar, release)
+        self.assertIn("toolbar.managed_runtime", {issue.code for issue in issues})
 
 
 class CapDependencyGateTests(unittest.TestCase):

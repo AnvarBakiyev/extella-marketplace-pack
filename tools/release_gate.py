@@ -798,27 +798,43 @@ def validate_toolbar_source(
                 "candidate gate requires the canonical toolbar source clone",
             )
         ]
-    checker = toolbar_root / "scripts/check-reproducible-build.js"
     canonical = toolbar_root / "toolbar/build/toolbar.js"
     distributed = root / "toolbar/toolbar.js"
-    if not checker.is_file():
-        issues.append(Issue("toolbar.reproducibility_tool", str(checker), "toolbar reproducibility checker is missing"))
-        return issues
-    try:
-        result = subprocess.run(
-            ("npm", "run", "test:reproducible"),
-            cwd=toolbar_root,
-            capture_output=True,
-            text=True,
-            timeout=180,
-            check=False,
-            shell=False,
-        )
-    except (OSError, subprocess.SubprocessError) as error:
-        issues.append(Issue("toolbar.reproducibility", str(toolbar_root), type(error).__name__))
-        return issues
-    if result.returncode != 0:
-        issues.append(Issue("toolbar.reproducibility", str(toolbar_root), "canonical toolbar did not rebuild reproducibly"))
+    toolbar_checks = (
+        ("toolbar.reproducibility", "test:reproducible", "scripts/check-reproducible-build.js", 180),
+        ("toolbar.account_scope", "test:account-scope", "scripts/check-account-scope.js", 60),
+        ("toolbar.portability", "test:runtime-portability", "scripts/check-runtime-portability.js", 60),
+        ("toolbar.catalog_contract", "test:catalog-contract", "scripts/check-catalog-contract.js", 60),
+        ("toolbar.managed_runtime", "test:managed-runtime", "scripts/check-managed-runtime-lifecycle.js", 60),
+    )
+    for issue_code, npm_script, checker_name, timeout in toolbar_checks:
+        checker = toolbar_root / checker_name
+        if not checker.is_file():
+            issues.append(Issue(f"{issue_code}_tool", str(checker), f"{npm_script} checker is missing"))
+            continue
+        try:
+            result = subprocess.run(
+                ("npm", "run", npm_script),
+                cwd=toolbar_root,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=False,
+                shell=False,
+            )
+        except (OSError, subprocess.SubprocessError) as error:
+            issues.append(Issue(issue_code, str(toolbar_root), type(error).__name__))
+            continue
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout or "").strip().splitlines()
+            issues.append(
+                Issue(
+                    issue_code,
+                    str(toolbar_root),
+                    detail[-1] if detail else f"{npm_script} failed",
+                )
+            )
+    if issues:
         return issues
     if not canonical.is_file() or not distributed.is_file() or _sha256(canonical) != _sha256(distributed):
         issues.append(
