@@ -9,11 +9,11 @@
     "windows11-x86_64"
   ],
   "distribution": {
-    "status": "pending",
+    "status": "candidate",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": null,
-    "bytes": null,
-    "fileCount": null
+    "sha256": "9cd6cff849557e137df43e3b5e548760e5dac0bf8e898d3145cec24b7781633d",
+    "bytes": 3243747,
+    "fileCount": 265
   },
   "dependencies": [
     {
