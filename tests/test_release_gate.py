@@ -327,6 +327,7 @@ class LifecycleEntrypointTests(unittest.TestCase):
                 "toolbar/install.ps1": "install-all.ps1",
                 "toolbar/Install-Extella.command": "install-all.sh",
                 "toolbar/Install-Extella.bat": "install-all.ps1",
+                "toolbar/fix-certs.sh": "legacy_certificate_repair_retired",
                 "device/activity-center/install.py": "standalone_component_installer_retired",
                 "device/activity-center/uninstall.py": "standalone_component_uninstaller_retired",
             }

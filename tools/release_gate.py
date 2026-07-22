@@ -634,6 +634,7 @@ def validate_lifecycle_entrypoints(root: Path) -> list[Issue]:
         root / "toolbar/install.ps1": "install-all.ps1",
         root / "toolbar/Install-Extella.command": "install-all.sh",
         root / "toolbar/Install-Extella.bat": "install-all.ps1",
+        root / "toolbar/fix-certs.sh": "legacy_certificate_repair_retired",
         root / "device/activity-center/install.py": "standalone_component_installer_retired",
         root / "device/activity-center/uninstall.py": "standalone_component_uninstaller_retired",
     }
