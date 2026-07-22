@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from installer.account import (
     APIError,
@@ -118,6 +119,19 @@ class AccountInstallerTests(unittest.TestCase):
         self.assertEqual(api.agent_scope, "agent_user_Qwen123")
         with self.assertRaises(AccountInstallError):
             api.set_agent_scope(BOOTSTRAP_AGENT_SCOPE)
+
+    def test_live_token_validation_contract_is_injected_by_secret_owning_client(self):
+        token = "t" * 24
+        response = MagicMock()
+        response.read.return_value = b'{"status":"success","valid":true}'
+        response.__enter__.return_value = response
+        response.__exit__.return_value = False
+        with patch("installer.account.urllib.request.urlopen", return_value=response) as opener:
+            result = ExtellaAPI(token).post("/api/token/validate", {})
+
+        request = opener.call_args.args[0]
+        self.assertEqual(json.loads(request.data), {"token": token})
+        self.assertTrue(result["valid"])
 
     def test_instrumented_python_expert_delegates_and_has_safe_probe(self):
         source = expert(

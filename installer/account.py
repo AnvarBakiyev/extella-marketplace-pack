@@ -76,9 +76,15 @@ class ExtellaAPI:
     def post(self, endpoint: str, payload: Mapping[str, Any], *, timeout: int = 90) -> dict[str, Any]:
         if not endpoint.startswith("/api/"):
             raise APIError(endpoint, "invalid_endpoint")
+        body = dict(payload)
+        if endpoint == "/api/token/validate":
+            # The live Extella API requires the token in the validation body
+            # as well as the auth header. Keep this injection inside the
+            # secret-owning client so callers never read, log, or persist it.
+            body = {"token": self._token}
         request = urllib.request.Request(
             self.api_base + endpoint,
-            data=json.dumps(dict(payload), ensure_ascii=False).encode("utf-8"),
+            data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
             headers={
                 "X-Auth-Token": self._token,
                 "Content-Type": "application/json",
