@@ -18,7 +18,7 @@ from installer.account import (
     repair_interrupted_account,
     uninstall_account_resources,
 )
-from installer.bundle import verify_bundle
+from installer.bundle import VerifiedBundle, verify_bundle
 from installer.client import _restrict_secret_file, _runtime_environment
 from runtime.extella_runtime.paths import ClientPaths, client_paths
 from runtime.extella_runtime.platforms import PlatformInfo, detect_platform
@@ -47,10 +47,14 @@ def _package_root(paths: ClientPaths) -> Path:
     return paths.data_root / "packages" / "current"
 
 
-def _load_manifest(package_root: Path, plugin_id: str, platform_info: PlatformInfo) -> dict[str, Any]:
+def _load_manifest(
+    package_root: Path,
+    plugin_id: str,
+    platform_info: PlatformInfo,
+) -> tuple[dict[str, Any], VerifiedBundle]:
     if plugin_id not in SUPPORTED_IDS or not PLUGIN_ID.fullmatch(plugin_id):
         raise PluginLifecycleError("plugin is not in the supported on-demand allowlist")
-    verify_bundle(package_root)
+    verified = verify_bundle(package_root)
     path = package_root / "payload/marketplace/release/plugins" / f"{plugin_id}.json"
     try:
         manifest = json.loads(path.read_text(encoding="utf-8"))
@@ -64,7 +68,7 @@ def _load_manifest(package_root: Path, plugin_id: str, platform_info: PlatformIn
         raise PluginLifecycleError("plugin does not support this platform")
     if (manifest.get("install") or {}).get("strategy") != "on_demand":
         raise PluginLifecycleError("plugin has no on-demand install contract")
-    return manifest
+    return manifest, verified
 
 
 def _read_account_config(paths: ClientPaths, platform_info: PlatformInfo) -> dict[str, str]:
@@ -163,7 +167,12 @@ def _runtime_spec(
     )
 
 
-def _registry_payload(manifest: Mapping[str, Any], spec: RuntimeSpec, paths: ClientPaths) -> dict[str, Any]:
+def _registry_payload(
+    manifest: Mapping[str, Any],
+    spec: RuntimeSpec,
+    paths: ClientPaths,
+    bundle: VerifiedBundle,
+) -> dict[str, Any]:
     ui = manifest.get("ui") if isinstance(manifest.get("ui"), dict) else {}
     return {
         "schemaVersion": 1,
@@ -171,6 +180,8 @@ def _registry_payload(manifest: Mapping[str, Any], spec: RuntimeSpec, paths: Cli
         "name": manifest.get("name") or spec.runtime_id,
         "description": manifest.get("description") or "",
         "version": manifest.get("version"),
+        "releaseVersion": bundle.release_version,
+        "packageRevision": bundle.packaging_repository_revision,
         "classification": "supported_on_demand",
         "source": manifest.get("source"),
         "installed": True,
@@ -195,6 +206,67 @@ def _registry_payload(manifest: Mapping[str, Any], spec: RuntimeSpec, paths: Cli
             "autostart": "controller",
         },
     }
+
+
+def _existing_registry(
+    path: Path,
+    plugin_id: str,
+    state_file: Path,
+) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise PluginLifecycleError("refusing to replace an unreadable plugin registration") from error
+    if (
+        not isinstance(payload, dict)
+        or payload.get("id") != plugin_id
+        or payload.get("installedByExtella") is not True
+    ):
+        raise PluginLifecycleError("refusing to replace a plugin registration not owned by Extella")
+    if not state_file.is_file():
+        raise PluginLifecycleError("plugin registration has no lifecycle ownership state")
+    return payload
+
+
+def _enable_service_autostart(
+    transaction: InstallTransaction,
+    paths: ClientPaths,
+    plugin_id: str,
+) -> str:
+    state_path = paths.state_root / "services.json"
+    if not state_path.is_file():
+        return "service autostart is enabled by default"
+    try:
+        payload = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    raw_disabled = payload.get("disabled", [])
+    if not isinstance(raw_disabled, list):
+        raw_disabled = []
+    disabled = [
+        item
+        for item in raw_disabled
+        if isinstance(item, str) and item != plugin_id
+    ]
+    errors = payload.get("lastErrors")
+    if not isinstance(errors, dict):
+        errors = {}
+    had_error = plugin_id in errors
+    errors.pop(plugin_id, None)
+    if disabled == raw_disabled and not had_error and isinstance(payload.get("lastErrors"), dict):
+        return "service autostart was already enabled"
+    payload["disabled"] = sorted(set(disabled))
+    payload["lastErrors"] = errors
+    transaction.atomic_write(
+        (json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode("utf-8"),
+        state_path,
+        mode=0o600,
+    )
+    return "service autostart enabled for this installation"
 
 
 def _probe_ui(
@@ -257,7 +329,7 @@ def install_supported_plugin(
     environment = dict(os.environ if env is None else env)
     paths = client_paths(platform_info=platform_info, env=environment)
     package_root = (package_root or _package_root(paths)).resolve()
-    manifest = _load_manifest(package_root, plugin_id, platform_info)
+    manifest, verified_bundle = _load_manifest(package_root, plugin_id, platform_info)
     config = _read_account_config(paths, platform_info)
     python = (python_executable or Path(sys.executable)).resolve()
     if not python.is_file():
@@ -275,11 +347,26 @@ def install_supported_plugin(
     )
     spec = _runtime_spec(manifest, paths=paths, python=python)
     ui_report: dict[str, Any] = {}
+    registry_path = paths.plugins_root / "_registry" / f"{plugin_id}.json"
+    local_state = paths.state_root / "plugins" / plugin_id / "install-state.json"
+    existing_registry = _existing_registry(registry_path, plugin_id, local_state)
     try:
+        def migrate_previous_runtime() -> str:
+            if not existing_registry or existing_registry.get("packageRevision") == verified_bundle.packaging_repository_revision:
+                return "no previous runtime migration required"
+            status = supervisor.status(spec)
+            if status.get("status") == "stopped":
+                return "previous runtime was already stopped"
+            if not status.get("canStop"):
+                raise PluginLifecycleError("refusing to replace a running plugin process without verified ownership")
+            supervisor.stop(spec)
+            local.register_undo(lambda: supervisor.start(spec))
+            return "previous owned runtime stopped for verified upgrade"
+
+        local.run("plugin.migration", migrate_previous_runtime)
         mappings = _source_mappings(package_root, manifest, paths)
         local.run("plugin.files", lambda: _copy_files(local, mappings))
-        registry_path = paths.plugins_root / "_registry" / f"{plugin_id}.json"
-        registry = _registry_payload(manifest, spec, paths)
+        registry = _registry_payload(manifest, spec, paths, verified_bundle)
         local.run(
             "plugin.registry",
             lambda: (
@@ -290,6 +377,10 @@ def install_supported_plugin(
                 )
                 and "owned plugin registration verified"
             ),
+        )
+        local.run(
+            "plugin.autostart",
+            lambda: _enable_service_autostart(local, paths, plugin_id),
         )
         account_state = paths.state_root / "account" / "plugins" / plugin_id
         api = account_api or ExtellaAPI(config["token"], api_base=config["api_base"])
@@ -371,10 +462,13 @@ def uninstall_supported_plugin(
     environment = dict(os.environ if env is None else env)
     paths = client_paths(platform_info=platform_info, env=environment)
     package_root = (package_root or _package_root(paths)).resolve()
-    manifest = _load_manifest(package_root, plugin_id, platform_info)
+    manifest, _verified_bundle = _load_manifest(package_root, plugin_id, platform_info)
     config = _read_account_config(paths, platform_info)
     python = (python_executable or Path(sys.executable)).resolve()
     spec = _runtime_spec(manifest, paths=paths, python=python)
+    registry_path = paths.plugins_root / "_registry" / f"{plugin_id}.json"
+    local_state = paths.state_root / "plugins" / plugin_id / "install-state.json"
+    _existing_registry(registry_path, plugin_id, local_state)
     supervisor = ProcessSupervisor(
         state_file=paths.state_root / "processes.json",
         platform_info=platform_info,
@@ -399,7 +493,6 @@ def uninstall_supported_plugin(
                 "account": account_report,
                 "local": {"status": "preserved"},
             }
-    local_state = paths.state_root / "plugins" / plugin_id / "install-state.json"
     local_report = (
         uninstall_from_state(local_state)
         if local_state.is_file()
@@ -429,11 +522,26 @@ def list_supported_plugins(
     plugins: list[dict[str, Any]] = []
     for plugin_id in sorted(SUPPORTED_IDS):
         try:
-            manifest = _load_manifest(package_root, plugin_id, platform_info)
+            manifest, verified_bundle = _load_manifest(package_root, plugin_id, platform_info)
         except PluginLifecycleError:
             continue
         state = paths.state_root / "plugins" / plugin_id / "install-state.json"
         registry = paths.plugins_root / "_registry" / f"{plugin_id}.json"
+        registration: dict[str, Any] = {}
+        try:
+            candidate = json.loads(registry.read_text(encoding="utf-8"))
+            if isinstance(candidate, dict):
+                registration = candidate
+        except (OSError, ValueError):
+            pass
+        installed_files = state.is_file() and registry.is_file()
+        has_install_artifacts = state.is_file() or registry.is_file()
+        current_package = (
+            registration.get("id") == plugin_id
+            and registration.get("installedByExtella") is True
+            and registration.get("releaseVersion") == verified_bundle.release_version
+            and registration.get("packageRevision") == verified_bundle.packaging_repository_revision
+        )
         plugins.append(
             {
                 "id": plugin_id,
@@ -441,7 +549,8 @@ def list_supported_plugins(
                 "description": manifest.get("description") or "",
                 "version": manifest.get("version"),
                 "classification": "supported_on_demand",
-                "installed": state.is_file() and registry.is_file(),
+                "installed": installed_files and current_package,
+                "needsRepair": has_install_artifacts and not (installed_files and current_package),
             }
         )
     return plugins

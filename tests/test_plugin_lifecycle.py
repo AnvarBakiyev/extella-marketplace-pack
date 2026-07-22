@@ -40,6 +40,7 @@ class FakeAccountInstaller:
 
 class FakeSupervisor:
     running = set()
+    events = []
 
     def __init__(self, **_kwargs):
         pass
@@ -60,10 +61,12 @@ class FakeSupervisor:
         if not (spec.cwd / "server.py").is_file():
             raise AssertionError("service started before files were installed")
         self.running.add(spec.runtime_id)
+        self.events.append(("start", spec.runtime_id))
         return self.status(spec)
 
     def stop(self, spec):
         self.running.discard(spec.runtime_id)
+        self.events.append(("stop", spec.runtime_id))
         return self.status(spec)
 
 
@@ -102,6 +105,7 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
         FakeAccountInstaller.installs = []
         FakeAccountInstaller.instances = []
         FakeSupervisor.running = set()
+        FakeSupervisor.events = []
         self.mac = detect_platform(system="Darwin", architecture="arm64", release="15.5")
 
     def fixture(self, root: Path):
@@ -156,7 +160,14 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
 
     def lifecycle_patches(self):
         return (
-            patch.object(plugin_lifecycle, "verify_bundle", return_value=SimpleNamespace(release_version="test")),
+            patch.object(
+                plugin_lifecycle,
+                "verify_bundle",
+                return_value=SimpleNamespace(
+                    release_version="test",
+                    packaging_repository_revision="a" * 40,
+                ),
+            ),
             patch.object(plugin_lifecycle, "repair_interrupted_account"),
             patch.object(plugin_lifecycle, "discover_bundle_experts", return_value={}),
             patch.object(plugin_lifecycle, "AccountInstaller", FakeAccountInstaller),
@@ -189,6 +200,7 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
             registry = json.loads((data / "plugins/_registry/extella_travel_agency.json").read_text())
             self.assertTrue(registry["installedByExtella"])
             self.assertEqual(registry["classification"], "supported_on_demand")
+            self.assertEqual(registry["packageRevision"], "a" * 40)
             self.assertEqual(FakeAccountInstaller.installs, [({"travel_required"}, {"travel_smoke"}, False)])
 
     def test_uninstall_removes_owned_files_but_preserves_user_data(self):
@@ -236,6 +248,109 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
             verify.assert_not_called()
             self.assertFalse((data / "plugins/unknown_plugin").exists())
 
+    def test_unowned_registry_fails_before_payload_or_account_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package, data, env = self.fixture(Path(directory))
+            registry = data / "plugins/_registry/extella_travel_agency.json"
+            registry.parent.mkdir(parents=True)
+            registry.write_text(
+                json.dumps({"id": "extella_travel_agency", "installedByExtella": False}),
+                encoding="utf-8",
+            )
+            patches = self.lifecycle_patches()
+            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6]:
+                with self.assertRaisesRegex(Exception, "not owned by Extella"):
+                    plugin_lifecycle.install_supported_plugin(
+                        "extella_travel_agency",
+                        package_root=package,
+                        platform_info=self.mac,
+                        env=env,
+                        account_api=object(),
+                        python_executable=Path(sys.executable),
+                    )
+            self.assertFalse(FakeAccountInstaller.instances)
+            self.assertFalse((data / "plugins/extella_travel_agency/server.py").exists())
+            self.assertFalse(json.loads(registry.read_text())["installedByExtella"])
+
+    def test_forged_owned_registry_without_lifecycle_state_is_not_adopted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package, data, env = self.fixture(Path(directory))
+            registry = data / "plugins/_registry/extella_travel_agency.json"
+            registry.parent.mkdir(parents=True)
+            registry.write_text(
+                json.dumps({"id": "extella_travel_agency", "installedByExtella": True}),
+                encoding="utf-8",
+            )
+            patches = self.lifecycle_patches()
+            with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6]:
+                with self.assertRaisesRegex(Exception, "no lifecycle ownership state"):
+                    plugin_lifecycle.install_supported_plugin(
+                        "extella_travel_agency",
+                        package_root=package,
+                        platform_info=self.mac,
+                        env=env,
+                        account_api=object(),
+                        python_executable=Path(sys.executable),
+                    )
+            self.assertFalse(FakeAccountInstaller.instances)
+            self.assertFalse((data / "plugins/extella_travel_agency/server.py").exists())
+
+    def test_package_upgrade_restarts_owned_runtime_and_clears_disabled_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            package, data, env = self.fixture(Path(directory))
+            first = self.lifecycle_patches()
+            with first[0], first[1], first[2], first[3], first[4], first[5], first[6]:
+                plugin_lifecycle.install_supported_plugin(
+                    "extella_travel_agency",
+                    package_root=package,
+                    platform_info=self.mac,
+                    env=env,
+                    account_api=object(),
+                    python_executable=Path(sys.executable),
+                )
+            service_state = data / "state/services.json"
+            service_state.parent.mkdir(parents=True, exist_ok=True)
+            service_state.write_text(
+                json.dumps({"disabled": ["extella_travel_agency", "other"], "lastErrors": {}}),
+                encoding="utf-8",
+            )
+            second = list(self.lifecycle_patches())
+            second[0] = patch.object(
+                plugin_lifecycle,
+                "verify_bundle",
+                return_value=SimpleNamespace(
+                    release_version="test",
+                    packaging_repository_revision="b" * 40,
+                ),
+            )
+            with second[0], second[1], second[2], second[3], second[4], second[5], second[6]:
+                before = plugin_lifecycle.list_supported_plugins(
+                    package_root=package,
+                    platform_info=self.mac,
+                    env=env,
+                )
+                self.assertEqual(len(before), 1)
+                self.assertFalse(before[0]["installed"])
+                self.assertTrue(before[0]["needsRepair"])
+                result = plugin_lifecycle.install_supported_plugin(
+                    "extella_travel_agency",
+                    package_root=package,
+                    platform_info=self.mac,
+                    env=env,
+                    account_api=object(),
+                    python_executable=Path(sys.executable),
+                )
+            self.assertEqual(result["status"], "installed")
+            self.assertEqual(FakeSupervisor.events[-2:], [
+                ("stop", "extella_travel_agency"),
+                ("start", "extella_travel_agency"),
+            ])
+            registration = json.loads(
+                (data / "plugins/_registry/extella_travel_agency.json").read_text()
+            )
+            self.assertEqual(registration["packageRevision"], "b" * 40)
+            self.assertEqual(json.loads(service_state.read_text())["disabled"], ["other"])
+
     def test_unhealthy_service_rolls_back_account_files_and_registration(self):
         with tempfile.TemporaryDirectory() as directory:
             package, data, env = self.fixture(Path(directory))
@@ -262,6 +377,12 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             package, data, env = self.fixture(Path(directory))
             patches = self.lifecycle_patches()
+            service_state = data / "state/services.json"
+            service_state.parent.mkdir(parents=True, exist_ok=True)
+            service_state.write_text(
+                json.dumps({"disabled": ["extella_travel_agency"], "lastErrors": {}}),
+                encoding="utf-8",
+            )
             with (
                 patches[0], patches[1], patches[2], patches[3], patches[4], patches[5],
                 patch.object(
@@ -281,6 +402,10 @@ class SupportedPluginLifecycleTests(unittest.TestCase):
                     )
             self.assertTrue(FakeAccountInstaller.instances[0].transaction.rolled_back)
             self.assertFalse(FakeSupervisor.running)
+            self.assertEqual(
+                json.loads(service_state.read_text())["disabled"],
+                ["extella_travel_agency"],
+            )
             self.assertFalse((data / "plugins/extella_travel_agency/server.py").exists())
             self.assertFalse((data / "plugins/_registry/extella_travel_agency.json").exists())
 
