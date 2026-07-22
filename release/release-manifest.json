@@ -156,25 +156,25 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "19c5854387c1d45dc8ba2fee0114ff577e97b502"
+      "revision": "76bfedbb8ceace8c50f08b8a567749e70ce4ccc3"
     },
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "dc67b224732592c2e370bb3bd95fec51a7ea8ca5"
+      "revision": "ec922af369d7c39bcad5d9bd4a977992de849a2d"
     },
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "209532ed403a784de8275cf0e2446e51fbf336a0"
+      "revision": "8b546d96ab9246f5e93d4a7e39d50b573a5504cd"
     }
   ],
   "artifacts": [
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "48959f5a99106dd1bc1e89bebf7321a7faa337024797af4b428733ce340686a0",
-      "bytes": 5776194,
+      "sha256": "49a075b2c7018e43230c55871d618772604cc9235064a1d9d85a1cce5d4b5068",
+      "bytes": 5816810,
       "required": true,
       "platforms": [
         "macos-x86_64",
