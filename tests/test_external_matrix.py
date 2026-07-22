@@ -9,7 +9,13 @@ from unittest.mock import patch
 import zipfile
 
 from runtime.extella_runtime.platforms import detect_platform
-from tools.external_matrix import MatrixError, _sha256_bytes_for_evidence, run
+from tools.external_matrix import (
+    MatrixError,
+    SUPPORTED_IDS,
+    _install_supported_plugins,
+    _sha256_bytes_for_evidence,
+    run,
+)
 
 
 class ExternalMatrixTests(unittest.TestCase):
@@ -95,6 +101,42 @@ class ExternalMatrixTests(unittest.TestCase):
             with patch("tools.external_matrix.detect_platform", return_value=mac):
                 with self.assertRaises(MatrixError):
                     run(args)
+
+    def test_installs_exact_supported_inventory_through_protected_lifecycle(self):
+        ids = sorted(SUPPORTED_IDS)
+        before = {"status": "ok", "plugins": [{"id": plugin_id} for plugin_id in ids]}
+        after = {
+            "status": "ok",
+            "plugins": [
+                {"id": plugin_id, "installed": True, "needsRepair": False}
+                for plugin_id in ids
+            ],
+        }
+        replies = [
+            {"status": "ok", "controlToken": "x" * 32},
+            before,
+            *(
+                {
+                    "status": "installed",
+                    "pluginId": plugin_id,
+                    "service": {"status": "running", "pid": index + 100},
+                    "ui": {"status": "ready"},
+                    "account": {"status": "installed"},
+                }
+                for index, plugin_id in enumerate(ids)
+            ),
+            after,
+        ]
+        with patch("tools.external_matrix._http_json", side_effect=replies) as request:
+            result = _install_supported_plugins()
+        self.assertEqual(result, {"plugins": 3, "healthyServices": 3, "readyUis": 3})
+        install_calls = [
+            call
+            for call in request.call_args_list
+            if call.args[0].endswith("/install")
+        ]
+        self.assertEqual(len(install_calls), 3)
+        self.assertTrue(all(call.kwargs["token"] == "x" * 32 for call in install_calls))
 
 
 if __name__ == "__main__":

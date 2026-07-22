@@ -22,6 +22,7 @@ from installer.account import (
     prompt_token,
     repair_interrupted_account,
     required_experts,
+    _response_success,
     uninstall_account_resources,
 )
 from installer.bundle import VerifiedBundle, verify_bundle
@@ -663,7 +664,20 @@ def uninstall_client(
     paths = client_paths(platform_info=platform_info, env=environment)
     account_state = paths.state_root / "account" / "account-state.json"
     local_state = paths.state_root / "client" / "install-state.json"
-    if not account_state.exists() and not local_state.exists():
+    api = account_api
+    if account_state.exists():
+        if not token.strip() and api is None:
+            raise InstallationError("Extella token is required to uninstall account-owned resources")
+        api = api or ExtellaAPI(token, api_base=api_base)
+        if not _response_success(api.post("/api/token/validate", {})):
+            raise InstallationError("Extella token validation failed before uninstall")
+    plugin_reports = _uninstall_supported_plugins(
+        paths=paths,
+        platform_info=platform_info,
+        environment=environment,
+        account_api=api,
+    )
+    if not account_state.exists() and not local_state.exists() and not plugin_reports:
         return {
             "schemaVersion": 1,
             "status": "not_installed",
@@ -672,9 +686,7 @@ def uninstall_client(
 
     account_report: dict[str, Any] = {"status": "not_installed", "steps": []}
     if account_state.exists():
-        if not token.strip() and account_api is None:
-            raise InstallationError("Extella token is required to uninstall account-owned resources")
-        api = account_api or ExtellaAPI(token, api_base=api_base)
+        assert api is not None
         account_report = uninstall_account_resources(api, account_state)
         if account_report["status"] != "uninstalled":
             return {
@@ -683,6 +695,7 @@ def uninstall_client(
                 "platform": platform_info.key,
                 "account": account_report,
                 "local": {"status": "preserved"},
+                "plugins": plugin_reports,
             }
 
     local_report: dict[str, Any] = {"status": "not_installed", "steps": []}
@@ -722,4 +735,45 @@ def uninstall_client(
         "platform": platform_info.key,
         "account": account_report,
         "local": local_report,
+        "plugins": plugin_reports,
     }
+
+
+def _uninstall_supported_plugins(
+    *,
+    paths: ClientPaths,
+    platform_info: PlatformInfo,
+    environment: Mapping[str, str],
+    account_api: Any | None,
+) -> dict[str, dict[str, Any]]:
+    """Remove every installed release-gated on-demand lifecycle first."""
+
+    from installer.plugin_lifecycle import SUPPORTED_IDS, uninstall_supported_plugin
+
+    reports: dict[str, dict[str, Any]] = {}
+    package_root = paths.data_root / "packages" / "current"
+    candidates = _python_candidates(paths.runtime_root / "python", platform_info)
+    plugin_python = candidates[0] if candidates else Path(sys.executable).resolve()
+    for plugin_id in sorted(SUPPORTED_IDS):
+        local_state = paths.state_root / "plugins" / plugin_id / "install-state.json"
+        account_state = paths.state_root / "account" / "plugins" / plugin_id / "account-state.json"
+        registry = paths.plugins_root / "_registry" / f"{plugin_id}.json"
+        if not any(path.exists() for path in (local_state, account_state, registry)):
+            continue
+        result = uninstall_supported_plugin(
+            plugin_id,
+            package_root=package_root,
+            platform_info=platform_info,
+            env=environment,
+            account_api=account_api,
+            python_executable=plugin_python,
+        )
+        if result.get("status") not in {"uninstalled", "not_installed"}:
+            raise InstallationError(f"supported plugin uninstall did not complete: {plugin_id}")
+        reports[plugin_id] = {
+            "status": result.get("status"),
+            "account": (result.get("account") or {}).get("status"),
+            "local": (result.get("local") or {}).get("status"),
+            "service": (result.get("service") or {}).get("status"),
+        }
+    return reports

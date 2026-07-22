@@ -45,6 +45,13 @@ sh toolbar/install-all.sh \
 
 Use the installed managed Python and matrix runner for subsequent phases:
 
+The `installed` phase first asks the protected local Activity Center to install
+exactly the three release-gated on-demand programs. Each lifecycle must finish
+its account smoke, owned PID health check and real HTML UI probe before the
+phase prompts for the hidden token and verifies the complete client. The
+`upgraded` phase repeats the same lifecycle so a previous package revision is
+repaired and restarted under proven ownership.
+
 ```sh
 DATA="$HOME/Library/Application Support/Extella"
 PYTHON=$(find "$DATA/runtime/python" -type f -name python3.12 -perm -u+x | head -n 1)
@@ -87,9 +94,11 @@ restart. This phase fails unless the operating-system boot marker changed:
 "$PYTHON" "$RUNNER" --phase restarted --expected-platform "$PLATFORM" --candidate "$CANDIDATE" --release-manifest "$MANIFEST" --result "$RESULT"
 ```
 
-Finally run the owned uninstaller through the verified native bootstrap. Its
-temporary Python lives outside Extella, so the managed runtime can also be
-removed completely:
+Finally run the owned uninstaller through the verified native bootstrap. It
+first removes the three release-gated plugin lifecycles and their account
+resources, then the base account/client state. User uploads, generated
+documents and declared mutable data remain preserved. Its temporary Python
+lives outside Extella, so the managed runtime can also be removed completely:
 
 ```sh
 sh toolbar/install-all.sh --uninstall --bundle "$CANDIDATE" --sha256 "$SHA256" --bytes "$BYTES" --release-manifest "$MANIFEST" --matrix-result "$RESULT"

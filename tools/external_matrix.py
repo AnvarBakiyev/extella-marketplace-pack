@@ -34,6 +34,7 @@ from installer.verification import (  # noqa: E402
     SERVICE_PORTS,
     verify_installed_client,
 )
+from installer.plugin_lifecycle import SUPPORTED_IDS  # noqa: E402
 from runtime.extella_runtime.paths import client_paths  # noqa: E402
 from runtime.extella_runtime.platforms import detect_platform  # noqa: E402
 
@@ -216,21 +217,89 @@ def _expected_file_hash(state: dict[str, Any], filename: str) -> str:
     raise MatrixError(f"installed ownership state has no file contract for {filename}")
 
 
-def _http_json(url: str, *, method: str = "GET", token: str = "") -> dict[str, Any]:
+def _http_json(
+    url: str,
+    *,
+    method: str = "GET",
+    token: str = "",
+    accepted_statuses: tuple[str, ...] = ("ok", "success"),
+    timeout: float = 20,
+) -> dict[str, Any]:
     headers = {"Origin": ALLOWED_ORIGIN}
     if token:
         headers["X-Extella-Control"] = token
     request = urllib.request.Request(url, data=b"{}" if method == "POST" else None, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(request, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             if not 200 <= int(response.status) < 300:
                 raise MatrixError("Activity Center control returned a non-success status")
             value = json.loads(response.read().decode("utf-8"))
     except (urllib.error.URLError, OSError, ValueError, json.JSONDecodeError) as error:
         raise MatrixError("Activity Center control request failed") from error
-    if not isinstance(value, dict) or value.get("status") not in {"ok", "success"}:
+    if not isinstance(value, dict) or value.get("status") not in set(accepted_statuses):
         raise MatrixError("Activity Center control was not acknowledged")
     return value
+
+
+def _install_supported_plugins() -> dict[str, int]:
+    services = _http_json("http://127.0.0.1:8799/api/services")
+    control_token = services.get("controlToken")
+    if not isinstance(control_token, str) or len(control_token) < 20:
+        raise MatrixError("Activity Center returned no control token")
+    before = _http_json("http://127.0.0.1:8799/api/plugins")
+    available = {
+        str(item.get("id"))
+        for item in before.get("plugins") or []
+        if isinstance(item, dict)
+    }
+    expected = set(SUPPORTED_IDS)
+    if available != expected:
+        raise MatrixError("supported on-demand inventory differs from the release allowlist")
+    ordered = sorted(expected)
+    for index, plugin_id in enumerate(ordered, start=1):
+        print(
+            f"Supported program {index}/{len(ordered)}: installing and running verified smokes ({plugin_id})…",
+            file=sys.stderr,
+            flush=True,
+        )
+        result = _http_json(
+            f"http://127.0.0.1:8799/api/plugins/{plugin_id}/install",
+            method="POST",
+            token=control_token,
+            accepted_statuses=("installed",),
+            timeout=2400,
+        )
+        service = result.get("service")
+        ui = result.get("ui")
+        account = result.get("account")
+        if (
+            result.get("pluginId") != plugin_id
+            or not isinstance(service, dict)
+            or service.get("status") != "running"
+            or not isinstance(service.get("pid"), int)
+            or not isinstance(ui, dict)
+            or ui.get("status") != "ready"
+            or not isinstance(account, dict)
+            or account.get("status") != "installed"
+        ):
+            raise MatrixError(f"supported plugin did not complete its lifecycle: {plugin_id}")
+        print(
+            f"Supported program {index}/{len(ordered)}: ready ({plugin_id}).",
+            file=sys.stderr,
+            flush=True,
+        )
+    after = _http_json("http://127.0.0.1:8799/api/plugins")
+    current = {
+        str(item.get("id")): item
+        for item in after.get("plugins") or []
+        if isinstance(item, dict)
+    }
+    if set(current) != expected or any(
+        item.get("installed") is not True or item.get("needsRepair") is True
+        for item in current.values()
+    ):
+        raise MatrixError("supported plugin inventory is not current after installation")
+    return {"plugins": len(expected), "healthyServices": len(expected), "readyUis": len(expected)}
 
 
 def _control_cycle() -> dict[str, int]:
@@ -337,6 +406,7 @@ def _phase_checks(
         current_boot = _boot_marker(platform_info.system)
         if not previous_boots or current_boot in previous_boots:
             raise MatrixError("cold-restart phase was recorded without a new OS boot")
+    managed_install = _install_supported_plugins() if phase in {"installed", "upgraded"} else None
     token = getpass.getpass("Extella token for read-only release verification (hidden): ").strip()
     report = verify_installed_client(token=token, platform_info=platform_info)
     checks: dict[str, Any] = {
@@ -344,6 +414,8 @@ def _phase_checks(
         "services": report["services"],
         "account": report["account"],
     }
+    if managed_install is not None:
+        checks["supportedOnDemand"] = managed_install
     if phase == "controlled":
         checks["controlCycle"] = _control_cycle()
         # Prove all services returned to healthy/owned state after the cycle.
