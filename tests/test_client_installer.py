@@ -139,7 +139,7 @@ class ClientInstallerTests(unittest.TestCase):
         }
         (bundle / "bundle-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
-    def test_prepares_standard_paths_and_safe_service_registries(self):
+    def test_prepares_toolbar_catalog_without_on_demand_services(self):
         mac = detect_platform(system="Darwin", architecture="arm64", release="15")
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -156,18 +156,19 @@ class ClientInstallerTests(unittest.TestCase):
             report = prepared.transaction.commit()
             self.assertEqual(verified.release_version, "2.0.0-rc.1")
             self.assertEqual(report["status"], "installed")
-            self.assertTrue((root / "data/wizard/app/wizard.html").is_file())
-            self.assertTrue((root / "data/wizard/app/workspace/workspace_autopilot.py").is_file())
+            self.assertFalse((root / "data/wizard/app/wizard.html").exists())
+            self.assertFalse((root / "data/wizard/app/workspace/workspace_autopilot.py").exists())
             self.assertTrue((root / "data/runtime/pinokio_recipe_resolver.js").is_file())
             self.assertTrue((root / "data/installer/client_uninstall.py").is_file())
             self.assertTrue((root / "data/installer/external_matrix.py").is_file())
-            registry = json.loads(
-                (root / "data/plugins/_registry/extella_adoption_wizard.json").read_text()
-            )
-            self.assertNotIn("launchCmd", registry["service"])
-            self.assertNotIn("ready", registry["service"])
-            self.assertEqual(registry["service"]["argv"][0], str(Path(sys.executable).resolve()))
-            self.assertEqual(registry["service"]["autostart"], "activity_center")
+            self.assertTrue((root / "home/Library/Application Support/extella-desktop/toolbar.js").is_file())
+            self.assertTrue((root / "data/activity-center/server.py").is_file())
+            for plugin_id in (
+                "extella_adoption_wizard",
+                "extella_travel_agency",
+                "extella_contract_agent",
+            ):
+                self.assertFalse((root / f"data/plugins/_registry/{plugin_id}.json").exists())
 
 
 if __name__ == "__main__":

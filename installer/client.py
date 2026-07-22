@@ -35,11 +35,6 @@ from runtime.extella_runtime.telemetry import StabilityEvent, record_local_aggre
 
 
 ACTIVITY_ID = "extella_activity_center"
-LOCAL_SERVICE_IDS = (
-    "extella_adoption_wizard",
-    "extella_travel_agency",
-    "extella_contract_agent",
-)
 
 
 @dataclass(frozen=True)
@@ -214,66 +209,6 @@ def _copy_activity(transaction: InstallTransaction, bundle_root: Path, paths: Cl
     return "Activity Center installed"
 
 
-def _copy_plugin_files(transaction: InstallTransaction, source: Path, target: Path) -> None:
-    for item in sorted(source.iterdir(), key=lambda path: path.name):
-        if item.is_file() and item.name != "config.json":
-            transaction.atomic_copy(item, target / item.name)
-
-
-def _plugin_manifest(bundle_root: Path, plugin_id: str) -> dict[str, Any]:
-    path = bundle_root / "payload/marketplace/release/plugins" / f"{plugin_id}.json"
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _service_root(paths: ClientPaths, plugin_id: str) -> Path:
-    if plugin_id == "extella_adoption_wizard":
-        return paths.wizard_root
-    return paths.plugins_root / plugin_id
-
-
-def _registry_payload(
-    manifest: Mapping[str, Any],
-    *,
-    root: Path,
-    python: Path,
-    source_revisions: Mapping[str, str],
-) -> dict[str, Any]:
-    runtime = manifest["runtime"]
-    port = int(runtime["port"]["preferred"])
-    ui = manifest["ui"]
-    command = [
-        str(python) if value == "${PYTHON}" else str(root / "server.py") if value.endswith("/server.py") else value
-        for value in runtime["command"]
-    ]
-    return {
-        "schemaVersion": 1,
-        "id": manifest["id"],
-        "name": manifest["name"],
-        "version": manifest["version"],
-        "purpose": manifest.get("description") or manifest.get("name"),
-        "installed": True,
-        "source": {
-            "repository": "marketplace" if manifest["id"] != "extella_adoption_wizard" else "wizard",
-            "revision": source_revisions["marketplace" if manifest["id"] != "extella_adoption_wizard" else "wizard"],
-        },
-        "ui": {
-            "type": "local_server",
-            "port": port,
-            "rootPath": str(root),
-            "mainFile": str(ui.get("entrypoint") or "").lstrip("/"),
-            "openInBrowser": False,
-        },
-        "service": {
-            "argv": command,
-            "cwd": str(root),
-            "port": port,
-            "healthPath": runtime["health"]["path"],
-            "owner": runtime["owner"],
-            "autostart": "activity_center",
-        },
-    }
-
-
 def _install_local_payload(
     transaction: InstallTransaction,
     *,
@@ -283,7 +218,6 @@ def _install_local_payload(
     python: Path,
 ) -> str:
     marketplace = bundle_root / "payload/marketplace"
-    wizard = bundle_root / "payload/wizard"
     if not _tree_same(transaction, marketplace / "installer", paths.data_root / "installer"):
         transaction.atomic_tree(marketplace / "installer", paths.data_root / "installer")
     transaction.atomic_copy(
@@ -291,33 +225,10 @@ def _install_local_payload(
         paths.data_root / "installer" / "external_matrix.py",
     )
     transaction.atomic_copy(marketplace / "toolbar/toolbar.js", paths.toolbar_root / "toolbar.js")
-    if not _tree_same(transaction, wizard / "ui", paths.wizard_root):
-        transaction.atomic_tree(wizard / "ui", paths.wizard_root)
-    if not _tree_same(transaction, wizard / "dist/workspace", paths.wizard_root / "workspace"):
-        transaction.atomic_tree(wizard / "dist/workspace", paths.wizard_root / "workspace")
-    transaction.atomic_copy(wizard / "catalog/catalog.json", paths.data_root / "wizard/catalog/catalog.json")
-    transaction.atomic_copy(wizard / "catalog/catalog.json", paths.wizard_root / "catalog.json")
-    for plugin_id in ("extella_travel_agency", "extella_contract_agent"):
-        _copy_plugin_files(
-            transaction,
-            marketplace / "automations/ui" / plugin_id,
-            paths.plugins_root / plugin_id,
-        )
-    revisions = {item["id"]: item["revision"] for item in bundle.source_repositories}
-    for plugin_id in LOCAL_SERVICE_IDS:
-        manifest = _plugin_manifest(bundle_root, plugin_id)
-        payload = _registry_payload(
-            manifest,
-            root=_service_root(paths, plugin_id),
-            python=python,
-            source_revisions=revisions,
-        )
-        transaction.atomic_write(
-            (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
-            paths.plugins_root / "_registry" / f"{plugin_id}.json",
-            mode=0o600,
-        )
-    return "toolbar, wizard workspace, plugin UIs, and registries installed"
+    # Конструктор и предметные локальные сервисы входят в подписанный архив,
+    # но устанавливаются только по своей карточке. Базовая установка тулбара
+    # не копирует, не регистрирует и не запускает их.
+    return "toolbar catalog payload installed; on-demand services left untouched"
 
 
 def prepare_local_client(
@@ -353,7 +264,7 @@ def prepare_local_client(
             "ollama",
             "brew" if platform_info.system == "Darwin" else "winget",
         ),
-        ports=(8765, 8766, 8767, 8799),
+        ports=(8799,),
         network_urls=network_urls,
         env=environment,
     )
@@ -436,33 +347,6 @@ def prepare_local_client(
     )
 
 
-def _write_config(
-    prepared: PreparedClient,
-    *,
-    token: str,
-    api_base: str,
-    wizard_agent: str,
-    builder_agent: str,
-    platform_info: PlatformInfo,
-) -> str:
-    payload = {
-        "schemaVersion": 1,
-        "auth_token": token,
-        "api_base": api_base,
-        "port": 8765,
-        "agent_id": wizard_agent,
-        "llm_agent_id": builder_agent,
-    }
-    target = prepared.paths.wizard_root / "config.json"
-    prepared.transaction.atomic_write(
-        (json.dumps(payload, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
-        target,
-        mode=0o600,
-    )
-    _restrict_secret_file(target, platform_info=platform_info)
-    return "local account configuration installed"
-
-
 def _restrict_secret_file(path: Path, *, platform_info: PlatformInfo) -> None:
     if platform_info.system != "Windows":
         os.chmod(path, 0o600)
@@ -531,19 +415,14 @@ def _activate_services(
     if previous["status"] != "running":
         prepared.transaction.register_undo(lambda: supervisor.stop(runtime))
         supervisor.start(runtime, timeout=30)
-    deadlines = {
-        "activity": ("http://127.0.0.1:8799/api/services", 35),
-        "wizard": ("http://127.0.0.1:8765/wizard.html", 75),
-        "travel": ("http://127.0.0.1:8766/onboarding.html", 45),
-        "contract": ("http://127.0.0.1:8767/onboarding.html", 45),
-    }
+    deadlines = {"activity": ("http://127.0.0.1:8799/api/services", 35)}
     for name, (url, seconds) in deadlines.items():
         deadline = time.monotonic() + seconds
         while time.monotonic() < deadline and not _health(url):
             time.sleep(0.25)
         if not _health(url):
             raise InstallationError(f"required UI smoke failed: {name}")
-    return "Activity Center and all required local UIs are healthy"
+    return "Activity Center is healthy; on-demand local services were not started"
 
 
 def install_client(
@@ -595,41 +474,15 @@ def install_client(
         )
         experts = discover_bundle_experts(bundle_root)
         required, smokes = required_experts(bundle_root)
-        wizard = bundle_root / "payload/wizard/agents/wizard_agent.instructions.md"
-        builder = bundle_root / "payload/wizard/agents/builder_agent.instructions.md"
         account.install(
             experts,
             required=required,
             smokes=smokes,
             kv_artifacts=catalog_kv_artifacts(bundle_root),
-            agent_instructions={
-                "wizard": wizard.read_text(encoding="utf-8"),
-                "builder": builder.read_text(encoding="utf-8"),
-            },
+            agent_instructions=None,
             commit=False,
         )
         account_prepared = True
-        ownership = json.loads(account._get_kv("extella:client:agents:v1") or "{}")
-        wizard_agent = account.agent_id
-        builder_agent = str(ownership.get("builder") or "")
-        if not builder_agent:
-            # The ownership KV is written later in the prepared account transaction;
-            # resolve the just-created/reused builder from the transaction message.
-            for step in account.transaction.steps:
-                if step.name == "agent:builder":
-                    builder_agent = step.message.rsplit(":", 1)[-1]
-        stage = "local-config"
-        prepared.transaction.run(
-            "client.config",
-            lambda: _write_config(
-                prepared,
-                token=token,
-                api_base=api_base,
-                wizard_agent=wizard_agent,
-                builder_agent=builder_agent,
-                platform_info=platform_info,
-            ),
-        )
         if activate_services:
             stage = "service-activation"
             prepared.transaction.run(
@@ -681,41 +534,19 @@ def _installed_runtime_spec(
     paths: ClientPaths,
     python: Path,
 ) -> RuntimeSpec:
-    if runtime_id == ACTIVITY_ID:
-        root = paths.data_root / "activity-center"
-        return RuntimeSpec(
-            runtime_id,
-            "Extella Activity Center",
-            (str(python), str(root / "server.py")),
-            root,
-            8799,
-            "http://127.0.0.1:8799/api/health",
-            paths.logs_root / "activity-center.log",
-            ACTIVITY_ID,
-            "native",
-        )
-    ports = {
-        "extella_adoption_wizard": 8765,
-        "extella_travel_agency": 8766,
-        "extella_contract_agent": 8767,
-    }
-    roots = {
-        "extella_adoption_wizard": paths.wizard_root,
-        "extella_travel_agency": paths.plugins_root / "extella_travel_agency",
-        "extella_contract_agent": paths.plugins_root / "extella_contract_agent",
-    }
-    root = roots[runtime_id]
-    port = ports[runtime_id]
+    if runtime_id != ACTIVITY_ID:
+        raise InstallationError(f"runtime is not owned by the toolbar profile: {runtime_id}")
+    root = paths.data_root / "activity-center"
     return RuntimeSpec(
         runtime_id,
-        runtime_id.replace("_", " ").title(),
+        "Extella Activity Center",
         (str(python), str(root / "server.py")),
         root,
-        port,
-        f"http://127.0.0.1:{port}/x/health",
-        paths.logs_root / f"{runtime_id}.log",
-        runtime_id,
-        "activity_center",
+        8799,
+        "http://127.0.0.1:8799/api/health",
+        paths.logs_root / "activity-center.log",
+        ACTIVITY_ID,
+        "native",
     )
 
 
@@ -767,9 +598,8 @@ def uninstall_client(
             platform_info=platform_info,
             environment={**environment, **_runtime_environment(paths)},
         )
-        for runtime_id in (*LOCAL_SERVICE_IDS, ACTIVITY_ID):
-            spec = _installed_runtime_spec(runtime_id, paths=paths, python=python)
-            supervisor.stop(spec)
+        spec = _installed_runtime_spec(ACTIVITY_ID, paths=paths, python=python)
+        supervisor.stop(spec)
         remove_autostart(
             "activity-center", platform_info=platform_info, paths=paths
         )

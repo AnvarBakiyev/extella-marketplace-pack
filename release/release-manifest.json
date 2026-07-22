@@ -3,6 +3,7 @@
   "releaseId": "extella-client",
   "version": "2.0.0-rc.1",
   "status": "candidate",
+  "installProfile": "toolbar_catalog",
   "supportedPlatforms": [
     "macos-x86_64",
     "macos-arm64",
@@ -126,8 +127,7 @@
       "apps_catalog",
       "loc_catalog",
       "mcp_catalog",
-      "models_catalog",
-      "extella:client:agents:v1"
+      "models_catalog"
     ]
   },
   "lifecycle": {
@@ -143,25 +143,8 @@
       "id": "extella_activity_center",
       "owner": "extella_activity_center",
       "port": 8799,
-      "autostart": "native"
-    },
-    {
-      "id": "extella_adoption_wizard",
-      "owner": "extella_adoption_wizard",
-      "port": 8765,
-      "autostart": "activity_center"
-    },
-    {
-      "id": "extella_travel_agency",
-      "owner": "extella_travel_agency",
-      "port": 8766,
-      "autostart": "activity_center"
-    },
-    {
-      "id": "extella_contract_agent",
-      "owner": "extella_contract_agent",
-      "port": 8767,
-      "autostart": "activity_center"
+      "autostart": "native",
+      "installMode": "base"
     }
   ],
   "telemetry": {
@@ -173,7 +156,7 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "bfce70cc37f3ac760933de59f7a9f0f8c1564209"
+      "revision": "f2c0ef5374749e3d4db469b36098d124f6a6a924"
     },
     {
       "id": "marketplace",
@@ -190,8 +173,8 @@
     {
       "id": "toolbar",
       "path": "toolbar/toolbar.js",
-      "sha256": "4270b788463390c26041683c4855b111c4465d56a31a6b894eedb34824fd0b42",
-      "bytes": 5774080,
+      "sha256": "48959f5a99106dd1bc1e89bebf7321a7faa337024797af4b428733ce340686a0",
+      "bytes": 5776194,
       "required": true,
       "platforms": [
         "macos-x86_64",
@@ -422,19 +405,19 @@
     },
     {
       "id": "extella_adoption_wizard",
-      "classification": "bundled",
+      "classification": "supported_on_demand",
       "manifest": "release/plugins/extella_adoption_wizard.json",
       "required": true
     },
     {
       "id": "extella_travel_agency",
-      "classification": "bundled",
+      "classification": "supported_on_demand",
       "manifest": "release/plugins/extella_travel_agency.json",
       "required": true
     },
     {
       "id": "extella_contract_agent",
-      "classification": "bundled",
+      "classification": "supported_on_demand",
       "manifest": "release/plugins/extella_contract_agent.json",
       "required": true
     },

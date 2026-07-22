@@ -4,7 +4,7 @@
   "name": "Extella Contract Agent",
   "description": "Human-in-the-loop contract review and negotiation workflow.",
   "version": "1.1.0-rc.1",
-  "classification": "bundled",
+  "classification": "supported_on_demand",
   "source": {"type": "bundled", "locator": "automations/ui/extella_contract_agent", "revision": "release"},
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {

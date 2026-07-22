@@ -4,7 +4,7 @@
   "name": "Travel Agency",
   "description": "Travel lead qualification and human-approved offer workflow.",
   "version": "0.2.0-rc.1",
-  "classification": "bundled",
+  "classification": "supported_on_demand",
   "source": {"type": "bundled", "locator": "automations/ui/extella_travel_agency", "revision": "release"},
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {

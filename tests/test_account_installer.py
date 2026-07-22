@@ -312,6 +312,24 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertEqual(required, {"required_0"})
             self.assertEqual(smokes, {"smoke_0"})
 
+    def test_real_toolbar_contract_excludes_wizard_and_includes_catalog_runtime(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / "bundle"
+            manifests = bundle / "payload/marketplace/release/plugins"
+            shutil.copytree(root / "release/plugins", manifests)
+            required, smokes = required_experts(bundle)
+        self.assertNotIn("wz_build_runner", required | smokes)
+        self.assertNotIn("wz_capability_install", required | smokes)
+        self.assertTrue({
+            "catalog_tool_manage",
+            "catalog_capability_uninstall",
+            "cap_localmodel_install",
+            "app_install",
+            "app_start",
+            "app_uninstall",
+        }.issubset(required))
+
     def test_uses_token_associated_keyless_qwen_for_clean_account(self):
         api = FakeAPI()
         with tempfile.TemporaryDirectory() as directory:
@@ -338,6 +356,25 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertFalse(any(endpoint == "/api/agent/create" for endpoint, _ in api.calls))
             self.assertEqual(api.agent_scope, ownership["wizard"])
             self.assertEqual(api.scope_history[-1], ownership["wizard"])
+
+    def test_toolbar_profile_does_not_create_wizard_agent_ownership(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+            )
+            report = installer.install(
+                {"safe_smoke": expert("safe_smoke")},
+                required={"safe_smoke"},
+                smokes=set(),
+                kv_artifacts=[],
+                agent_instructions=None,
+            )
+        self.assertEqual(report["status"], "installed")
+        self.assertNotIn("extella:client:agents:v1", api.kv)
+        self.assertFalse(any(endpoint == "/api/agent/create" for endpoint, _ in api.calls))
 
     def test_repair_replaces_stale_pro_agent_ownership_with_token_qwen(self):
         api = FakeAPI()
