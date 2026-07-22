@@ -20,6 +20,7 @@ from installer.account import (
     catalog_kv_artifacts,
     discover_bundle_experts,
     prompt_token,
+    repair_interrupted_account,
     required_experts,
     uninstall_account_resources,
 )
@@ -583,6 +584,10 @@ def install_client(
     try:
         stage = "account-prepare"
         api = account_api or ExtellaAPI(token, api_base=api_base)
+        repair_interrupted_account(
+            api,
+            prepared.paths.state_root / "account" / "account-state.json",
+        )
         account = AccountInstaller(
             api,
             release_version=prepared.release_version,

@@ -18,6 +18,7 @@ from installer.account import (
     INSTALL_SMOKE_PARAM,
     instrument_expert_code,
     load_expert_sources,
+    repair_interrupted_account,
     required_experts,
     uninstall_account_resources,
 )
@@ -30,6 +31,8 @@ class FakeAPI:
         self.fail_save = None
         self.strip_saved_newlines = set()
         self.repr_install_smokes = set()
+        self.nested_install_smokes = set()
+        self.transient_api_failures = {}
         self.calls = []
         self.default_agent_id = "agent_account_QwenBase"
         self.agents = {
@@ -52,6 +55,10 @@ class FakeAPI:
 
     def post(self, endpoint, payload, *, timeout=90):
         self.calls.append((endpoint, dict(payload)))
+        remaining = self.transient_api_failures.get(endpoint, 0)
+        if remaining:
+            self.transient_api_failures[endpoint] = remaining - 1
+            raise APIError(endpoint, "http_error", http_status=429, code="rate limited")
         if endpoint == "/api/token/validate":
             return {"status": "success", "agent_id": self.default_agent_id}
         if endpoint == "/api/expert/get":
@@ -88,6 +95,8 @@ class FakeAPI:
                 }
                 if payload["expert_name"] in self.repr_install_smokes:
                     result = repr(result)
+                if payload["expert_name"] in self.nested_install_smokes:
+                    result = {"status": "success", "result": repr(result)}
                 return {"status": "success", "result": result}
             return {"status": "success", "result": json.dumps({"ok": True})}
         if endpoint == "/api/agent/create":
@@ -392,6 +401,94 @@ class AccountInstallerTests(unittest.TestCase):
                 kv_artifacts=[],
             )
         self.assertEqual(report["status"], "installed")
+
+    def test_live_fython_nested_result_envelope_is_accepted(self):
+        api = FakeAPI()
+        api.nested_install_smokes.add("nested_smoke")
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            report = installer.install(
+                {"nested_smoke": expert("nested_smoke")},
+                required={"nested_smoke"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+        self.assertEqual(report["status"], "installed")
+
+    def test_rollback_retries_transient_api_throttling(self):
+        api = FakeAPI()
+        api.fail_save = "second"
+        api.transient_api_failures["/api/expert/delete"] = 2
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            with self.assertRaises(AccountInstallError):
+                installer.install(
+                    {"first": expert("first"), "second": expert("second")},
+                    required={"first", "second"},
+                    smokes=set(),
+                    kv_artifacts=[],
+                )
+            report = json.loads((Path(directory) / "last-account-report.json").read_text())
+        self.assertEqual(report["status"], "rolled_back")
+        self.assertNotIn("first", api.experts)
+        deletes = [endpoint for endpoint, _ in api.calls if endpoint == "/api/expert/delete"]
+        self.assertEqual(len(deletes), 4)
+
+    def test_install_retries_transient_idempotent_api_write(self):
+        api = FakeAPI()
+        api.transient_api_failures["/api/expert/save"] = 2
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            report = installer.install(
+                {"retry_save": expert("retry_save")},
+                required={"retry_save"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+        self.assertEqual(report["status"], "installed")
+        saves = [endpoint for endpoint, _ in api.calls if endpoint == "/api/expert/save"]
+        self.assertEqual(len(saves), 3)
+
+    def test_next_install_repairs_durable_failed_rollback_first(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"partial": expert("partial")},
+                required={"partial"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            state_file = root / "account-state.json"
+            state = json.loads(state_file.read_text())
+            state["status"] = "rollback_failed"
+            state_file.write_text(json.dumps(state))
+
+            report = repair_interrupted_account(api, state_file)
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertNotIn("partial", api.experts)
+            self.assertFalse(state_file.exists())
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()

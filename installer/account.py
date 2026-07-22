@@ -247,7 +247,11 @@ class AccountTransaction:
             try:
                 undo()
             except Exception as error:
-                errors.append(type(error).__name__)
+                if isinstance(error, APIError):
+                    status = str(error.http_status) if error.http_status is not None else "network"
+                    errors.append(f"APIError:{error.error_class}:{status}")
+                else:
+                    errors.append(type(error).__name__)
         for step in self.steps:
             if step.status == "installed":
                 step.status = "rolled_back"
@@ -408,22 +412,54 @@ def _canonical_expert_code(code: str) -> str:
     return code.replace("\r\n", "\n").rstrip("\n") + "\n"
 
 
-def _structured_result(value: Any) -> Any:
-    """Decode JSON or the literal dict representation returned by live fython runs."""
+def _retry_transient_api(action: Callable[[], Any]) -> Any:
+    """Retry bounded, idempotent account mutations during rollback.
 
-    for _ in range(2):
-        if not isinstance(value, str):
-            return value
+    The live account API can briefly throttle a long clean-account install.
+    Rollback mutations are restore-by-identity or delete-by-identity, so they
+    are safe to retry without creating duplicate resources.
+    """
+
+    last_error: APIError | None = None
+    for attempt, delay in enumerate((0.0, 0.5, 1.5, 3.0), start=1):
+        if delay:
+            time.sleep(delay)
         try:
-            parsed = json.loads(value)
-        except json.JSONDecodeError:
+            return action()
+        except APIError as error:
+            last_error = error
+            retryable = (
+                error.http_status is None
+                or error.http_status in {408, 425, 429}
+                or error.http_status >= 500
+            )
+            if not retryable or attempt == 4:
+                raise
+    raise last_error or AccountInstallError("transient account mutation failed")
+
+
+def _structured_result(value: Any) -> Any:
+    """Decode live fython literals and bounded nested result envelopes."""
+
+    for _ in range(6):
+        if isinstance(value, str):
             try:
-                parsed = ast.literal_eval(value)
-            except (SyntaxError, ValueError):
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                try:
+                    parsed = ast.literal_eval(value)
+                except (SyntaxError, ValueError):
+                    return value
+            if parsed == value:
                 return value
-        if parsed == value:
-            return value
-        value = parsed
+            value = parsed
+            continue
+        if isinstance(value, dict) and "result" in value:
+            nested = value.get("result")
+            if nested is not value:
+                value = nested
+                continue
+        return value
     return value
 
 
@@ -501,7 +537,9 @@ class AccountInstaller:
         scope_api_to_agent(self.api, agent_id)
 
     def validate_token(self) -> None:
-        response = self.api.post("/api/token/validate", {})
+        response = _retry_transient_api(
+            lambda: self.api.post("/api/token/validate", {})
+        )
         if not _response_success(response):
             raise AccountInstallError("Extella token validation failed")
         # A live token validation returns the platform Qwen assigned to the
@@ -522,14 +560,22 @@ class AccountInstaller:
 
     def _get_expert(self, name: str) -> dict[str, Any] | None:
         try:
-            return _normalise_expert(self.api.post("/api/expert/get", {"name": name, "global": True}))
+            return _normalise_expert(
+                _retry_transient_api(
+                    lambda: self.api.post(
+                        "/api/expert/get", {"name": name, "global": True}
+                    )
+                )
+            )
         except APIError as error:
             if _missing(error):
                 return None
             raise
 
     def _save_expert_payload(self, payload: Mapping[str, Any]) -> None:
-        response = self.api.post("/api/expert/save", payload, timeout=120)
+        response = _retry_transient_api(
+            lambda: self.api.post("/api/expert/save", payload, timeout=120)
+        )
         if not _response_success(response):
             raise AccountInstallError("expert save was not acknowledged")
 
@@ -546,7 +592,9 @@ class AccountInstaller:
 
     def _get_agent(self, agent_id: str) -> dict[str, Any] | None:
         try:
-            response = self.api.post("/api/agent/get", {"agent_id": agent_id})
+            response = _retry_transient_api(
+                lambda: self.api.post("/api/agent/get", {"agent_id": agent_id})
+            )
         except APIError as error:
             if _missing(error):
                 return None
@@ -588,6 +636,7 @@ class AccountInstaller:
                     not permanent
                     and (
                         error.http_status is None
+                        or error.http_status in {408, 425, 429}
                         or error.http_status >= 500
                         or "incorrect api key provided" in code
                     )
@@ -688,11 +737,15 @@ class AccountInstaller:
         }
         def undo() -> None:
             if previous is None:
-                response = self.api.post("/api/expert/delete", {"name": source.name, "global": True})
+                response = _retry_transient_api(
+                    lambda: self.api.post(
+                        "/api/expert/delete", {"name": source.name, "global": True}
+                    )
+                )
                 if not _delete_success(response):
                     raise AccountInstallError("expert rollback delete failed")
             else:
-                self._save_expert_payload(previous)
+                _retry_transient_api(lambda: self._save_expert_payload(previous))
 
         self.transaction.register_undo(undo)
         self._save_expert_payload(payload)
@@ -712,7 +765,9 @@ class AccountInstaller:
 
     def _get_kv(self, key: str) -> str | None:
         try:
-            response = self.api.post("/api/kv/get", {"key": key, "global": True})
+            response = _retry_transient_api(
+                lambda: self.api.post("/api/kv/get", {"key": key, "global": True})
+            )
         except APIError as error:
             if _missing(error):
                 return None
@@ -725,26 +780,39 @@ class AccountInstaller:
 
         def undo() -> None:
             if previous is None:
-                result = self.api.post("/api/kv/remove", {"key": artifact.key, "global": True})
+                result = _retry_transient_api(
+                    lambda: self.api.post(
+                        "/api/kv/remove", {"key": artifact.key, "global": True}
+                    )
+                )
                 acknowledged = _delete_success(result)
             else:
-                result = self.api.post(
-                    "/api/kv/set",
-                    {"key": artifact.key, "value": previous, "description": "restored by Extella installer", "global": True},
+                result = _retry_transient_api(
+                    lambda: self.api.post(
+                        "/api/kv/set",
+                        {
+                            "key": artifact.key,
+                            "value": previous,
+                            "description": "restored by Extella installer",
+                            "global": True,
+                        },
+                    )
                 )
                 acknowledged = _response_success(result)
             if not acknowledged:
                 raise AccountInstallError("KV rollback failed")
 
         self.transaction.register_undo(undo)
-        response = self.api.post(
-            "/api/kv/set",
-            {
-                "key": artifact.key,
-                "value": artifact.value,
-                "description": artifact.description,
-                "global": True,
-            },
+        response = _retry_transient_api(
+            lambda: self.api.post(
+                "/api/kv/set",
+                {
+                    "key": artifact.key,
+                    "value": artifact.value,
+                    "description": artifact.description,
+                    "global": True,
+                },
+            )
         )
         if not _response_success(response) or self._get_kv(artifact.key) != artifact.value:
             raise AccountInstallError(f"KV verification failed: {artifact.key}")
@@ -761,10 +829,12 @@ class AccountInstaller:
 
     def smoke_expert(self, name: str, *, install_contract: bool = False) -> tuple[str, None]:
         params = {INSTALL_SMOKE_PARAM: True} if install_contract else {}
-        response = self.api.post(
-            "/api/expert/run",
-            {"expert_name": name, "params": params, "global": True},
-            timeout=180,
+        response = _retry_transient_api(
+            lambda: self.api.post(
+                "/api/expert/run",
+                {"expert_name": name, "params": params, "global": True},
+                timeout=180,
+            )
         )
         if not _response_success(response):
             raise AccountInstallError(f"expert smoke was not acknowledged: {name}")
@@ -845,7 +915,11 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
 
     def current_expert(name: str) -> dict[str, Any] | None:
         try:
-            return _normalise_expert(api.post("/api/expert/get", {"name": name, "global": True}))
+            return _normalise_expert(
+                _retry_transient_api(
+                    lambda: api.post("/api/expert/get", {"name": name, "global": True})
+                )
+            )
         except APIError as error:
             if _missing(error):
                 return None
@@ -853,7 +927,9 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
 
     def current_kv(key: str) -> str | None:
         try:
-            response = api.post("/api/kv/get", {"key": key, "global": True})
+            response = _retry_transient_api(
+                lambda: api.post("/api/kv/get", {"key": key, "global": True})
+            )
         except APIError as error:
             if _missing(error):
                 return None
@@ -888,13 +964,20 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         elif change.existed:
                             if not isinstance(change.previous, dict):
                                 raise AccountInstallError("expert restore snapshot is invalid")
-                            response = api.post("/api/expert/save", change.previous, timeout=120)
+                            response = _retry_transient_api(
+                                lambda: api.post(
+                                    "/api/expert/save", change.previous, timeout=120
+                                )
+                            )
                             if not _response_success(response):
                                 raise AccountInstallError("expert restore was not acknowledged")
                             status = "restored"
                         else:
-                            response = api.post(
-                                "/api/expert/delete", {"name": change.identity, "global": True}
+                            response = _retry_transient_api(
+                                lambda: api.post(
+                                    "/api/expert/delete",
+                                    {"name": change.identity, "global": True},
+                                )
                             )
                             if not _delete_success(response):
                                 raise AccountInstallError("expert removal was not acknowledged")
@@ -909,35 +992,48 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                     elif change.existed:
                         if not isinstance(change.previous, str):
                             raise AccountInstallError("KV restore snapshot is invalid")
-                        response = api.post(
-                            "/api/kv/set",
-                            {
-                                "key": change.identity,
-                                "value": change.previous,
-                                "description": "restored by Extella uninstaller",
-                                "global": True,
-                            },
+                        response = _retry_transient_api(
+                            lambda: api.post(
+                                "/api/kv/set",
+                                {
+                                    "key": change.identity,
+                                    "value": change.previous,
+                                    "description": "restored by Extella uninstaller",
+                                    "global": True,
+                                },
+                            )
                         )
                         if not _response_success(response):
                             raise AccountInstallError("KV restore was not acknowledged")
                         status = "restored"
                     else:
-                        response = api.post(
-                            "/api/kv/remove", {"key": change.identity, "global": True}
+                        response = _retry_transient_api(
+                            lambda: api.post(
+                                "/api/kv/remove",
+                                {"key": change.identity, "global": True},
+                            )
                         )
                         if not _delete_success(response):
                             raise AccountInstallError("KV removal was not acknowledged")
                         status = "removed"
                 elif change.kind == "agent":
                     try:
-                        api.post("/api/agent/get", {"agent_id": change.identity})
+                        _retry_transient_api(
+                            lambda: api.post(
+                                "/api/agent/get", {"agent_id": change.identity}
+                            )
+                        )
                     except APIError as error:
                         if _missing(error):
                             status = "already_absent"
                         else:
                             raise
                     else:
-                        response = api.post("/api/agent/delete", {"agent_id": change.identity})
+                        response = _retry_transient_api(
+                            lambda: api.post(
+                                "/api/agent/delete", {"agent_id": change.identity}
+                            )
+                        )
                         if not _delete_success(response):
                             raise AccountInstallError("agent removal was not acknowledged")
                         status = "removed"
@@ -963,3 +1059,26 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
     if status == "uninstalled":
         state_file.unlink(missing_ok=True)
     return {"schemaVersion": 1, "status": status, "steps": steps}
+
+
+def repair_interrupted_account(api: AccountAPI, state_file: Path) -> dict[str, Any] | None:
+    """Finish a durable failed rollback before accepting a new baseline."""
+
+    if not state_file.exists():
+        return None
+    try:
+        state = json.loads(state_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise AccountInstallError("interrupted account state is unreadable") from error
+    if not isinstance(state, dict) or state.get("status") != "rollback_failed":
+        return None
+    validator = AccountInstaller(
+        api,
+        release_version=str(state.get("releaseVersion") or "unknown"),
+        state_root=state_file.parent,
+    )
+    validator.validate_token()
+    report = uninstall_account_resources(api, state_file)
+    if report.get("status") != "uninstalled":
+        raise AccountInstallError("interrupted account rollback requires manual recovery")
+    return report
