@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "releaseVersion": "2.0.0-rc.1",
-  "generatedAt": "2026-07-22T02:41:17+05:00",
+  "generatedAt": "2026-07-22T05:09:34+05:00",
   "automatedChecks": {
-    "marketplaceUnit": {"status": "passed", "tests": 70},
-    "activityCenter": {"status": "passed", "tests": 22, "skipped": 2},
+    "marketplaceUnit": {"status": "passed", "tests": 93},
+    "activityCenter": {"status": "passed", "tests": 21, "skipped": 2},
     "toolbarBuild": {"status": "passed"},
     "toolbarReproducibility": {"status": "passed"},
     "wizardPackaging": {"status": "passed"},
@@ -13,8 +13,8 @@
   },
   "candidateBundle": {
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "c68703bc8790d25eadcb372c5ec1d6b9514a40c6405f38ac6a9e7d7bc77a5373",
-    "bytes": 3296036,
+    "sha256": "3fd35c5b82ceeedd4789d0d48e2ad605c53a7f1a0e6e3ae6bcf8f3d3697f193f",
+    "bytes": 3239751,
     "fileCount": 264,
     "reproducedCopies": 2
   },
