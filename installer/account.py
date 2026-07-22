@@ -103,6 +103,16 @@ class ExtellaAPI:
             try:
                 parsed = json.loads(error.read().decode("utf-8", "replace"))
                 code = str(parsed.get("code") or parsed.get("error") or parsed.get("message") or "")
+                if not code and isinstance(parsed.get("detail"), list):
+                    details: list[str] = []
+                    for item in parsed["detail"][:4]:
+                        if not isinstance(item, dict):
+                            continue
+                        location = item.get("loc")
+                        where = ".".join(str(value) for value in location) if isinstance(location, list) else "body"
+                        kind = str(item.get("type") or "validation_error")
+                        details.append(f"{where}:{kind}")
+                    code = "validation:" + ",".join(details) if details else "validation_error"
             except (ValueError, OSError):
                 pass
             raise APIError(endpoint, "http_error", http_status=error.code, code=code) from error
@@ -396,14 +406,48 @@ def _normalise_expert(response: Mapping[str, Any]) -> dict[str, Any] | None:
     code = response.get("expert_code") or response.get("code")
     if not isinstance(code, str) or not code.strip():
         return None
+    kwargs = response.get("kwargs")
+    if not isinstance(kwargs, dict):
+        kwargs = response.get("expert_params")
     return {
         "name": str(response.get("name") or response.get("expert_name") or ""),
-        "description": str(response.get("description") or ""),
+        "description": str(
+            response.get("description") or response.get("expert_description") or ""
+        ),
         "code": code,
-        "kwargs": response.get("kwargs") if isinstance(response.get("kwargs"), dict) else {},
+        "kwargs": kwargs if isinstance(kwargs, dict) else {},
         "cspl": str(response.get("cspl") or "fython"),
         "global": bool(response.get("global", True)),
     }
+
+
+def _restorable_expert_snapshot(change: AccountChange) -> tuple[dict[str, Any], list[str]]:
+    """Validate a snapshot and repair metadata lost by the pre-2.0 live-field parser."""
+
+    if not isinstance(change.previous, dict):
+        raise AccountInstallError("expert restore snapshot is invalid")
+    payload = dict(change.previous)
+    if payload.get("name") != change.identity:
+        raise AccountInstallError("expert restore snapshot identity is invalid")
+    code = payload.get("code")
+    if not isinstance(code, str) or not code.strip():
+        raise AccountInstallError("expert restore snapshot code is invalid")
+    _name, header_description, header_kwargs = _expert_header(code, change.identity)
+    reconstructed: list[str] = []
+    if not isinstance(payload.get("description"), str) or not payload["description"].strip():
+        payload["description"] = header_description
+        reconstructed.append("description")
+    if not isinstance(payload.get("kwargs"), dict):
+        payload["kwargs"] = header_kwargs
+        reconstructed.append("kwargs")
+    elif not payload["kwargs"] and header_kwargs:
+        payload["kwargs"] = header_kwargs
+        reconstructed.append("kwargs")
+    if not isinstance(payload.get("cspl"), str) or not payload["cspl"].strip():
+        payload["cspl"] = "fython"
+        reconstructed.append("cspl")
+    payload["global"] = bool(payload.get("global", True))
+    return payload, reconstructed
 
 
 def _canonical_expert_code(code: str) -> str:
@@ -950,7 +994,11 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
             try:
                 change = AccountChange(**raw)
                 status = "failed"
+                reconstructed_fields: list[str] = []
                 if change.kind == "expert":
+                    previous_payload: dict[str, Any] | None = None
+                    if change.existed:
+                        previous_payload, reconstructed_fields = _restorable_expert_snapshot(change)
                     current = current_expert(change.identity)
                     if current is None:
                         status = "already_absent"
@@ -960,12 +1008,10 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         ).hexdigest()
                         previous_digest = ""
                         if change.existed:
-                            if not isinstance(change.previous, dict) or not isinstance(
-                                change.previous.get("code"), str
-                            ):
+                            if previous_payload is None:
                                 raise AccountInstallError("expert restore snapshot is invalid")
                             previous_digest = hashlib.sha256(
-                                _canonical_expert_code(change.previous["code"]).encode("utf-8")
+                                _canonical_expert_code(previous_payload["code"]).encode("utf-8")
                             ).hexdigest()
                         if previous_digest and digest == previous_digest:
                             status = "already_restored"
@@ -973,13 +1019,20 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                             status = "preserved_modified"
                             action_required = True
                         elif change.existed:
+                            if previous_payload is None:
+                                raise AccountInstallError("expert restore snapshot is invalid")
                             response = _retry_transient_api(
                                 lambda: api.post(
-                                    "/api/expert/save", change.previous, timeout=120
+                                    "/api/expert/save", previous_payload, timeout=120
                                 )
                             )
                             if not _response_success(response):
                                 raise AccountInstallError("expert restore was not acknowledged")
+                            restored = current_expert(change.identity)
+                            if restored is None or _canonical_expert_code(
+                                restored["code"]
+                            ) != _canonical_expert_code(previous_payload["code"]):
+                                raise AccountInstallError("expert restore verification failed")
                             status = "restored"
                         else:
                             response = _retry_transient_api(
@@ -1050,7 +1103,10 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         status = "removed"
                 else:
                     raise AccountInstallError(f"unknown account change kind: {change.kind}")
-                steps.append({"kind": change.kind, "identity": change.identity, "status": status})
+                step = {"kind": change.kind, "identity": change.identity, "status": status}
+                if reconstructed_fields:
+                    step["reconstructedFields"] = reconstructed_fields
+                steps.append(step)
             except Exception as error:
                 failed = True
                 failure = {
@@ -1060,8 +1116,11 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                     "errorClass": type(error).__name__,
                 }
                 if isinstance(error, APIError):
+                    failure["endpoint"] = error.endpoint
                     failure["apiErrorClass"] = error.error_class
                     failure["httpStatus"] = error.http_status
+                    if error.code:
+                        failure["apiCode"] = error.code
                 steps.append(failure)
         previous = current_state.get("previousState")
         if not failed and not action_required and isinstance(previous, dict):

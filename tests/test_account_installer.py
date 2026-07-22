@@ -18,6 +18,7 @@ from installer.account import (
     INSTALL_SMOKE_PARAM,
     instrument_expert_code,
     load_expert_sources,
+    _normalise_expert,
     repair_interrupted_account,
     required_experts,
     uninstall_account_resources,
@@ -69,6 +70,8 @@ class FakeAPI:
         if endpoint == "/api/expert/save":
             if payload["name"] == self.fail_save:
                 return {"status": "error"}
+            if not isinstance(payload.get("description"), str) or not payload["description"]:
+                raise APIError(endpoint, "http_error", http_status=422, code="description too short")
             code = payload["code"]
             if payload["name"] in self.strip_saved_newlines:
                 code = code.rstrip("\n")
@@ -147,6 +150,22 @@ def expert(name, code=None):
 
 
 class AccountInstallerTests(unittest.TestCase):
+    def test_normalises_live_expert_response_field_names(self):
+        normalised = _normalise_expert(
+            {
+                "status": "success",
+                "expert_name": "live_expert",
+                "expert_description": "Live description",
+                "expert_code": "def live_expert(): return True\n",
+                "expert_params": {"value": ""},
+                "cspl": "fython",
+                "global": True,
+            }
+        )
+        self.assertEqual(normalised["name"], "live_expert")
+        self.assertEqual(normalised["description"], "Live description")
+        self.assertEqual(normalised["kwargs"], {"value": ""})
+
     def test_api_starts_with_non_real_bootstrap_scope_and_accepts_current_account_agent(self):
         api = ExtellaAPI("t" * 24)
         self.assertEqual(api.agent_scope, BOOTSTRAP_AGENT_SCOPE)
@@ -537,6 +556,53 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertFalse(state_file.exists())
             repair_report = json.loads((root / "last-account-repair-report.json").read_text())
             self.assertEqual(repair_report["status"], "uninstalled")
+
+    def test_repair_reconstructs_legacy_snapshot_metadata(self):
+        api = FakeAPI()
+        api.experts["legacy"] = {
+            "status": "success",
+            "name": "legacy",
+            "expert_code": (
+                "# expert: legacy\n"
+                "# description: Previous legacy description\n"
+                "# params: value\n"
+                "def legacy(value=''): return 'old'\n"
+            ),
+            "description": "Previous legacy description",
+            "kwargs": {"value": ""},
+            "cspl": "fython",
+            "global": True,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"legacy": expert("legacy")},
+                required={"legacy"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            state_file = root / "account-state.json"
+            state = json.loads(state_file.read_text())
+            state["status"] = "rollback_failed"
+            state["changes"][0]["previous"]["description"] = ""
+            state["changes"][0]["previous"]["kwargs"] = {}
+            state_file.write_text(json.dumps(state))
+
+            report = repair_interrupted_account(api, state_file)
+
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertEqual(api.experts["legacy"]["description"], "Previous legacy description")
+            self.assertEqual(api.experts["legacy"]["kwargs"], {"value": ""})
+            self.assertEqual(
+                report["steps"][0]["reconstructedFields"],
+                ["description", "kwargs"],
+            )
 
     def test_repair_persists_sanitized_api_failure_details(self):
         api = FakeAPI()
