@@ -2,7 +2,9 @@
 # Полный установщик Extella для коллег: ТУЛБАР + ЭКСПЕРТЫ тулбара + ВИЗАРД.
 set -euo pipefail
 PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
-WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/refs/heads/main.tar.gz"
+# Визард пиннится НЕИЗМЕНЯЕМЫМ SHA проверенного релиза (не веткой): что проверили — то и ставится.
+WIZ_SHA="__WIZ_SHA_PLACEHOLDER__"
+WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/${WIZ_SHA}.tar.gz"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
 WA="$HOME/extella_wizard/app"; AGENT="${EXTELLA_AGENT_ID:-agent_extella_alibaba_default}"
@@ -15,14 +17,20 @@ grep -q "Extella Plugins" "$APP/tb.tmp" || { echo "✗ toolbar check"; rm -f "$A
 mv "$APP/tb.tmp" "$APP/toolbar.js"; echo "  ✓"
 
 say "2/5 Токен"
-TOKEN="${EXTELLA_TOKEN:-}"
-if [ -z "$TOKEN" ]; then printf "  Вставь Extella-токен и нажми Enter: "; read -r TOKEN </dev/tty || true; fi
-if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | LC_ALL=C grep -q '[^ -~]\|[<> ]' || [ ${#TOKEN} -lt 20 ]; then
-  echo "  ! Тулбар установлен. Эксперты/Визард пропущены: нужен НАСТОЯЩИЙ токен."; exit 0; fi
-mkdir -p "$WA"
-python3 - "$WA/config.json" "$TOKEN" "$AGENT" <<'PY'
+# ИДЕМПОТЕНТНОСТЬ: существующий config.json НЕ перезаписываем (там токен, ключи, настройки
+# пользователя). Токен спрашиваем только на чистой машине.
+if [ -f "$WA/config.json" ]; then
+  echo "  ✓ config.json уже есть — сохранён без изменений (обновление, не первая установка)"
+else
+  TOKEN="${EXTELLA_TOKEN:-}"
+  if [ -z "$TOKEN" ]; then printf "  Вставь Extella-токен и нажми Enter: "; read -r TOKEN </dev/tty || true; fi
+  if [ -z "$TOKEN" ] || printf '%s' "$TOKEN" | LC_ALL=C grep -q '[^ -~]\|[<> ]' || [ ${#TOKEN} -lt 20 ]; then
+    echo "  ! Тулбар установлен. Эксперты/Визард пропущены: нужен НАСТОЯЩИЙ токен."; exit 0; fi
+  mkdir -p "$WA"
+  python3 - "$WA/config.json" "$TOKEN" "$AGENT" <<'PY'
 import json,sys;json.dump({"auth_token":sys.argv[2],"api_base":"https://api.extella.ai","port":8765,"agent_id":sys.argv[3]},open(sys.argv[1],"w"),ensure_ascii=False,indent=2)
 PY
+fi
 
 say "3/5 Python"
 PY=""; for c in python3 python; do $c -c 'import sys;exit(0 if sys.version_info[0]==3 else 1)' >/dev/null 2>&1 && { PY=$c; break; }; done
@@ -76,6 +84,15 @@ if [ "$(uname)" = "Darwin" ] && [ -f "$PD/device/activity-center/install.py" ]; 
 fi
 curl -fsSL "$WIZ" -o "$TMP/w.tgz"; tar -xzf "$TMP/w.tgz" -C "$TMP"
 WD=$(find "$TMP" -maxdepth 1 -type d -name "extella-adoption-wizard*"|head -1)
+# BACKUP перед обновлением визарда: прежние файлы приложения → ~/extella_wizard/backup/<дата>.
+# ОТКАТ: cp ~/extella_wizard/backup/<дата>/* ~/extella_wizard/app/ и перезапустить мост.
+if [ -d "$WA" ] && ls "$WA"/*.py >/dev/null 2>&1; then
+  BK="$HOME/extella_wizard/backup/$(date +%Y%m%d_%H%M%S)"
+  mkdir -p "$BK"
+  cp "$WA"/*.py "$WA/wizard.html" "$BK/" 2>/dev/null || true
+  [ -d "$WA/system_experts" ] && cp -R "$WA/system_experts" "$BK/" 2>/dev/null || true
+  echo "  ✓ backup прежней версии: $BK (откат: cp \$BK/* ~/extella_wizard/app/)"
+fi
 cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
 ( cd "$WD" && "$PY" install.py ) || echo "  ⚠️ wizard install.py частично"
 rm -rf "$TMP"
