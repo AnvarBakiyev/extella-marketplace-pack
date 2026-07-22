@@ -9,11 +9,11 @@
     "windows11-x86_64"
   ],
   "distribution": {
-    "status": "candidate",
+    "status": "pending",
     "fileName": "extella-client-2.0.0-rc.1.zip",
-    "sha256": "bbc187c440c1ece69ae182baee65f189acfdcca9c85ece4065065621a8560fe4",
-    "bytes": 3243747,
-    "fileCount": 265
+    "sha256": null,
+    "bytes": null,
+    "fileCount": null
   },
   "dependencies": [
     {
@@ -172,12 +172,12 @@
     {
       "id": "toolbar",
       "url": "https://github.com/AnvarBakiyev/extella-toolbar-src.git",
-      "revision": "e95805769e574d217bd9d38e9022a0c2528e0798"
+      "revision": "c69933d4e9b374ccd9c4cb5770c2b0753a02b9e2"
     },
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "2e03ad3fedec411ac9c5da54515ce27555bc2546"
+      "revision": "2181e71c5deaff2d363a83bfd96f9592ffab2df9"
     },
     {
       "id": "wizard",
