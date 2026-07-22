@@ -177,12 +177,12 @@
     {
       "id": "marketplace",
       "url": "https://github.com/AnvarBakiyev/extella-marketplace-pack.git",
-      "revision": "9c4734a1d5123febdaa9df07f91489eeb70ec0e4"
+      "revision": "483246c19634fa0ea7810e8139d8da754927306a"
     },
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "c79b6b8dfdc98e0db36885921c192d74b3ecab82"
+      "revision": "f42ee02db426f9f517c501767cdea64dd6c91214"
     }
   ],
   "artifacts": [
