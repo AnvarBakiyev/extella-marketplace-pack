@@ -245,12 +245,12 @@ def _verify_account(
     if not isinstance(ownership, dict) or ownership.get("releaseVersion") != release_version:
         raise ClientVerificationError("current-account agent ownership is invalid")
     agent_ids = [ownership.get("wizard"), ownership.get("builder")]
-    if (
-        len(set(agent_ids)) != 2
-        or any(not isinstance(agent_id, str) or not SAFE_AGENT_ID.fullmatch(agent_id) for agent_id in agent_ids)
-    ):
+    if any(not isinstance(agent_id, str) or not SAFE_AGENT_ID.fullmatch(agent_id) for agent_id in agent_ids):
         raise ClientVerificationError("current-account Qwen agent identities are invalid")
-    for agent_id in agent_ids:
+    unique_agent_ids = list(dict.fromkeys(agent_ids))
+    if not 1 <= len(unique_agent_ids) <= 2:
+        raise ClientVerificationError("current-account Qwen agent identities are invalid")
+    for agent_id in unique_agent_ids:
         response = api.post("/api/agent/get", {"agent_id": agent_id})
         agent = response.get("result") if isinstance(response.get("result"), dict) else response
         if (
@@ -270,7 +270,12 @@ def _verify_account(
         )
         if not _response_success(smoke) or "EXTELLA_READY" not in json.dumps(smoke, ensure_ascii=False):
             raise ClientVerificationError("current-account Qwen agent smoke failed")
-    return {"experts": len(experts), "expertSmokes": len(experts), "kv": len(kv_keys), "agents": 2}
+    return {
+        "experts": len(experts),
+        "expertSmokes": len(experts),
+        "kv": len(kv_keys),
+        "agents": len(unique_agent_ids),
+    }
 
 
 def verify_installed_client(

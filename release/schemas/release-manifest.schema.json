@@ -70,9 +70,10 @@
         "agents": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["count", "provider", "model"],
+          "required": ["count", "strategy", "provider", "model"],
           "properties": {
-            "count": {"const": 2},
+            "count": {"const": 1},
+            "strategy": {"const": "token_associated"},
             "provider": {"const": "alibaba"},
             "model": {"type": "string"}
           }

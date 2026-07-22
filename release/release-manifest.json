@@ -110,7 +110,8 @@
   "accountResources": {
     "scope": "current_account",
     "agents": {
-      "count": 2,
+      "count": 1,
+      "strategy": "token_associated",
       "provider": "alibaba",
       "model": "qwen3.7-max-2026-06-08"
     },
@@ -182,7 +183,7 @@
     {
       "id": "wizard",
       "url": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-      "revision": "f42ee02db426f9f517c501767cdea64dd6c91214"
+      "revision": "209532ed403a784de8275cf0e2446e51fbf336a0"
     }
   ],
   "artifacts": [

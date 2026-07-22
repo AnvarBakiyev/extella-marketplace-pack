@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from installer.account import (
+    AGENTS_KV_KEY,
     APIError,
     BOOTSTRAP_AGENT_SCOPE,
     AccountInstallError,
@@ -28,8 +29,17 @@ class FakeAPI:
         self.kv = {}
         self.fail_save = None
         self.calls = []
-        self.agents = {}
+        self.default_agent_id = "agent_account_QwenBase"
+        self.agents = {
+            self.default_agent_id: {
+                "status": "success",
+                "agent_id": self.default_agent_id,
+                "provider": "alibaba",
+                "model": "qwen3.7-max-2026-06-08",
+            }
+        }
         self.next_agent = 1
+        self.fail_agent_runs = set()
         self.agent_scope = ""
         self.scope_history = []
 
@@ -40,7 +50,7 @@ class FakeAPI:
     def post(self, endpoint, payload, *, timeout=90):
         self.calls.append((endpoint, dict(payload)))
         if endpoint == "/api/token/validate":
-            return {"status": "success"}
+            return {"status": "success", "agent_id": self.default_agent_id}
         if endpoint == "/api/expert/get":
             name = payload["name"]
             if name not in self.experts:
@@ -89,6 +99,8 @@ class FakeAPI:
                 raise APIError(endpoint, "http_error", http_status=404, code="not found")
             return dict(self.agents[payload["agent_id"]])
         if endpoint == "/api/agent/run":
+            if payload["agent_id"] in self.fail_agent_runs:
+                raise APIError(endpoint, "http_error", http_status=400, code="pro_key_required")
             return {"status": "success", "output_text": "EXTELLA_READY"}
         if endpoint == "/api/agent/delete":
             self.agents.pop(payload["agent_id"], None)
@@ -258,7 +270,7 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertEqual(required, {"required_0"})
             self.assertEqual(smokes, {"smoke_0"})
 
-    def test_creates_two_explicit_qwen_agents_for_clean_account(self):
+    def test_uses_token_associated_keyless_qwen_for_clean_account(self):
         api = FakeAPI()
         with tempfile.TemporaryDirectory() as directory:
             installer = AccountInstaller(
@@ -273,14 +285,47 @@ class AccountInstallerTests(unittest.TestCase):
                 kv_artifacts=[],
                 agent_instructions={"wizard": "wizard instructions", "builder": "builder instructions"},
             )
-            self.assertEqual(len(api.agents), 2)
+            self.assertEqual(len(api.agents), 1)
             self.assertTrue(all(agent["provider"] == "alibaba" for agent in api.agents.values()))
             self.assertTrue(all(agent["model"] == "qwen3.7-max-2026-06-08" for agent in api.agents.values()))
             ownership = json.loads(api.kv["extella:client:agents:v1"])
             self.assertIn(ownership["wizard"], api.agents)
             self.assertIn(ownership["builder"], api.agents)
+            self.assertEqual(ownership["wizard"], api.default_agent_id)
+            self.assertEqual(ownership["builder"], api.default_agent_id)
+            self.assertFalse(any(endpoint == "/api/agent/create" for endpoint, _ in api.calls))
             self.assertEqual(api.agent_scope, ownership["wizard"])
             self.assertEqual(api.scope_history[-1], ownership["wizard"])
+
+    def test_repair_replaces_stale_pro_agent_ownership_with_token_qwen(self):
+        api = FakeAPI()
+        stale = "agent_user_ProQwen123"
+        api.agents[stale] = {
+            "status": "success",
+            "agent_id": stale,
+            "provider": "alibaba",
+            "model": "qwen3.7-max-2026-06-08",
+        }
+        api.fail_agent_runs.add(stale)
+        api.kv[AGENTS_KV_KEY] = json.dumps({"wizard": stale, "builder": stale})
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+            )
+            installer.install(
+                {"safe_smoke": expert("safe_smoke")},
+                required={"safe_smoke"},
+                smokes={"safe_smoke"},
+                kv_artifacts=[],
+                agent_instructions={"wizard": "wizard instructions", "builder": "builder instructions"},
+            )
+            ownership = json.loads(api.kv[AGENTS_KV_KEY])
+            self.assertEqual(ownership["wizard"], api.default_agent_id)
+            self.assertEqual(ownership["builder"], api.default_agent_id)
+            self.assertIn(stale, api.agents)
+            self.assertFalse(any(endpoint == "/api/agent/delete" for endpoint, _ in api.calls))
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()

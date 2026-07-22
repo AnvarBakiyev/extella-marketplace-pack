@@ -373,6 +373,15 @@ def _response_success(response: Mapping[str, Any]) -> bool:
     return status in {"success", "ok", "completed", "done"} or response.get("ok") is True
 
 
+def _delete_success(response: Mapping[str, Any]) -> bool:
+    """Accept both documented status responses and the live message-only delete acknowledgement."""
+
+    if _response_success(response):
+        return True
+    message = str(response.get("message") or "").strip().lower()
+    return any(marker in message for marker in ("deleted", "removed", "удален", "удалён"))
+
+
 def _missing(error: APIError) -> bool:
     message = error.code.lower()
     return error.http_status == 404 or "not found" in message or "не найден" in message
@@ -455,6 +464,7 @@ class AccountInstaller:
             raise AccountInstallError("a valid current-account Qwen agent id is required")
         self.api = api
         self.agent_id = agent_id or ""
+        self.token_agent_id = ""
         self.release_version = release_version
         self.transaction = AccountTransaction(release_version=release_version, state_root=state_root)
         if self.agent_id:
@@ -467,6 +477,21 @@ class AccountInstaller:
         response = self.api.post("/api/token/validate", {})
         if not _response_success(response):
             raise AccountInstallError("Extella token validation failed")
+        # A live token validation returns the platform Qwen assigned to the
+        # current account. It is already keyless and runnable. API-created
+        # Alibaba agents are Pro custom agents and require a provider key, so
+        # they must never be used as the clean-account bootstrap path.
+        if self.agent_id:
+            return
+        agent_id = self._agent_id(response)
+        if not agent_id:
+            raise AccountInstallError("token validation returned no current-account agent")
+        self._scope_api(agent_id)
+        if not self._verified_qwen(self._get_agent(agent_id)):
+            raise AccountInstallError("token-associated agent is not the required Qwen")
+        self._smoke_agent(agent_id)
+        self.agent_id = agent_id
+        self.token_agent_id = agent_id
 
     def _get_expert(self, name: str) -> dict[str, Any] | None:
         try:
@@ -527,43 +552,25 @@ class AccountInstaller:
 
     def ensure_agent(self, *, role: str, name: str, instructions: str, existing_id: str = "") -> tuple[str, Callable[[], None] | None]:
         if existing_id:
-            self._scope_api(existing_id)
-            current = self._get_agent(existing_id)
-            if self._verified_qwen(current):
-                self._smoke_agent(existing_id)
-                return f"Qwen agent verified: {role}:{existing_id}", None
-        response = self.api.post(
-            "/api/agent/create",
-            {
-                "name": name,
-                "provider": QWEN_PROVIDER,
-                "model": QWEN_MODEL,
-                "instructions": instructions,
-                "tools": [],
-                "model_parameters": {"temperature": 0.2},
-            },
-            timeout=120,
-        )
-        agent_id = self._agent_id(response)
-        if not agent_id:
-            raise AccountInstallError(f"agent create returned no id: {role}")
-        self._scope_api(agent_id)
-
-        def undo() -> None:
-            self._scope_api(agent_id)
-            result = self.api.post("/api/agent/delete", {"agent_id": agent_id})
-            if not _response_success(result):
-                raise AccountInstallError("agent rollback delete failed")
-
-        self.transaction.register_undo(undo)
-        self.transaction.register_change(
-            AccountChange("agent", agent_id, False, hashlib.sha256(agent_id.encode("utf-8")).hexdigest())
-        )
-        created = self._get_agent(agent_id)
-        if not self._verified_qwen(created):
-            raise AccountInstallError(f"created agent is not the required Qwen: {role}")
-        self._smoke_agent(agent_id)
-        return f"Qwen agent created and verified: {role}:{agent_id}", None
+            try:
+                self._scope_api(existing_id)
+                current = self._get_agent(existing_id)
+                if self._verified_qwen(current):
+                    self._smoke_agent(existing_id)
+                    return f"Qwen agent verified: {role}:{existing_id}", None
+            except (APIError, AccountInstallError):
+                # Stale ownership may reference a removed agent or an old Pro
+                # custom agent that now requires BYOK. The token-associated
+                # platform Qwen remains the deterministic repair path.
+                pass
+        if not self.token_agent_id:
+            raise AccountInstallError(f"no runnable token-associated Qwen is available: {role}")
+        self._scope_api(self.token_agent_id)
+        current = self._get_agent(self.token_agent_id)
+        if not self._verified_qwen(current):
+            raise AccountInstallError(f"token-associated agent is not the required Qwen: {role}")
+        self._smoke_agent(self.token_agent_id)
+        return f"account Qwen verified: {role}:{self.token_agent_id}", None
 
     def ensure_agents(self, instructions: Mapping[str, str]) -> tuple[dict[str, str], list[KVArtifact]]:
         if {"wizard", "builder"} - set(instructions):
@@ -624,7 +631,7 @@ class AccountInstaller:
         def undo() -> None:
             if previous is None:
                 response = self.api.post("/api/expert/delete", {"name": source.name, "global": True})
-                if not _response_success(response):
+                if not _delete_success(response):
                     raise AccountInstallError("expert rollback delete failed")
             else:
                 self._save_expert_payload(previous)
@@ -661,12 +668,14 @@ class AccountInstaller:
         def undo() -> None:
             if previous is None:
                 result = self.api.post("/api/kv/remove", {"key": artifact.key, "global": True})
+                acknowledged = _delete_success(result)
             else:
                 result = self.api.post(
                     "/api/kv/set",
                     {"key": artifact.key, "value": previous, "description": "restored by Extella installer", "global": True},
                 )
-            if not _response_success(result):
+                acknowledged = _response_success(result)
+            if not acknowledged:
                 raise AccountInstallError("KV rollback failed")
 
         self.transaction.register_undo(undo)
@@ -834,7 +843,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                             response = api.post(
                                 "/api/expert/delete", {"name": change.identity, "global": True}
                             )
-                            if not _response_success(response):
+                            if not _delete_success(response):
                                 raise AccountInstallError("expert removal was not acknowledged")
                             status = "removed"
                 elif change.kind == "kv":
@@ -863,7 +872,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         response = api.post(
                             "/api/kv/remove", {"key": change.identity, "global": True}
                         )
-                        if not _response_success(response):
+                        if not _delete_success(response):
                             raise AccountInstallError("KV removal was not acknowledged")
                         status = "removed"
                 elif change.kind == "agent":
@@ -876,7 +885,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                             raise
                     else:
                         response = api.post("/api/agent/delete", {"agent_id": change.identity})
-                        if not _response_success(response):
+                        if not _delete_success(response):
                             raise AccountInstallError("agent removal was not acknowledged")
                         status = "removed"
                 else:
