@@ -8,8 +8,8 @@
   "source": {"type": "bundled", "locator": "automations/ui/extella_contract_agent", "revision": "release"},
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
-    "strategy": "bundled",
-    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
+    "strategy": "on_demand",
+    "entrypoints": {"macos": "installer/plugin_lifecycle.py", "windows11": "installer/plugin_lifecycle.py"},
     "idempotent": true,
     "transactional": true,
     "mutablePaths": ["${EXTELLA_DATA}/plugins/extella_contract_agent"]
@@ -27,7 +27,7 @@
   "artifacts": {
     "installRoot": "${EXTELLA_DATA}/plugins/extella_contract_agent",
     "registryFile": "${EXTELLA_DATA}/plugins/_registry/extella_contract_agent.json",
-    "files": ["server.py", "index.html", "onboarding.html"]
+    "files": ["index.html", "onboarding.html", "server.py"]
   },
   "experts": {
     "required": ["p2d4_evaluate_contract_batch", "p2d4_generate_document_package", "p2d4_run_pipeline", "p2d5_negotiate", "lp_notify", "lp_email_send", "lp_wa_state", "lp_wa_send", "lp_assistant"],
@@ -36,7 +36,7 @@
   "secrets": [
     {"key": "notification_credentials", "source": "encrypted_vault", "required": false}
   ],
-  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["contracts", "review outputs", "encrypted credentials"]},
+  "uninstall": {"entrypoint": "installer/plugin_lifecycle.py", "preserves": ["contracts", "review outputs", "encrypted credentials"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.0.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }

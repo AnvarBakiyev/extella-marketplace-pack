@@ -8,8 +8,8 @@
   "source": {"type": "bundled", "locator": "automations/ui/extella_travel_agency", "revision": "release"},
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
-    "strategy": "bundled",
-    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
+    "strategy": "on_demand",
+    "entrypoints": {"macos": "installer/plugin_lifecycle.py", "windows11": "installer/plugin_lifecycle.py"},
     "idempotent": true,
     "transactional": true,
     "mutablePaths": ["${EXTELLA_DATA}/plugins/extella_travel_agency"]
@@ -27,7 +27,7 @@
   "artifacts": {
     "installRoot": "${EXTELLA_DATA}/plugins/extella_travel_agency",
     "registryFile": "${EXTELLA_DATA}/plugins/_registry/extella_travel_agency.json",
-    "files": ["server.py", "index.html", "onboarding.html"]
+    "files": ["index.html", "onboarding.html", "passport_specimen.png", "server.py"]
   },
   "experts": {
     "required": ["ta_tv_get", "ta_tv_search", "ta_pick_226", "ta_offer_message", "ta_lead_upsert", "ta_run_lead_pipeline", "ta_birthday_scan", "ta_season_campaign", "ta_wa_state", "ta_wa_send", "ta_tg_send", "ta_passport_extract", "ta_contract_generate", "ta_wa_inbound_tick"],
@@ -37,7 +37,7 @@
     {"key": "tour_provider_token", "source": "encrypted_vault", "required": false},
     {"key": "messenger_credentials", "source": "encrypted_vault", "required": false}
   ],
-  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["client records", "drafts", "encrypted credentials"]},
+  "uninstall": {"entrypoint": "installer/plugin_lifecycle.py", "preserves": ["client records", "drafts", "encrypted credentials"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["0.1.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }

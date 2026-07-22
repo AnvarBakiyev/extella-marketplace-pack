@@ -12,11 +12,11 @@
   },
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {
-    "strategy": "bundled",
-    "entrypoints": {"macos": "installer/client_install.py", "windows11": "installer/client_install.py"},
+    "strategy": "on_demand",
+    "entrypoints": {"macos": "installer/plugin_lifecycle.py", "windows11": "installer/plugin_lifecycle.py"},
     "idempotent": true,
     "transactional": true,
-    "mutablePaths": ["${EXTELLA_DATA}/wizard/app", "${EXTELLA_DATA}/wizard/sessions"]
+    "mutablePaths": ["${EXTELLA_DATA}/wizard/app", "${EXTELLA_DATA}/wizard/catalog", "${EXTELLA_DATA}/wizard/sessions"]
   },
   "runtime": {
     "kind": "local_service",
@@ -31,7 +31,21 @@
   "artifacts": {
     "installRoot": "${EXTELLA_DATA}/wizard/app",
     "registryFile": "${EXTELLA_DATA}/plugins/_registry/extella_adoption_wizard.json",
-    "files": ["server.py", "wz_platform.py", "wz_llm.py", "wz_build.py", "wizard.html"]
+    "files": [
+      "catalog.json",
+      "server.py",
+      "wizard.html",
+      "workspace/VERSION",
+      "workspace/index.html",
+      "workspace/server.py",
+      "workspace/workspace_autopilot.py",
+      "workspace/workspace_refresh.py",
+      "wz_agentic.py",
+      "wz_build.py",
+      "wz_llm.py",
+      "wz_platform.py",
+      "wz_process.py"
+    ]
   },
   "experts": {
     "required": [
@@ -88,9 +102,9 @@
   },
   "secrets": [
     {"key": "extella_session", "source": "extella_session", "required": true},
-    {"key": "vault_pin", "source": "user_prompt", "required": true}
+    {"key": "vault_pin", "source": "user_prompt", "required": false}
   ],
-  "uninstall": {"entrypoint": "installer/client_uninstall.py", "preserves": ["sessions", "reports", "encrypted vault"]},
+  "uninstall": {"entrypoint": "installer/plugin_lifecycle.py", "preserves": ["sessions", "reports", "encrypted vault"]},
   "migration": {"strategy": "replace_preserve_data", "fromVersions": ["1.x", "4.x"]},
   "releaseState": {"advertised": false, "verification": "pending"}
 }

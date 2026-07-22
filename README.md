@@ -55,11 +55,15 @@ around the unified native bootstraps.
 - `release/plugins/*.json` contains schema-validated bundled plugin contracts.
 - `release/expert-classification.json` classifies every shipped expert.
 - `release/catalog-policy.json` marks external catalogs as third-party and
-  unverified; the supported on-demand catalog is empty until an item passes the
-  complete release gate.
+  unverified. The three Extella-managed runtime candidates are declared
+  separately as `supported_on_demand` and remain visibly marked as candidates
+  until their complete external matrix passes.
 - `runtime/extella_runtime/ensure_tool.py` is the shared dependency resolver.
-- `installer/client_install.py` and `installer/client_uninstall.py` are the only
-  supported lifecycle entrypoints inside a verified bundle.
+- `installer/client_install.py` and `installer/client_uninstall.py` own the base
+  client. `installer/plugin_lifecycle.py` is the single allow-listed,
+  transactional install/uninstall entrypoint for supported on-demand programs;
+  toolbar cards reach it only through Activity Center's token-protected local
+  API.
 
 Builds are allowlisted and deterministic:
 

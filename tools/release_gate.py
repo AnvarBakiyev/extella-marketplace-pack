@@ -39,6 +39,7 @@ EVIDENCE_SCENARIOS = {
 }
 REQUIRED_BUNDLE_PAYLOAD = frozenset(
     {
+        "payload/marketplace/installer/plugin_lifecycle.py",
         "payload/marketplace/installer/client_verify.py",
         "payload/marketplace/installer/verification.py",
         "payload/marketplace/tools/external_matrix.py",
@@ -189,6 +190,27 @@ def validate_plugin(path: Path) -> list[Issue]:
                     "uninstall.unified_entrypoint",
                     str(path),
                     "bundled capabilities must use the unified client uninstaller",
+                )
+            )
+    elif data.get("classification") == "supported_on_demand":
+        entrypoints = install.get("entrypoints") if isinstance(install.get("entrypoints"), dict) else {}
+        if install.get("strategy") != "on_demand" or set(entrypoints.values()) != {
+            "installer/plugin_lifecycle.py"
+        }:
+            issues.append(
+                Issue(
+                    "install.on_demand_entrypoint",
+                    str(path),
+                    "supported on-demand capabilities must use the shared plugin lifecycle",
+                )
+            )
+        uninstall = data.get("uninstall") if isinstance(data.get("uninstall"), dict) else {}
+        if uninstall.get("entrypoint") != "installer/plugin_lifecycle.py":
+            issues.append(
+                Issue(
+                    "uninstall.on_demand_entrypoint",
+                    str(path),
+                    "supported on-demand capabilities must use the shared plugin lifecycle",
                 )
             )
 

@@ -78,8 +78,39 @@ def mcp_connect(server_id="", pkg_type="", pkg="", title="") -> str:
         except Exception: pass
     d = native["mcp_root"]; os.makedirs(d, exist_ok=True)
     fp = os.path.join(d, "allowlist.json")
-    try: allow = json.load(open(fp))
-    except Exception: allow = {}
-    allow[key] = {"cmd": cmd, "title": title or key, "pkg": pkg, "tools": [t["name"] for t in tools]}
-    json.dump(allow, open(fp, "w"), ensure_ascii=False, indent=1)
-    return json.dumps({"status":"success","server":key,"title":title or key,"count":len(tools),"tools":tools[:20]}, ensure_ascii=False)
+    try: payload = json.load(open(fp, encoding="utf-8"))
+    except Exception: payload = {}
+    servers = payload.get("servers", payload) if isinstance(payload, dict) else None
+    if not isinstance(servers, dict):
+        return err("неожиданный формат MCP allowlist — существующий файл не изменён")
+    existing = servers.get(key)
+    if isinstance(existing, dict):
+        existing_pkg = str(existing.get("pkg") or "")
+        if existing_pkg and existing_pkg != pkg:
+            return err("ключ %s уже принадлежит другому MCP-пакету; существующее подключение не изменено" % key)
+        owned = existing.get("owner") == "extella_mcp_connect" and existing.get("installedByExtella") is True
+        return json.dumps({"status":"already", "server":key,
+                           "title":existing.get("title") or title or key,
+                           "count":len(tools), "tools":tools[:20],
+                           "owned":owned, "changed":False}, ensure_ascii=False)
+    servers[key] = {"cmd": cmd, "title": title or key, "pkg": pkg,
+                    "tools": [t["name"] for t in tools],
+                    "owner": "extella_mcp_connect", "installedByExtella": True}
+    if isinstance(payload, dict) and "servers" in payload:
+        payload["servers"] = servers
+    else:
+        payload = servers
+    tmp = fp + ".tmp." + str(os.getpid())
+    try:
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=1)
+            handle.write("\n")
+        os.replace(tmp, fp)
+    finally:
+        try:
+            if os.path.exists(tmp): os.unlink(tmp)
+        except Exception:
+            pass
+    return json.dumps({"status":"success","server":key,"title":title or key,
+                       "count":len(tools),"tools":tools[:20],
+                       "owned":True,"changed":True}, ensure_ascii=False)

@@ -100,7 +100,7 @@ def _runtime_environment(paths: ClientPaths) -> dict[str, str]:
         "EXTELLA_ACTIVITY_FILE": str(paths.state_root / "activity" / "events.jsonl"),
         "EXTELLA_SERVICE_STATE": str(paths.state_root / "services.json"),
         "EXTELLA_PROCESS_STATE": str(paths.state_root / "processes.json"),
-        "PYTHONPATH": str(paths.runtime_root),
+        "PYTHONPATH": os.pathsep.join((str(paths.data_root), str(paths.runtime_root))),
     }
 
 
@@ -225,10 +225,51 @@ def _install_local_payload(
         paths.data_root / "installer" / "external_matrix.py",
     )
     transaction.atomic_copy(marketplace / "toolbar/toolbar.js", paths.toolbar_root / "toolbar.js")
+    package_cache = paths.data_root / "packages" / "current"
+    if not _tree_same(transaction, bundle_root, package_cache):
+        transaction.atomic_tree(bundle_root, package_cache)
     # Конструктор и предметные локальные сервисы входят в подписанный архив,
-    # но устанавливаются только по своей карточке. Базовая установка тулбара
-    # не копирует, не регистрирует и не запускает их.
-    return "toolbar catalog payload installed; on-demand services left untouched"
+    # но активируются только по своей карточке. Базовая установка сохраняет
+    # проверенный package cache, не регистрирует и не запускает сервисы.
+    return "toolbar catalog payload and verified on-demand package cache installed"
+
+
+def _write_account_config(
+    transaction: InstallTransaction,
+    *,
+    paths: ClientPaths,
+    token: str,
+    api_base: str,
+    agent_id: str,
+    platform_info: PlatformInfo,
+) -> str:
+    """Persist the current-account session for release-gated local services.
+
+    Existing optional connector credentials are retained. The token never
+    enters a report or command line and the resulting file is user-only.
+    """
+
+    target = paths.wizard_root / "config.json"
+    try:
+        current = json.loads(target.read_text(encoding="utf-8"))
+        if not isinstance(current, dict):
+            current = {}
+    except (OSError, ValueError):
+        current = {}
+    current.update(
+        {
+            "auth_token": token,
+            "api_base": api_base.rstrip("/"),
+            "agent_id": agent_id,
+        }
+    )
+    transaction.atomic_write(
+        (json.dumps(current, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+        target,
+        mode=0o600,
+    )
+    _restrict_secret_file(target, platform_info=platform_info)
+    return "current-account local service credential configured"
 
 
 def prepare_local_client(
@@ -524,6 +565,17 @@ def install_client(
             progress=progress,
         )
         account_prepared = True
+        prepared.transaction.run(
+            "account.config",
+            lambda: _write_account_config(
+                prepared.transaction,
+                paths=prepared.paths,
+                token=token,
+                api_base=api_base,
+                agent_id=account.agent_id,
+                platform_info=platform_info,
+            ),
+        )
         if activate_services:
             stage = "service-activation"
             emit("service_activation")

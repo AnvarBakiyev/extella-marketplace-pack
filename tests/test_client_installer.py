@@ -11,10 +11,13 @@ from unittest.mock import patch
 
 from installer.client import (
     _restrict_secret_file,
+    _write_account_config,
     _wait_for_activity_autostart,
     prepare_local_client,
 )
+from runtime.extella_runtime.paths import client_paths
 from installer.client_install import _console_progress
+from runtime.extella_runtime.transaction import InstallTransaction
 from runtime.extella_runtime.processes import RuntimeSpec
 from runtime.extella_runtime.platforms import detect_platform
 
@@ -98,6 +101,37 @@ class ClientInstallerTests(unittest.TestCase):
             argv = run.call_args.args[0]
             self.assertNotIn("TOP_SECRET", " ".join(argv))
             self.assertIn("WindowsIdentity", " ".join(argv))
+
+    def test_account_config_is_user_only_and_secret_free_in_report(self):
+        mac = detect_platform(system="Darwin", architecture="arm64", release="15.5")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = client_paths(
+                platform_info=mac,
+                env={"HOME": str(root / "home"), "EXTELLA_DATA_ROOT": str(root / "data")},
+            )
+            paths.wizard_root.mkdir(parents=True)
+            target = paths.wizard_root / "config.json"
+            target.write_text('{"telegram_chat_id":"kept"}', encoding="utf-8")
+            transaction = InstallTransaction(release_version="test", state_root=paths.state_root / "client")
+            token = "secret-token-that-must-never-enter-reports"
+            transaction.run(
+                "account.config",
+                lambda: _write_account_config(
+                    transaction,
+                    paths=paths,
+                    token=token,
+                    api_base="https://api.extella.ai",
+                    agent_id="agent_current123",
+                    platform_info=mac,
+                ),
+            )
+            report = transaction.commit()
+            config = json.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(config["telegram_chat_id"], "kept")
+            self.assertEqual(config["auth_token"], token)
+            self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+            self.assertNotIn(token, json.dumps(report))
 
     def _bundle(self, bundle: Path):
         files = []
@@ -220,6 +254,8 @@ class ClientInstallerTests(unittest.TestCase):
             self.assertTrue((root / "data/installer/external_matrix.py").is_file())
             self.assertTrue((root / "home/Library/Application Support/extella-desktop/toolbar.js").is_file())
             self.assertTrue((root / "data/activity-center/server.py").is_file())
+            self.assertTrue((root / "data/packages/current/bundle-manifest.json").is_file())
+            self.assertTrue((root / "data/packages/current/payload/wizard/ui/wizard.html").is_file())
             for plugin_id in (
                 "extella_adoption_wizard",
                 "extella_travel_agency",

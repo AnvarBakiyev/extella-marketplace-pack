@@ -70,6 +70,31 @@ def activity_payload(include_dismissed: bool = False) -> dict[str, Any]:
     return payload
 
 
+def supported_plugins_payload() -> dict[str, Any]:
+    """Return only release-gated plugin metadata; never expose the control token."""
+    from installer.plugin_lifecycle import list_supported_plugins
+
+    return {"status": "ok", "plugins": list_supported_plugins()}
+
+
+def run_supported_plugin_action(plugin_id: str, action: str) -> dict[str, Any]:
+    """Dispatch a validated action through the single shared lifecycle."""
+    from installer.plugin_lifecycle import (
+        install_supported_plugin,
+        uninstall_supported_plugin,
+    )
+
+    operations = {
+        "install": install_supported_plugin,
+        "uninstall": uninstall_supported_plugin,
+    }
+    try:
+        operation = operations[action]
+    except KeyError as error:
+        raise ValueError("unsupported plugin action") from error
+    return operation(plugin_id)
+
+
 def listener_processes() -> dict[str, Any]:
     global _process_cache
     now = time.monotonic()
@@ -193,6 +218,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _read_json(self) -> dict[str, Any]:
+        try:
+            length = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            length = -1
+        if length < 0 or length > 64 * 1024:
+            raise ValueError("invalid request size")
+        if not length:
+            return {}
+        payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        if not isinstance(payload, dict):
+            raise ValueError("JSON body must be an object")
+        return payload
+
     def do_OPTIONS(self) -> None:  # noqa: N802
         self.send_response(204)
         self._cors()
@@ -223,6 +262,21 @@ class Handler(BaseHTTPRequestHandler):
                     "controlToken": CONTROL_TOKEN,
                 },
             )
+            return
+        if path == "/api/plugins":
+            try:
+                payload = supported_plugins_payload()
+            except Exception as error:
+                self._send_json(
+                    503,
+                    {
+                        "status": "error",
+                        "errorClass": type(error).__name__,
+                        "message": "Verified on-demand package cache is unavailable; run Repair.",
+                    },
+                )
+                return
+            self._send_json(200, payload)
             return
         self._send_json(404, {"status": "not_found"})
 
@@ -259,6 +313,27 @@ class Handler(BaseHTTPRequestHandler):
                     "dismissed": len(dismissed),
                 },
             )
+            return
+        plugin_match = re.fullmatch(
+            r"/api/plugins/([a-z0-9][a-z0-9._-]{1,79})/(install|uninstall)", path
+        )
+        if plugin_match:
+            try:
+                self._read_json()
+                result = run_supported_plugin_action(
+                    plugin_match.group(1), plugin_match.group(2)
+                )
+            except Exception as error:
+                self._send_json(
+                    409,
+                    {
+                        "status": "error",
+                        "errorClass": type(error).__name__,
+                        "message": str(error)[:240] or "Supported plugin lifecycle failed.",
+                    },
+                )
+                return
+            self._send_json(200, result)
             return
         match = re.fullmatch(
             r"/api/services/([A-Za-z0-9_.-]{1,128})/(start|stop|restart)", path

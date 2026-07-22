@@ -23,6 +23,12 @@ class RequiredBundlePayloadTests(unittest.TestCase):
             release_gate.REQUIRED_BUNDLE_PAYLOAD,
         )
 
+    def test_supported_plugin_lifecycle_is_a_release_gate_requirement(self):
+        self.assertIn(
+            "payload/marketplace/installer/plugin_lifecycle.py",
+            release_gate.REQUIRED_BUNDLE_PAYLOAD,
+        )
+
 
 def valid_plugin() -> dict:
     return {

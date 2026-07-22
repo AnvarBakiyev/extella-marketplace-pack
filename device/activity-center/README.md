@@ -14,6 +14,12 @@ It consists of two deliberately separate pieces:
    exposes localhost services declared in the Extella plugin registry, with a
    narrow start/stop endpoint protected by an in-memory control token.
 
+Supported on-demand program cards use the same protected boundary:
+`GET /api/plugins` lists only release-allowlisted candidates, while
+`POST /api/plugins/{id}/install|uninstall` delegates to the shared signed
+package lifecycle. A card is not marked installed until its account experts,
+functional smoke, service health, and owned PID all pass.
+
 The raw task result is never persisted. Tokens, arbitrary arguments, message
 contents, and listener command lines are not part of the API payload.
 Registry launch commands and full project paths are likewise never returned to

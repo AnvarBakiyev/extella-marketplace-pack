@@ -1,8 +1,8 @@
 # expert: catalog_capability_uninstall
-# description: Безопасно удаляет установленную из каталога модель Ollama или подключение MCP; посторонние процессы не останавливает.
-# params: kind, ref, method
+# description: Безопасно удаляет только подтверждённо принадлежащую Extella модель Ollama или MCP-запись; посторонние процессы и данные не трогает.
+# params: kind, ref, method, owned
 
-def catalog_capability_uninstall(kind="", ref="", method="") -> str:
+def catalog_capability_uninstall(kind="", ref="", method="", owned="no") -> str:
     import json
     import os
     import urllib.error
@@ -16,6 +16,15 @@ def catalog_capability_uninstall(kind="", ref="", method="") -> str:
         return json.dumps({"status": "error", "device_removed": False, "message": "Нужны kind и ref."}, ensure_ascii=False)
     if not method:
         method = {"model": "ollama", "mcp": "mcp_connect", "service": "mcp_connect"}.get(kind, "")
+    if method in ("ollama", "mcp_connect") and str(owned or "").strip().lower() not in (
+        "1", "true", "yes", "owned"
+    ):
+        return json.dumps({
+            "status": "error",
+            "error_class": "ownership_not_confirmed",
+            "device_removed": False,
+            "message": "Extella не подтверждает владение этой установкой; устройство не изменено.",
+        }, ensure_ascii=False)
 
     if method == "ollama":
         if "nomic-embed-text" in ref.lower():
@@ -103,7 +112,16 @@ def catalog_capability_uninstall(kind="", ref="", method="") -> str:
         if len(matches) > 1:
             return json.dumps({"status": "error", "device_removed": False, "message": "Найдено несколько MCP-подключений; удаление остановлено."}, ensure_ascii=False)
         if matches:
-            servers.pop(matches[0], None)
+            match = matches[0]
+            entry = servers.get(match) if isinstance(servers.get(match), dict) else {}
+            if entry.get("owner") != "extella_mcp_connect" or entry.get("installedByExtella") is not True:
+                return json.dumps({
+                    "status": "error",
+                    "error_class": "ownership_not_confirmed",
+                    "device_removed": False,
+                    "message": "MCP-подключение не помечено как принадлежащее Extella; allowlist сохранён.",
+                }, ensure_ascii=False)
+            servers.pop(match, None)
             if isinstance(payload, dict) and "servers" in payload:
                 payload["servers"] = servers
             else:
