@@ -958,12 +958,21 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         digest = hashlib.sha256(
                             _canonical_expert_code(current["code"]).encode("utf-8")
                         ).hexdigest()
-                        if digest != change.installed_sha256:
+                        previous_digest = ""
+                        if change.existed:
+                            if not isinstance(change.previous, dict) or not isinstance(
+                                change.previous.get("code"), str
+                            ):
+                                raise AccountInstallError("expert restore snapshot is invalid")
+                            previous_digest = hashlib.sha256(
+                                _canonical_expert_code(change.previous["code"]).encode("utf-8")
+                            ).hexdigest()
+                        if previous_digest and digest == previous_digest:
+                            status = "already_restored"
+                        elif digest != change.installed_sha256:
                             status = "preserved_modified"
                             action_required = True
                         elif change.existed:
-                            if not isinstance(change.previous, dict):
-                                raise AccountInstallError("expert restore snapshot is invalid")
                             response = _retry_transient_api(
                                 lambda: api.post(
                                     "/api/expert/save", change.previous, timeout=120
@@ -986,12 +995,14 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                     current = current_kv(change.identity)
                     if current is None:
                         status = "already_absent"
+                    elif change.existed and not isinstance(change.previous, str):
+                        raise AccountInstallError("KV restore snapshot is invalid")
+                    elif change.existed and current == change.previous:
+                        status = "already_restored"
                     elif hashlib.sha256(current.encode("utf-8")).hexdigest() != change.installed_sha256:
                         status = "preserved_modified"
                         action_required = True
                     elif change.existed:
-                        if not isinstance(change.previous, str):
-                            raise AccountInstallError("KV restore snapshot is invalid")
                         response = _retry_transient_api(
                             lambda: api.post(
                                 "/api/kv/set",
@@ -1042,14 +1053,16 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                 steps.append({"kind": change.kind, "identity": change.identity, "status": status})
             except Exception as error:
                 failed = True
-                steps.append(
-                    {
-                        "kind": raw.get("kind"),
-                        "identity": raw.get("identity"),
-                        "status": "failed",
-                        "errorClass": type(error).__name__,
-                    }
-                )
+                failure = {
+                    "kind": raw.get("kind"),
+                    "identity": raw.get("identity"),
+                    "status": "failed",
+                    "errorClass": type(error).__name__,
+                }
+                if isinstance(error, APIError):
+                    failure["apiErrorClass"] = error.error_class
+                    failure["httpStatus"] = error.http_status
+                steps.append(failure)
         previous = current_state.get("previousState")
         if not failed and not action_required and isinstance(previous, dict):
             apply_state(previous)
@@ -1079,6 +1092,16 @@ def repair_interrupted_account(api: AccountAPI, state_file: Path) -> dict[str, A
     )
     validator.validate_token()
     report = uninstall_account_resources(api, state_file)
+    _atomic_json(state_file.parent / "last-account-repair-report.json", report)
     if report.get("status") != "uninstalled":
-        raise AccountInstallError("interrupted account rollback requires manual recovery")
+        statuses = [
+            str(step.get("status") or "")
+            for step in report.get("steps") or []
+            if isinstance(step, dict)
+        ]
+        raise AccountInstallError(
+            "interrupted account rollback did not complete: "
+            f"status={report.get('status')}, failed={statuses.count('failed')}, "
+            f"preserved_modified={statuses.count('preserved_modified')}"
+        )
     return report

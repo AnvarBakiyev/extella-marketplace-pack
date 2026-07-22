@@ -490,6 +490,81 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertNotIn("partial", api.experts)
             self.assertFalse(state_file.exists())
 
+    def test_repair_accepts_resources_already_restored_by_partial_rollback(self):
+        api = FakeAPI()
+        api.experts["previous"] = {
+            "status": "success",
+            "name": "previous",
+            "expert_code": "# expert: previous\ndef previous(): return 'old'\n",
+            "description": "old",
+            "kwargs": {},
+            "cspl": "fython",
+            "global": True,
+        }
+        api.kv["catalog"] = "old catalog"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"previous": expert("previous")},
+                required={"previous"},
+                smokes=set(),
+                kv_artifacts=[KVArtifact("catalog", "new catalog", "catalog")],
+            )
+            state_file = root / "account-state.json"
+            state = json.loads(state_file.read_text())
+            state["status"] = "rollback_failed"
+            state_file.write_text(json.dumps(state))
+
+            api.experts["previous"] = dict(state["changes"][0]["previous"])
+            api.kv["catalog"] = "old catalog"
+            report = repair_interrupted_account(api, state_file)
+
+            self.assertEqual(report["status"], "uninstalled")
+            self.assertEqual(
+                [step["status"] for step in report["steps"]],
+                ["already_restored", "already_restored"],
+            )
+            self.assertFalse(state_file.exists())
+            repair_report = json.loads((root / "last-account-repair-report.json").read_text())
+            self.assertEqual(repair_report["status"], "uninstalled")
+
+    def test_repair_persists_sanitized_api_failure_details(self):
+        api = FakeAPI()
+        with tempfile.TemporaryDirectory() as directory, patch("installer.account.time.sleep"):
+            root = Path(directory)
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=root,
+                agent_id="agent_user_Qwen123",
+            )
+            installer.install(
+                {"partial": expert("partial")},
+                required={"partial"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            state_file = root / "account-state.json"
+            state = json.loads(state_file.read_text())
+            state["status"] = "rollback_failed"
+            state_file.write_text(json.dumps(state))
+            api.transient_api_failures["/api/expert/get"] = 5
+
+            with self.assertRaisesRegex(AccountInstallError, "status=failed, failed=1"):
+                repair_interrupted_account(api, state_file)
+
+            repair_report = json.loads((root / "last-account-repair-report.json").read_text())
+            self.assertEqual(repair_report["status"], "failed")
+            self.assertEqual(repair_report["steps"][0]["errorClass"], "APIError")
+            self.assertEqual(repair_report["steps"][0]["apiErrorClass"], "http_error")
+            self.assertEqual(repair_report["steps"][0]["httpStatus"], 429)
+
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()
         with tempfile.TemporaryDirectory() as directory:
