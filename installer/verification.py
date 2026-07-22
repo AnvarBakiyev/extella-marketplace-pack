@@ -19,6 +19,7 @@ from installer.account import (
     AccountAPI,
     ExtellaAPI,
     _normalise_expert,
+    _canonical_expert_code,
     _response_success,
     scope_api_to_agent,
 )
@@ -211,7 +212,7 @@ def _verify_account(
         if (
             expert is None
             or expert.get("global") is not True
-            or _sha256_bytes(expert["code"].replace("\r\n", "\n").encode("utf-8")) != expected
+            or _sha256_bytes(_canonical_expert_code(expert["code"]).encode("utf-8")) != expected
         ):
             raise ClientVerificationError(f"installed expert differs from release state: {name}")
         smoke = api.post(

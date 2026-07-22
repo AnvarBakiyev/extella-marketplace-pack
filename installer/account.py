@@ -401,6 +401,12 @@ def _normalise_expert(response: Mapping[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _canonical_expert_code(code: str) -> str:
+    """Match the live API's harmless newline normalization for code identity checks."""
+
+    return code.replace("\r\n", "\n").rstrip("\n") + "\n"
+
+
 def instrument_expert_code(source: ExpertSource, agent_id: str) -> str:
     """Add one reserved, side-effect-free cloud execution probe.
 
@@ -639,14 +645,14 @@ class AccountInstaller:
         self.transaction.register_undo(undo)
         self._save_expert_payload(payload)
         installed = self._get_expert(source.name)
-        if installed is None or installed["code"].replace("\r\n", "\n") != code.replace("\r\n", "\n"):
+        if installed is None or _canonical_expert_code(installed["code"]) != _canonical_expert_code(code):
             raise AccountInstallError(f"expert verification failed: {source.name}")
         self.transaction.register_change(
             AccountChange(
                 "expert",
                 source.name,
                 previous is not None,
-                hashlib.sha256(code.replace("\r\n", "\n").encode("utf-8")).hexdigest(),
+                hashlib.sha256(_canonical_expert_code(code).encode("utf-8")).hexdigest(),
                 previous,
             )
         )
@@ -827,7 +833,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         status = "already_absent"
                     else:
                         digest = hashlib.sha256(
-                            current["code"].replace("\r\n", "\n").encode("utf-8")
+                            _canonical_expert_code(current["code"]).encode("utf-8")
                         ).hexdigest()
                         if digest != change.installed_sha256:
                             status = "preserved_modified"

@@ -28,6 +28,7 @@ class FakeAPI:
         self.experts = {}
         self.kv = {}
         self.fail_save = None
+        self.strip_saved_newlines = set()
         self.calls = []
         self.default_agent_id = "agent_account_QwenBase"
         self.agents = {
@@ -59,10 +60,13 @@ class FakeAPI:
         if endpoint == "/api/expert/save":
             if payload["name"] == self.fail_save:
                 return {"status": "error"}
+            code = payload["code"]
+            if payload["name"] in self.strip_saved_newlines:
+                code = code.rstrip("\n")
             self.experts[payload["name"]] = {
                 "status": "success",
                 "name": payload["name"],
-                "expert_code": payload["code"],
+                "expert_code": code,
                 "description": payload.get("description", ""),
                 "kwargs": payload.get("kwargs", {}),
                 "cspl": payload.get("cspl", "fython"),
@@ -326,6 +330,25 @@ class AccountInstallerTests(unittest.TestCase):
             self.assertEqual(ownership["builder"], api.default_agent_id)
             self.assertIn(stale, api.agents)
             self.assertFalse(any(endpoint == "/api/agent/delete" for endpoint, _ in api.calls))
+
+    def test_live_api_trailing_newline_normalization_is_not_a_verification_failure(self):
+        api = FakeAPI()
+        api.strip_saved_newlines.add("newline_normalized")
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+                agent_id="agent_user_Qwen123",
+            )
+            report = installer.install(
+                {"newline_normalized": expert("newline_normalized")},
+                required={"newline_normalized"},
+                smokes=set(),
+                kv_artifacts=[],
+            )
+            self.assertEqual(report["status"], "installed")
+            self.assertFalse(api.experts["newline_normalized"]["expert_code"].endswith("\n"))
 
     def test_installs_verifies_smokes_and_never_journals_token(self):
         api = FakeAPI()
