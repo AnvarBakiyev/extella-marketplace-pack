@@ -83,6 +83,8 @@ class FakeAPI:
             }
             return {"status": "success"}
         if endpoint == "/api/expert/delete":
+            if set(payload) != {"name"}:
+                raise APIError(endpoint, "http_error", http_status=422, code="invalid delete payload")
             self.experts.pop(payload["name"], None)
             return {"status": "success"}
         if endpoint == "/api/expert/run":
@@ -132,6 +134,8 @@ class FakeAPI:
             self.kv[payload["key"]] = payload["value"]
             return {"status": "success"}
         if endpoint == "/api/kv/remove":
+            if set(payload) != {"key"}:
+                raise APIError(endpoint, "http_error", http_status=422, code="invalid remove payload")
             self.kv.pop(payload["key"], None)
             return {"status": "success"}
         raise AssertionError(endpoint)

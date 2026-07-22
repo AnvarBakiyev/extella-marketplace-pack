@@ -739,7 +739,7 @@ class AccountInstaller:
             if previous is None:
                 response = _retry_transient_api(
                     lambda: self.api.post(
-                        "/api/expert/delete", {"name": source.name, "global": True}
+                        "/api/expert/delete", {"name": source.name}
                     )
                 )
                 if not _delete_success(response):
@@ -782,7 +782,7 @@ class AccountInstaller:
             if previous is None:
                 result = _retry_transient_api(
                     lambda: self.api.post(
-                        "/api/kv/remove", {"key": artifact.key, "global": True}
+                        "/api/kv/remove", {"key": artifact.key}
                     )
                 )
                 acknowledged = _delete_success(result)
@@ -985,7 +985,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                             response = _retry_transient_api(
                                 lambda: api.post(
                                     "/api/expert/delete",
-                                    {"name": change.identity, "global": True},
+                                    {"name": change.identity},
                                 )
                             )
                             if not _delete_success(response):
@@ -1021,7 +1021,7 @@ def uninstall_account_resources(api: AccountAPI, state_file: Path) -> dict[str, 
                         response = _retry_transient_api(
                             lambda: api.post(
                                 "/api/kv/remove",
-                                {"key": change.identity, "global": True},
+                                {"key": change.identity},
                             )
                         )
                         if not _delete_success(response):
