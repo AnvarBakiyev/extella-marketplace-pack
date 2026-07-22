@@ -22,6 +22,41 @@ from installer.client import install_client  # noqa: E402
 from runtime.extella_runtime.platforms import detect_platform  # noqa: E402
 
 
+def _console_progress(event: dict) -> None:
+    """Write human progress to stderr while keeping final stdout valid JSON."""
+
+    phase = str(event.get("phase") or "")
+    current = int(event.get("current") or 0)
+    total = int(event.get("total") or 0)
+    raw_item = str(event.get("item") or "")
+    item = raw_item if raw_item.replace("_", "").isalnum() else ""
+    if phase == "local_prepare":
+        message = "[Client] Checking this computer and installing local files…"
+    elif phase == "account_repair":
+        message = "[Account] Checking for an interrupted earlier installation…"
+    elif phase == "account_validation":
+        message = "[Account] Validating the Extella account…"
+    elif phase == "expert":
+        suffix = f": {item}" if item else ""
+        message = f"[Account] Expert {current}/{total}{suffix} — install and verification"
+    elif phase == "catalog_data":
+        message = f"[Account] Catalog data {current}/{total} — install and verification"
+    elif phase == "functional_smoke":
+        suffix = f": {item}" if item else ""
+        message = f"[Account] Final smoke {current}/{total}{suffix}"
+    elif phase == "account_complete":
+        message = "[Account] Account resources verified."
+    elif phase == "service_activation":
+        message = "[Services] Starting and verifying Activity Center…"
+    elif phase == "commit":
+        message = "[Client] Committing the verified installation…"
+    elif phase == "complete":
+        message = "[Client] Installation complete."
+    else:
+        return
+    print(message, file=sys.stderr, flush=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bundle-root", type=Path, default=BUNDLE_ROOT)
@@ -49,6 +84,7 @@ def main() -> int:
             platform_info=platform_info,
             bootstrap_python_root=args.bootstrap_python_root,
             activate_services=not args.no_start,
+            progress=_console_progress,
         )
     except Exception as error:
         print(

@@ -376,6 +376,37 @@ class AccountInstallerTests(unittest.TestCase):
         self.assertNotIn("extella:client:agents:v1", api.kv)
         self.assertFalse(any(endpoint == "/api/agent/create" for endpoint, _ in api.calls))
 
+    def test_progress_reports_safe_bounded_account_steps(self):
+        api = FakeAPI()
+        events = []
+        with tempfile.TemporaryDirectory() as directory:
+            installer = AccountInstaller(
+                api,
+                release_version="2.0.0",
+                state_root=Path(directory),
+            )
+            installer.install(
+                {"safe_smoke": expert("safe_smoke")},
+                required={"safe_smoke"},
+                smokes={"safe_smoke"},
+                kv_artifacts=[KVArtifact("private:key", "TOP_SECRET", "test")],
+                progress=events.append,
+            )
+        self.assertEqual(
+            [event["phase"] for event in events],
+            [
+                "account_validation",
+                "expert",
+                "catalog_data",
+                "functional_smoke",
+                "account_complete",
+            ],
+        )
+        self.assertEqual(events[1]["item"], "safe_smoke")
+        serialized = json.dumps(events)
+        self.assertNotIn("TOP_SECRET", serialized)
+        self.assertNotIn("private:key", serialized)
+
     def test_repair_replaces_stale_pro_agent_ownership_with_token_qwen(self):
         api = FakeAPI()
         stale = "agent_user_ProQwen123"

@@ -904,10 +904,29 @@ class AccountInstaller:
         kv_artifacts: Iterable[KVArtifact],
         agent_instructions: Mapping[str, str] | None = None,
         commit: bool = True,
+        progress: Callable[[Mapping[str, Any]], None] | None = None,
     ) -> dict[str, Any]:
+        def emit(phase: str, current: int, total: int, item: str = "") -> None:
+            if progress is None:
+                return
+            try:
+                progress(
+                    {
+                        "phase": phase,
+                        "current": current,
+                        "total": total,
+                        "item": item,
+                    }
+                )
+            except Exception:
+                # Progress output is informational and can never invalidate an
+                # otherwise safe installation (for example, on a closed pipe).
+                pass
+
         missing = sorted((required | smokes) - set(experts))
         if missing:
             raise AccountInstallError(f"required expert sources are missing: {', '.join(missing[:10])}")
+        emit("account_validation", 0, 1)
         self.validate_token()
         owned_agent_kv: list[KVArtifact] = []
         if agent_instructions is not None:
@@ -918,20 +937,27 @@ class AccountInstaller:
         # unverified experts. A base install owns only the explicit release
         # contract; merely being present in the source tree is never consent to
         # advertise or install an expert into every account.
-        for name in sorted(required | smokes):
+        expert_names = sorted(required | smokes)
+        for index, name in enumerate(expert_names, start=1):
+            emit("expert", index, len(expert_names), name)
             source = experts[name]
             self.transaction.run(f"expert:{name}", lambda source=source: self.install_expert(source))
             self.transaction.run(
                 f"install-smoke:{name}",
                 lambda name=name: self.smoke_expert(name, install_contract=True),
             )
-        for artifact in [*kv_artifacts, *owned_agent_kv]:
+        all_kv = [*kv_artifacts, *owned_agent_kv]
+        for index, artifact in enumerate(all_kv, start=1):
+            emit("catalog_data", index, len(all_kv))
             self.transaction.run(f"kv:{artifact.key}", lambda artifact=artifact: self.install_kv(artifact))
-        for name in sorted(smokes):
+        smoke_names = sorted(smokes)
+        for index, name in enumerate(smoke_names, start=1):
+            emit("functional_smoke", index, len(smoke_names), name)
             self.transaction.run(
                 f"functional-smoke:{name}",
                 lambda name=name: self.smoke_expert(name),
             )
+        emit("account_complete", 1, 1)
         return self.transaction.commit() if commit else self.transaction.prepared_report()
 
 

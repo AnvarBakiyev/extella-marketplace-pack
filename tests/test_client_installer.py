@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import shutil
 import sys
@@ -13,6 +14,7 @@ from installer.client import (
     _wait_for_activity_autostart,
     prepare_local_client,
 )
+from installer.client_install import _console_progress
 from runtime.extella_runtime.processes import RuntimeSpec
 from runtime.extella_runtime.platforms import detect_platform
 
@@ -21,6 +23,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClientInstallerTests(unittest.TestCase):
+    def test_console_progress_is_human_readable_and_keeps_unknown_data_hidden(self):
+        output = io.StringIO()
+        with patch("installer.client_install.sys.stderr", output):
+            _console_progress(
+                {
+                    "phase": "expert",
+                    "current": 7,
+                    "total": 60,
+                    "item": "safe_expert",
+                    "secret": "TOP_SECRET",
+                }
+            )
+        rendered = output.getvalue()
+        self.assertIn("Expert 7/60: safe_expert", rendered)
+        self.assertNotIn("TOP_SECRET", rendered)
+
     def test_waits_for_launchagent_to_claim_one_activity_center_pid(self):
         class DelayedSupervisor:
             def __init__(self):

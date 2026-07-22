@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 import urllib.error
 import urllib.request
 
@@ -465,10 +465,20 @@ def install_client(
     python_executable: Path | None = None,
     activate_services: bool = True,
     account_api: Any | None = None,
+    progress: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
+    def emit(phase: str) -> None:
+        if progress is None:
+            return
+        try:
+            progress({"phase": phase, "current": 0, "total": 0, "item": ""})
+        except Exception:
+            pass
+
     platform_info = platform_info or detect_platform()
     environment = dict(os.environ if env is None else env)
     stage = "local-prepare"
+    emit("local_prepare")
     try:
         prepared, _bundle = prepare_local_client(
             bundle_root,
@@ -491,6 +501,7 @@ def install_client(
     account_prepared = False
     try:
         stage = "account-prepare"
+        emit("account_repair")
         api = account_api or ExtellaAPI(token, api_base=api_base)
         repair_interrupted_account(
             api,
@@ -510,15 +521,18 @@ def install_client(
             kv_artifacts=catalog_kv_artifacts(bundle_root),
             agent_instructions=None,
             commit=False,
+            progress=progress,
         )
         account_prepared = True
         if activate_services:
             stage = "service-activation"
+            emit("service_activation")
             prepared.transaction.run(
                 "services.activate",
                 lambda: _activate_services(prepared, platform_info=platform_info),
             )
         stage = "commit"
+        emit("commit")
         local_report = prepared.transaction.commit()
         account_report = account.transaction.commit()
     except Exception as error:
@@ -541,6 +555,7 @@ def install_client(
         stage="complete",
         success=True,
     )
+    emit("complete")
     return {
         "schemaVersion": 1,
         "status": "installed",
