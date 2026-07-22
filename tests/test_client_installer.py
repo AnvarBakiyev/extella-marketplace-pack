@@ -8,7 +8,12 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from installer.client import _restrict_secret_file, prepare_local_client
+from installer.client import (
+    _restrict_secret_file,
+    _wait_for_activity_autostart,
+    prepare_local_client,
+)
+from runtime.extella_runtime.processes import RuntimeSpec
 from runtime.extella_runtime.platforms import detect_platform
 
 
@@ -16,6 +21,38 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class ClientInstallerTests(unittest.TestCase):
+    def test_waits_for_launchagent_to_claim_one_activity_center_pid(self):
+        class DelayedSupervisor:
+            def __init__(self):
+                self.calls = 0
+
+            def status(self, spec):
+                del spec
+                self.calls += 1
+                return {
+                    "status": "running" if self.calls == 3 else "degraded",
+                    "errorClass": None if self.calls == 3 else "port_occupied_by_unowned_process",
+                    "pid": 321 if self.calls == 3 else None,
+                }
+
+        runtime = RuntimeSpec(
+            runtime_id="extella_activity_center",
+            name="Activity Center",
+            argv=(sys.executable, "server.py"),
+            cwd=Path("/tmp"),
+            port=8799,
+            health_url="http://127.0.0.1:8799/api/health",
+            log_path=Path("/tmp/activity.log"),
+            owner="extella_activity_center",
+            autostart="native",
+        )
+        supervisor = DelayedSupervisor()
+        with patch("installer.client.time.sleep"):
+            status = _wait_for_activity_autostart(supervisor, runtime, timeout=2)
+        self.assertEqual(status["status"], "running")
+        self.assertEqual(status["pid"], 321)
+        self.assertEqual(supervisor.calls, 3)
+
     def test_secret_file_permissions_are_restricted_on_macos(self):
         mac = detect_platform(system="Darwin", architecture="arm64", release="15.5")
         with tempfile.TemporaryDirectory() as directory:
@@ -146,13 +183,15 @@ class ClientInstallerTests(unittest.TestCase):
             bundle = root / "bundle"
             bundle.mkdir()
             self._bundle(bundle)
-            prepared, verified = prepare_local_client(
-                bundle,
-                platform_info=mac,
-                env={"HOME": str(root / "home"), "EXTELLA_DATA_ROOT": str(root / "data")},
-                python_executable=Path(sys.executable),
-                network_urls=(),
-            )
+            doctor = SimpleNamespace(ready=True, to_dict=lambda: {"ready": True})
+            with patch("installer.client.run_doctor", return_value=doctor):
+                prepared, verified = prepare_local_client(
+                    bundle,
+                    platform_info=mac,
+                    env={"HOME": str(root / "home"), "EXTELLA_DATA_ROOT": str(root / "data")},
+                    python_executable=Path(sys.executable),
+                    network_urls=(),
+                )
             report = prepared.transaction.commit()
             self.assertEqual(verified.release_version, "2.0.0-rc.1")
             self.assertEqual(report["status"], "installed")

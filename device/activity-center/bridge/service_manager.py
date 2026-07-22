@@ -16,9 +16,12 @@ from typing import Any
 
 from extella_runtime.paths import client_paths
 from extella_runtime.processes import (
+    ProcessIdentity,
     ProcessControlError,
     ProcessSupervisor,
     RuntimeSpec,
+    listening_pids,
+    process_identity,
 )
 from extella_runtime.platforms import detect_platform
 
@@ -26,6 +29,12 @@ from extella_runtime.platforms import detect_platform
 _PATHS = client_paths(platform_info=detect_platform())
 REGISTRY_DIR = Path(
     os.environ.get("EXTELLA_PLUGIN_REGISTRY", str(_PATHS.plugins_root / "_registry"))
+)
+LEGACY_REGISTRY_DIR = Path(
+    os.environ.get(
+        "EXTELLA_LEGACY_PLUGIN_REGISTRY",
+        str(Path.home() / "extella-plugins" / "_registry"),
+    )
 )
 STATE_FILE = Path(
     os.environ.get("EXTELLA_SERVICE_STATE", str(_PATHS.state_root / "services.json"))
@@ -159,11 +168,20 @@ def _runtime_spec(
     )
 
 
-def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]:
+def registry_services(
+    registry_dir: Path = REGISTRY_DIR,
+    legacy_registry_dir: Path | None = LEGACY_REGISTRY_DIR,
+) -> list[dict[str, Any]]:
     services: list[dict[str, Any]] = []
-    if not registry_dir.is_dir():
-        return services
-    for path in sorted(registry_dir.glob("*.json")):
+    seen: set[str] = set()
+    locations = [(registry_dir, "Extella registry")]
+    if legacy_registry_dir is not None and legacy_registry_dir.resolve() != registry_dir.resolve():
+        locations.append((legacy_registry_dir, "Legacy Extella registry"))
+    paths: list[tuple[Path, str]] = []
+    for directory, source_label in locations:
+        if directory.is_dir():
+            paths.extend((path, source_label) for path in sorted(directory.glob("*.json")))
+    for path, source_label in paths:
         try:
             manifest = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -177,7 +195,7 @@ def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]
         ):
             continue
         service_id = str(manifest.get("id") or path.stem)
-        if not _SERVICE_ID.fullmatch(service_id):
+        if not _SERVICE_ID.fullmatch(service_id) or service_id in seen:
             continue
         try:
             port = int(ui.get("port") or service.get("port"))
@@ -195,6 +213,7 @@ def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]
         if len(description) > 220:
             description = description[:217].rstrip() + "…"
         spec, blocked = _runtime_spec(manifest, path, root, port)
+        seen.add(service_id)
         services.append(
             {
                 "id": service_id,
@@ -204,6 +223,7 @@ def registry_services(registry_dir: Path = REGISTRY_DIR) -> list[dict[str, Any]]
                 "mainFile": str(ui.get("mainFile") or "").lstrip("/"),
                 "root": root,
                 "registryFile": path.name,
+                "sourceLabel": f"{source_label} · {path.name}",
                 "runtimeSpec": spec,
                 "blockedReason": blocked,
             }
@@ -246,6 +266,17 @@ def _public_service(
                 "owned": True,
             }
         )
+    elif runtime.get("errorClass") == "port_occupied_by_unowned_process":
+        for pid in listening_pids(service["port"]):
+            identity: ProcessIdentity | None = process_identity(pid)
+            processes.append(
+                {
+                    "pid": pid,
+                    "ppid": identity.ppid if identity else 0,
+                    "process": identity.executable if identity else "process",
+                    "owned": False,
+                }
+            )
     blocked = service.get("blockedReason") or ""
     if runtime.get("errorClass") == "port_occupied_by_unowned_process":
         blocked = "The port is occupied by a process whose Extella ownership is not confirmed."

@@ -377,6 +377,29 @@ def _health(url: str, *, timeout: float = 3.0) -> bool:
         return False
 
 
+def _wait_for_activity_autostart(
+    supervisor: ProcessSupervisor,
+    runtime: RuntimeSpec,
+    *,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
+    """Wait for launchd to start and let Activity Center claim its own PID.
+
+    ``launchctl bootstrap`` returns before a RunAtLoad process necessarily
+    binds its socket and records its fingerprint.  Starting a second process
+    immediately creates a race on port 8799.  Windows scheduled tasks do not
+    start at registration time and therefore use the explicit supervisor path
+    below instead.
+    """
+
+    deadline = time.monotonic() + timeout
+    status = supervisor.status(runtime)
+    while status["status"] != "running" and time.monotonic() < deadline:
+        time.sleep(0.2)
+        status = supervisor.status(runtime)
+    return status
+
+
 def _activate_services(
     prepared: PreparedClient,
     *,
@@ -412,7 +435,13 @@ def _activate_services(
         autostart="native",
     )
     previous = supervisor.status(runtime)
-    if previous["status"] != "running":
+    if platform_info.system == "Darwin":
+        previous = _wait_for_activity_autostart(supervisor, runtime)
+        if previous["status"] != "running":
+            raise InstallationError(
+                "Activity Center LaunchAgent did not claim a healthy PID on port 8799"
+            )
+    elif previous["status"] != "running":
         prepared.transaction.register_undo(lambda: supervisor.stop(runtime))
         supervisor.start(runtime, timeout=30)
     deadlines = {"activity": ("http://127.0.0.1:8799/api/services", 35)}

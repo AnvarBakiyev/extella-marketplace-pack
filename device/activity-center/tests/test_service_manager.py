@@ -147,7 +147,7 @@ class ServiceManagerTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            services = service_manager.registry_services(registry)
+            services = service_manager.registry_services(registry, legacy_registry_dir=None)
             self.assertEqual(
                 [service["id"] for service in services], ["demo_legacy", "demo_safe"]
             )
@@ -239,11 +239,69 @@ class ServiceManagerTests(unittest.TestCase):
                 "healthy": True,
             }
         )
-        public = service_manager._public_service(
-            service, {"disabled": [], "lastErrors": {}}, supervisor=supervisor
+        identity = service_manager.ProcessIdentity(
+            pid=4321,
+            ppid=1,
+            executable="Python",
+            started_at="today",
+            command_hash="not-public",
         )
+        with (
+            patch.object(service_manager, "listening_pids", return_value=[4321]),
+            patch.object(service_manager, "process_identity", return_value=identity),
+        ):
+            public = service_manager._public_service(
+                service, {"disabled": [], "lastErrors": {}}, supervisor=supervisor
+            )
         self.assertFalse(public["canStop"])
         self.assertIn("not confirmed", public["controlBlockedReason"])
+        self.assertEqual(
+            public["processes"],
+            [{"pid": 4321, "ppid": 1, "process": "Python", "owned": False}],
+        )
+        self.assertNotIn("not-public", json.dumps(public))
+
+    def test_canonical_registry_wins_and_legacy_services_remain_visible(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            current = root / "current"
+            legacy = root / "legacy"
+            project = root / "project"
+            current.mkdir()
+            legacy.mkdir()
+            project.mkdir()
+
+            def manifest(service_id: str, name: str, port: int) -> dict:
+                return {
+                    "id": service_id,
+                    "name": name,
+                    "ui": {
+                        "type": "local_server",
+                        "port": port,
+                        "rootPath": str(project),
+                    },
+                    "service": {
+                        "argv": [sys.executable, "-m", "http.server", str(port)],
+                        "healthPath": "/",
+                        "owner": service_id,
+                    },
+                }
+
+            (current / "shared.json").write_text(
+                json.dumps(manifest("shared", "Current", 9123)), encoding="utf-8"
+            )
+            (legacy / "shared.json").write_text(
+                json.dumps(manifest("shared", "Old duplicate", 9124)), encoding="utf-8"
+            )
+            (legacy / "legacy_only.json").write_text(
+                json.dumps(manifest("legacy_only", "Legacy only", 9125)), encoding="utf-8"
+            )
+
+            services = service_manager.registry_services(current, legacy)
+            self.assertEqual([item["id"] for item in services], ["shared", "legacy_only"])
+            self.assertEqual(services[0]["name"], "Current")
+            self.assertIn("Extella registry", services[0]["sourceLabel"])
+            self.assertIn("Legacy Extella registry", services[1]["sourceLabel"])
 
     def test_rejected_stop_does_not_persist_disabled_state(self) -> None:
         spec = service_manager.RuntimeSpec(
