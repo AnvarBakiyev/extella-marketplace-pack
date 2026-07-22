@@ -7,7 +7,7 @@ def kp_ingest(name="", folder="") -> str:
     folder = os.path.expanduser(folder or "")
     if not folder or not os.path.isdir(folder): return json.dumps({"status":"error","message":"нужна существующая папка"}, ensure_ascii=False)
     try:
-        from extella_expert_bridge import locations, path_or_error
+        from extella_expert_bridge import knowledge_path, path_or_error
         ollama, ollama_state = path_or_error("ollama", repair=False)
         pdftotext, _pdf_state = path_or_error("pdftotext", repair=False)
     except Exception:
@@ -62,7 +62,5 @@ def kp_ingest(name="", folder="") -> str:
                 if j < len(embs) and embs[j]: store.append({"text":part[j][0],"src":part[j][1],"emb":embs[j]})
         except Exception as e: last_err=str(e)[:110]
     if not store: return json.dumps({"status":"error","message":"файлы найдены ("+str(len(files))+"), но эмбеддинг не сработал: "+(last_err or "нет ответа от Ollama")}, ensure_ascii=False)
-    d=locations()["knowledge_root"]; os.makedirs(d, exist_ok=True)
-    safe=re.sub(r"[^a-zA-Z0-9_]","_",name)
-    json.dump({"name":name,"count":len(store),"chunks":store}, open(os.path.join(d,safe+".json"),"w"), ensure_ascii=False)
+    json.dump({"name":name,"count":len(store),"chunks":store}, open(knowledge_path(name),"w"), ensure_ascii=False)
     return json.dumps({"status":"success","name":name,"chunks":len(store),"files":len(files)}, ensure_ascii=False)

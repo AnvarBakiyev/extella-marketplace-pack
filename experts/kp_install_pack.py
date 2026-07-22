@@ -35,7 +35,7 @@ def kp_install_pack(pack_id="") -> str:
     p = PACKS.get(pack_id)
     if not p: return json.dumps({"status":"error","message":"неизвестный пак: "+str(pack_id)}, ensure_ascii=False)
     try:
-        from extella_expert_bridge import locations, path_or_error
+        from extella_expert_bridge import knowledge_path, path_or_error
         ollama, ollama_state = path_or_error("ollama", repair=False)
     except Exception:
         return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
@@ -110,7 +110,5 @@ def kp_install_pack(pack_id="") -> str:
                 if j < len(embs) and embs[j]: store.append({"text":part[j][0],"src":part[j][1],"emb":embs[j]})
         except Exception as e: last_err=str(e)[:110]
     if not store: return json.dumps({"status":"error","message":"векторизация не сработала: "+(last_err or "нет ответа")}, ensure_ascii=False)
-    d=locations()["knowledge_root"]; os.makedirs(d, exist_ok=True)
-    safe=re.sub(r"[^a-zA-Z0-9_]","_",p["name"])
-    json.dump({"name":p["name"],"count":len(store),"chunks":store}, open(os.path.join(d,safe+".json"),"w"), ensure_ascii=False)
+    json.dump({"name":p["name"],"count":len(store),"chunks":store}, open(knowledge_path(p["name"]),"w"), ensure_ascii=False)
     return json.dumps({"status":"success","name":p["name"],"chunks":len(store)}, ensure_ascii=False)

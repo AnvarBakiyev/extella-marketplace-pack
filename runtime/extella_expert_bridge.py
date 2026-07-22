@@ -7,6 +7,7 @@ every expert.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -73,6 +74,28 @@ def account_config() -> dict[str, Any]:
     except (OSError, json.JSONDecodeError):
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def knowledge_path(name: str, *, migrate: bool = True) -> str:
+    """Return a collision-resistant library path and migrate a matching legacy file."""
+
+    clean_name = str(name or "").strip()
+    if not clean_name:
+        raise ValueError("knowledge library name is required")
+    root = Path(locations()["knowledge_root"])
+    root.mkdir(parents=True, exist_ok=True)
+    stem = re.sub(r"[^A-Za-z0-9_]", "_", clean_name)[:40] or "knowledge"
+    digest = hashlib.sha256(clean_name.encode("utf-8")).hexdigest()[:12]
+    target = root / f"{stem}_{digest}.json"
+    legacy = root / f"{re.sub(r'[^A-Za-z0-9_]', '_', clean_name)}.json"
+    if migrate and not target.exists() and legacy != target and legacy.is_file():
+        try:
+            payload = json.loads(legacy.read_text(encoding="utf-8"))
+            if isinstance(payload, dict) and payload.get("name") == clean_name:
+                legacy.replace(target)
+        except (OSError, json.JSONDecodeError):
+            pass
+    return str(target)
 
 
 def resolve_pinokio_recipe(root: str, entry: str, *, fixed_port: int | None = None) -> dict[str, Any]:

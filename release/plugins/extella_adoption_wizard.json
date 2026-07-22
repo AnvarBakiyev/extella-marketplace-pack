@@ -8,7 +8,7 @@
   "source": {
     "type": "repository",
     "locator": "https://github.com/AnvarBakiyev/extella-adoption-wizard.git",
-    "revision": "a70c97a0e1dc1e717fff43e777210cd9da776a33"
+    "revision": "f5062ddd9f05c0cf523a5791f1ba9bc9483b2eb7"
   },
   "supportedPlatforms": ["macos-x86_64", "macos-arm64", "windows11-x86_64"],
   "install": {

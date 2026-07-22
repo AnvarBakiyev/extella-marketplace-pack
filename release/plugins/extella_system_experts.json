@@ -65,6 +65,7 @@
   "experts": {
     "required": [
       "agent_flash_role",
+      "agent_forge",
       "app_install",
       "app_list",
       "app_start",

@@ -6,11 +6,10 @@ def kp_ask(name="", question="") -> str:
     if not name or name.startswith("{{"): return json.dumps({"status":"error","message":"нужно имя базы"}, ensure_ascii=False)
     if not question or question.startswith("{{"): return json.dumps({"status":"error","message":"нужен вопрос"}, ensure_ascii=False)
     try:
-        from extella_expert_bridge import account_config, locations
+        from extella_expert_bridge import account_config, knowledge_path
     except Exception:
         return json.dumps({"status":"error","message":"Системный runtime Extella не установлен. Запустите Repair Extella Client."}, ensure_ascii=False)
-    d=locations()["knowledge_root"]; safe=re.sub(r"[^a-zA-Z0-9_]","_",name)
-    fp=os.path.join(d,safe+".json")
+    fp=knowledge_path(name)
     if not os.path.exists(fp): return json.dumps({"status":"error","message":"база не найдена — сначала загрузи документы"}, ensure_ascii=False)
     store=json.load(open(fp))["chunks"]
     def embed(t):

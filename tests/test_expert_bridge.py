@@ -34,6 +34,26 @@ class ExpertBridgeTests(unittest.TestCase):
                 self.assertEqual(extella_expert_bridge.locations()["apps_root"], str(root / "data/apps"))
                 self.assertEqual(extella_expert_bridge.account_config()["agent_id"], "agent_test")
 
+    def test_knowledge_paths_are_collision_resistant_and_migrate_matching_legacy_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "knowledge"
+            with patch(
+                "runtime.extella_expert_bridge.locations",
+                return_value={"knowledge_root": str(root)},
+            ):
+                first = Path(extella_expert_bridge.knowledge_path("База один"))
+                second = Path(extella_expert_bridge.knowledge_path("База дваа"))
+                self.assertNotEqual(first, second)
+                self.assertEqual(first.parent, root)
+
+                legacy = root / "______.json"
+                legacy.write_text(
+                    json.dumps({"name": "Знания", "chunks": []}), encoding="utf-8"
+                )
+                migrated = Path(extella_expert_bridge.knowledge_path("Знания"))
+                self.assertTrue(migrated.is_file())
+                self.assertFalse(legacy.exists())
+
     def test_service_control_builds_private_runtime_spec(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
