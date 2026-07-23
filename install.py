@@ -74,6 +74,25 @@ for i, f in enumerate(files, 1):
         print("  ❌", name, "—", str(e)[:70]); fail += 1
 print("  сохранено %d / %d, ошибок %d" % (ok, len(files), fail))
 
+# ---- 1a. CLI-библиотека (cap_library/): НА АККАУНТ НЕ СТАВИМ — только локальный склад ----
+# Решение Анвара 23.07: 68 cap_-обёрток (ffmpeg/ghostscript/imagemagick/audio/…) засоряли
+# аккаунт каждого коллеги и удлиняли установку, хотя нужны только тем, кто РЕАЛЬНО ставит
+# инструмент. Мост создаёт обёртки по требованию (/x/cap_install при клике «установить»);
+# библиотеку складируем локально файлами (ноль API-вызовов) — резолверы композитных
+# инструментов мост сможет брать отсюда.
+try:
+    import shutil as _sh
+    _cap_src = sorted(glob.glob(os.path.join(HERE, "cap_library", "*.py")))
+    if _cap_src:
+        _cap_dst = os.path.expanduser("~/extella_wizard/cap_library")
+        os.makedirs(_cap_dst, exist_ok=True)
+        for _f in _cap_src:
+            _sh.copy2(_f, os.path.join(_cap_dst, os.path.basename(_f)))
+        print("== CLI-библиотека == локальный склад: %d рецептов (на аккаунт не ставятся; "
+              "обёртки создаются по требованию при установке инструмента)" % len(_cap_src))
+except Exception as _e:
+    print("  ~ CLI-библиотека не разложилась локально:", str(_e)[:80])
+
 # ---- 1b. Платформенные эксперты (platform_experts/): СТАВИМ, НО НЕ ЗАТИРАЕМ ----
 # mcp_call/mcp_connect/mcp_list живут на платформе и правятся там же; слепая
 # перезапись убила бы чужие правки — поэтому они лежат вне experts/. Но тогда
