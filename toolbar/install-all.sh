@@ -3,7 +3,7 @@
 set -euo pipefail
 PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
 # Визард пиннится НЕИЗМЕНЯЕМЫМ SHA проверенного релиза (не веткой): что проверили — то и ставится.
-WIZ_SHA="fdc215b47556035bd95710f0d30e71826a6d038b"
+WIZ_SHA="97d4e6076374d59b22150b1769abb4918899877e"
 WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/${WIZ_SHA}.tar.gz"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
@@ -95,6 +95,9 @@ if [ -d "$WA" ] && ls "$WA"/*.py >/dev/null 2>&1; then
 fi
 cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
 ( cd "$WD" && "$PY" install.py ) || echo "  ⚠️ wizard install.py частично"
+# Карточки приложений/агентов (Бага, Таргетолог-команда, 1С и др.) регистрирует регистратор
+# визарда — без него свежая установка не видит агентов, которые раздаёт команда (Гульжан, 23.07).
+"$PY" "$WD/scripts/register_app_cards.py" >/dev/null 2>&1 && echo "  ✓ карточки приложений/агентов" || echo "  ~ карточки: пропущено (появятся после первого запуска Extella + повторного апдейта)"
 rm -rf "$TMP"
 
 say "5/5 Запуск"
