@@ -100,6 +100,10 @@ cp "$WD/ui/"*.py "$WD/ui/wizard.html" "$WA/" 2>/dev/null || true
 "$PY" "$WD/scripts/register_app_cards.py" >/dev/null 2>&1 && echo "  ✓ карточки приложений/агентов" || echo "  ~ карточки: пропущено (появятся после первого запуска Extella + повторного апдейта)"
 # «Подключения»: каждый подключает СВОИ сервисы/CRM/кабинеты (свой vault, свой Composio-ключ).
 bash "$PD/toolbar/install-connectors.sh" || echo "  ~ Connectors пропущен"
+# Локальные Predictive Sales и Таргетолог: данные и ключи — СВОИ у каждого (Keychain пользователя);
+# на машине владельца установщики честно скипают (основная карточка уже есть — дублей не будет).
+bash "$PD/toolbar/install-predictive.sh" || echo "  ~ Predictive Sales (локальный) пропущен"
+bash "$PD/toolbar/install-targetolog.sh" || echo "  ~ Таргетолог (локальный) пропущен"
 rm -rf "$TMP"
 
 say "5/5 Запуск"
