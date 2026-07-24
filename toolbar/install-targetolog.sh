@@ -33,6 +33,8 @@ echo "$VER" > "$DST/.version"
 say "✓ код Таргетолога → $DST"
 
 mkdir -p "$HOME/extella-plugins/_registry"
+# Явная (пере)установка снимает user-тумбстоун — иначе синк сочтёт карточку удалённой
+rm -f "$HOME/extella-plugins/_registry/_removed/targetologist_local.json"
 "$PY" - "$REG" "$DST" "$PORT" <<'PYJ'
 import json, sys
 reg, dst, port = sys.argv[1], sys.argv[2], int(sys.argv[3])
