@@ -3,7 +3,7 @@
 set -euo pipefail
 PACK="https://github.com/AnvarBakiyev/extella-marketplace-pack/archive/refs/heads/main.tar.gz"
 # Визард пиннится НЕИЗМЕНЯЕМЫМ SHA проверенного релиза (не веткой): что проверили — то и ставится.
-WIZ_SHA="bed2845de33444b547f520c44c3205af80a2bafa"
+WIZ_SHA="9d330d8808473ba51c4b4af5530dad683429b3ce"
 WIZ="https://github.com/AnvarBakiyev/extella-adoption-wizard/archive/${WIZ_SHA}.tar.gz"
 RAW="https://raw.githubusercontent.com/AnvarBakiyev/extella-marketplace-pack/main/toolbar"
 APP="$HOME/Library/Application Support/extella-desktop"
